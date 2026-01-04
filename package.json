@@ -5,7 +5,6 @@
   "engines": {
     "node": "20.x"
   },
-  "type": "module",
   "scripts": {
     "dev": "tsx watch server/_core/index.ts",
     "build": "vite build",
