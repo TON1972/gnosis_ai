@@ -1,15 +1,22 @@
 {
+  "version": 2,
   "buildCommand": "pnpm install && pnpm build",
   "outputDirectory": "dist/public",
+  "framework": "vite",
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/index"
+      "destination": "server/index.ts"
     },
     {
-      "source": "/(.*)",
+      "source": "/(?!api/)(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "server/index.ts": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  }
 }
-

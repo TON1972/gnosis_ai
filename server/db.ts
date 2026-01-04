@@ -1,53 +1,69 @@
 import { eq } from "drizzle-orm";
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
-import * as schema from "../shared/schema"; // Importamos tudo como schema
+import pg from "pg";
+// ✅ Correção da tipagem: Importamos 'Pool' como valor e 'Pool' como tipo separadamente
+const { Pool } = pg;
+import type { Pool as PoolType } from "pg"; 
+
+import * as schema from "../shared/schema"; 
 import { ENV } from './_core/env';
 
 // Tipos auxiliares
 type InsertUser = typeof schema.users.$inferInsert;
 
-// Definimos o tipo do banco explicitamente usando o schema
+// ✅ Singleton para evitar múltiplas conexões em funções Serverless
 let _db: NodePgDatabase<typeof schema> | null = null;
-let pool: Pool | null = null;
+let pool: PoolType | null = null; // ✅ Agora usamos PoolType aqui
 
 export async function getDb(): Promise<NodePgDatabase<typeof schema> | null> {
-  const dbUrl = process.env.DATABASE_URL || process.env.URL_DO_BANCO_DE_DADOS;
+  // ✅ Prioriza a URL do objeto ENV centralizado que configuramos
+  const dbUrl = ENV.databaseUrl || process.env.DATABASE_URL;
   
-  if (!_db && dbUrl) {
-    try {
-      console.log("[Database] Conectando com node-postgres (SSL Fix)...");
-      
-      pool = new Pool({
-        connectionString: dbUrl,
-        // ✅ Se 'require' falhou, o Supabase em algumas redes 
-        // aceita melhor o objeto de configuração explícito
-        ssl: {
-          rejectUnauthorized: false,
-        },
-        // Configurações para evitar queda de socket
-        max: 20,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000,
-      });
-
-      _db = drizzle(pool, { schema });
-      
-      // ✅ Teste de fogo: Se falhar aqui, a URL ou a rede está bloqueada
-      const client = await pool.connect();
-      client.release(); // Libera o cliente de volta para o pool
-      
-      console.log("[Database] Conexão estabelecida com sucesso!");
-    } catch (error: any) {
-      console.error("[Database] Falha na conexão:", error.message);
-      _db = null;
-    }
+  if (!dbUrl) {
+    console.error("[Database] DATABASE_URL não definida nas variáveis de ambiente.");
+    return null;
   }
-  return _db;
+
+  // Se já existe uma instância ativa, reutilizamos para economizar recursos na Vercel
+  if (_db) return _db;
+
+  try {
+    console.log("[Database] Iniciando conexão com o pool (Vercel Optimised)...");
+    
+    // ✅ Criamos uma nova instância do Pool
+    const newPool = new Pool({
+      connectionString: dbUrl,
+      ssl: {
+        rejectUnauthorized: false, // Necessário para conexões externas com Supabase/Neon
+      },
+      // ✅ Configurações críticas para evitar erro 500 por excesso de conexões na Vercel
+      max: 1, 
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 5000,
+    });
+
+    pool = newPool as unknown as PoolType;
+    _db = drizzle(pool, { schema });
+    
+    // ✅ Teste de conexão imediato para validar a DATABASE_URL
+    const client = await pool.connect();
+    client.release(); 
+    
+    console.log("[Database] Conexão estabelecida com sucesso!");
+    return _db;
+  } catch (error: any) {
+    console.error("[Database] Falha crítica na conexão:", error.message);
+    _db = null;
+    return null;
+  }
 }
 
+/**
+ * 🛠️ Funções de Manipulação de Dados
+ */
+
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) throw new Error("User openId is required");
+  if (!user.openId) throw new Error("User openId é obrigatório para o upsert.");
 
   const db = await getDb();
   if (!db) return;
@@ -83,10 +99,13 @@ export async function upsertUser(user: InsertUser): Promise<void> {
           .limit(1);
         
         if (freePlan.length > 0) {
+          // ✅ Criação automática de assinatura para novos usuários
           await db.insert(schema.subscriptions).values({
             userId: newUser.id,
             planId: freePlan[0].id,
             status: "active",
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
           });
         }
       }
@@ -97,7 +116,6 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 }
 
-// Funções de busca simplificadas
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) return undefined;
@@ -108,6 +126,7 @@ export async function getUserByOpenId(openId: string) {
 export async function getAllPlans() {
   const db = await getDb();
   if (!db) return [];
+  // ✅ Busca apenas planos marcados como ativos no banco
   return await db.select().from(schema.plans).where(eq(schema.plans.isActive, true));
 }
 
