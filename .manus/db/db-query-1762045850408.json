@@ -1,0 +1,17 @@
+{
+  "query": "SELECT s.id, s.userId, s.status, p.name, p.displayName FROM subscriptions s INNER JOIN plans p ON s.planId = p.id WHERE s.status = 'active'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT s.id, s.userId, s.status, p.name, p.displayName FROM subscriptions s INNER JOIN plans p ON s.planId = p.id WHERE s.status = 'active'",
+  "rows": [
+    {
+      "id": "180001",
+      "userId": "1",
+      "status": "active",
+      "name": "free",
+      "displayName": "Plano FREE"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tstatus\tname\tdisplayName\n180001\t1\tactive\tfree\tPlano FREE\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

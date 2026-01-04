@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, userId, planId, status FROM subscriptions",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT id, userId, planId, status FROM subscriptions",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "planId": "1",
+      "status": "active"
+    },
+    {
+      "id": "2",
+      "userId": "1",
+      "planId": "1",
+      "status": "active"
+    },
+    {
+      "id": "30001",
+      "userId": "1",
+      "planId": "90001",
+      "status": "active"
+    },
+    {
+      "id": "60001",
+      "userId": "720001",
+      "planId": "120001",
+      "status": "active"
+    },
+    {
+      "id": "90001",
+      "userId": "1080001",
+      "planId": "120001",
+      "status": "active"
+    },
+    {
+      "id": "120001",
+      "userId": "690001",
+      "planId": "120001",
+      "status": "active"
+    },
+    {
+      "id": "150001",
+      "userId": "1260009",
+      "planId": "150001",
+      "status": "active"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tplanId\tstatus\n1\t1\t1\tactive\n2\t1\t1\tactive\n30001\t1\t90001\tactive\n60001\t720001\t120001\tactive\n90001\t1080001\t120001\tactive\n120001\t690001\t120001\tactive\n150001\t1260009\t150001\tactive\n",
+  "stderr": "",
+  "execution_time_ms": 44
+}

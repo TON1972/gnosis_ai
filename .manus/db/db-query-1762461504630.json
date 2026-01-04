@@ -1,0 +1,9 @@
+{
+  "query": "SELECT id, openId, name, email, role FROM users WHERE role = 'admin' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT id, openId, name, email, role FROM users WHERE role = 'admin' LIMIT 5;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 4443
+}

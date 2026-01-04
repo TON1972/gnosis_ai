@@ -1,0 +1,65 @@
+{
+  "query": "SELECT * FROM userCredits LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT * FROM userCredits LIMIT 5",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "creditsInitial": "0",
+      "creditsInitialExpiry": "NULL",
+      "creditsDaily": "50",
+      "creditsBonus": "0",
+      "lastDailyReset": "2025-10-26 03:39:39",
+      "createdAt": "2025-10-24 04:16:27",
+      "updatedAt": "2025-10-26 03:39:38"
+    },
+    {
+      "id": "30001",
+      "userId": "690001",
+      "creditsInitial": "500",
+      "creditsInitialExpiry": "2025-11-25 21:00:37",
+      "creditsDaily": "50",
+      "creditsBonus": "0",
+      "lastDailyReset": "2025-10-26 21:00:37",
+      "createdAt": "2025-10-26 21:00:37",
+      "updatedAt": "2025-10-26 21:00:37"
+    },
+    {
+      "id": "60001",
+      "userId": "720001",
+      "creditsInitial": "500",
+      "creditsInitialExpiry": "2025-11-25 21:09:44",
+      "creditsDaily": "50",
+      "creditsBonus": "0",
+      "lastDailyReset": "2025-10-26 21:09:44",
+      "createdAt": "2025-10-26 21:09:44",
+      "updatedAt": "2025-10-26 21:09:44"
+    },
+    {
+      "id": "90001",
+      "userId": "1080001",
+      "creditsInitial": "500",
+      "creditsInitialExpiry": "2025-11-26 00:04:55",
+      "creditsDaily": "50",
+      "creditsBonus": "0",
+      "lastDailyReset": "2025-10-27 00:04:55",
+      "createdAt": "2025-10-27 00:04:54",
+      "updatedAt": "2025-10-27 00:04:54"
+    },
+    {
+      "id": "120001",
+      "userId": "1260009",
+      "creditsInitial": "500",
+      "creditsInitialExpiry": "2025-11-26 01:26:55",
+      "creditsDaily": "50",
+      "creditsBonus": "0",
+      "lastDailyReset": "2025-10-29 08:59:40",
+      "createdAt": "2025-10-27 01:26:54",
+      "updatedAt": "2025-10-29 08:59:40"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tcreditsInitial\tcreditsInitialExpiry\tcreditsDaily\tcreditsBonus\tlastDailyReset\tcreatedAt\tupdatedAt\n1\t1\t0\tNULL\t50\t0\t2025-10-26 03:39:39\t2025-10-24 04:16:27\t2025-10-26 03:39:38\n30001\t690001\t500\t2025-11-25 21:00:37\t50\t0\t2025-10-26 21:00:37\t2025-10-26 21:00:37\t2025-10-26 21:00:37\n60001\t720001\t500\t2025-11-25 21:09:44\t50\t0\t2025-10-26 21:09:44\t2025-10-26 21:09:44\t2025-10-26 21:09:44\n90001\t1080001\t500\t2025-11-26 00:04:55\t50\t0\t2025-10-27 00:04:55\t2025-10-27 00:04:54\t2025-10-27 00:04:54\n120001\t1260009\t500\t2025-11-26 01:26:55\t50\t0\t2025-10-29 08:59:40\t2025-10-27 01:26:54\t2025-10-29 08:59:40\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

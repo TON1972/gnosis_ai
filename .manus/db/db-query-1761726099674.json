@@ -1,0 +1,17 @@
+{
+  "query": "SELECT u.id, u.name, s.planId, p.displayName, p.toolsCount \nFROM users u \nLEFT JOIN subscriptions s ON u.id = s.userId \nLEFT JOIN plans p ON s.planId = p.id \nWHERE u.openId = (SELECT openId FROM users ORDER BY createdAt DESC LIMIT 1)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT u.id, u.name, s.planId, p.displayName, p.toolsCount \nFROM users u \nLEFT JOIN subscriptions s ON u.id = s.userId \nLEFT JOIN plans p ON s.planId = p.id \nWHERE u.openId = (SELECT openId FROM users ORDER BY createdAt DESC LIMIT 1)",
+  "rows": [
+    {
+      "id": "1260009",
+      "name": "WINSTON CECILIO",
+      "planId": "120001",
+      "displayName": "NULL",
+      "toolsCount": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tplanId\tdisplayName\ttoolsCount\n1260009\tWINSTON CECILIO\t120001\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 513
+}

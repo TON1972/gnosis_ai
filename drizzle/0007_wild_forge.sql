@@ -1,0 +1,1 @@
+ALTER TABLE `chatbotContacts` ADD `department` enum('tecnico','financeiro','comercial','outros') NOT NULL;

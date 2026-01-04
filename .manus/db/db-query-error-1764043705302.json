@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO tools (id, name, slug, description, icon, cost, category, isActive) \nVALUES (\n  19,\n  'Escatologia Bíblica',\n  'escatologia-biblica',\n  'Análise escatológica profunda com rigor acadêmico em nível de doutorado. Abrange história da interpretação, exegese avançada, sistematização teológica e modelagem hermenêutica.',\n  'Calendar',\n  100,\n  'advanced',\n  1\n);\n\nINSERT INTO planTools (planId, toolId, isActive, unlockOrder) \nVALUES \n  (3, 19, 1, 19),\n  (4, 19, 1, 19);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute INSERT INTO tools (id, name, slug, description, icon, cost, category, isActive) \nVALUES (\n  19,\n  'Escatologia Bíblica',\n  'escatologia-biblica',\n  'Análise escatológica profunda com rigor acadêmico em nível de doutorado. Abrange história da interpretação, exegese avançada, sistematização teológica e modelagem hermenêutica.',\n  'Calendar',\n  100,\n  'advanced',\n  1\n);\n\nINSERT INTO planTools (planId, toolId, isActive, unlockOrder) \nVALUES \n  (3, 19, 1, 19),\n  (4, 19, 1, 19);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'slug' in 'field list'"
+  ]
+}

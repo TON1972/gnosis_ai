@@ -1,0 +1,66 @@
+{
+  "query": "SELECT id, userId, planId, status, startDate, endDate FROM subscriptions WHERE status = 'active'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT id, userId, planId, status, startDate, endDate FROM subscriptions WHERE status = 'active'",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "planId": "1",
+      "status": "active",
+      "startDate": "2025-10-26 03:04:22",
+      "endDate": "2026-10-26 03:04:22"
+    },
+    {
+      "id": "2",
+      "userId": "1",
+      "planId": "1",
+      "status": "active",
+      "startDate": "2025-10-26 03:12:13",
+      "endDate": "2026-10-26 03:12:13"
+    },
+    {
+      "id": "30001",
+      "userId": "1",
+      "planId": "90001",
+      "status": "active",
+      "startDate": "2025-10-26 03:39:29",
+      "endDate": "2026-10-26 03:39:29"
+    },
+    {
+      "id": "60001",
+      "userId": "720001",
+      "planId": "120001",
+      "status": "active",
+      "startDate": "2025-10-26 21:50:39",
+      "endDate": "NULL"
+    },
+    {
+      "id": "90001",
+      "userId": "1080001",
+      "planId": "120001",
+      "status": "active",
+      "startDate": "2025-10-27 00:04:33",
+      "endDate": "NULL"
+    },
+    {
+      "id": "120001",
+      "userId": "690001",
+      "planId": "120001",
+      "status": "active",
+      "startDate": "2025-10-27 00:26:35",
+      "endDate": "NULL"
+    },
+    {
+      "id": "150001",
+      "userId": "1260009",
+      "planId": "150001",
+      "status": "active",
+      "startDate": "2025-10-27 01:26:41",
+      "endDate": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tplanId\tstatus\tstartDate\tendDate\n1\t1\t1\tactive\t2025-10-26 03:04:22\t2026-10-26 03:04:22\n2\t1\t1\tactive\t2025-10-26 03:12:13\t2026-10-26 03:12:13\n30001\t1\t90001\tactive\t2025-10-26 03:39:29\t2026-10-26 03:39:29\n60001\t720001\t120001\tactive\t2025-10-26 21:50:39\tNULL\n90001\t1080001\t120001\tactive\t2025-10-27 00:04:33\tNULL\n120001\t690001\t120001\tactive\t2025-10-27 00:26:35\tNULL\n150001\t1260009\t150001\tactive\t2025-10-27 01:26:41\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

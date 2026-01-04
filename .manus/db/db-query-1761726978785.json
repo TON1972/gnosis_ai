@@ -1,0 +1,46 @@
+{
+  "query": "SELECT pt.planId, t.id, t.name, t.displayName \nFROM planTools pt \nJOIN tools t ON pt.toolId = t.id \nWHERE pt.planId = '150001'\nORDER BY t.id",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT pt.planId, t.id, t.name, t.displayName \nFROM planTools pt \nJOIN tools t ON pt.toolId = t.id \nWHERE pt.planId = '150001'\nORDER BY t.id",
+  "rows": [
+    {
+      "planId": "150001",
+      "id": "150001",
+      "name": "hermeneutica",
+      "displayName": "Hermenêutica"
+    },
+    {
+      "planId": "150001",
+      "id": "150003",
+      "name": "traducoes",
+      "displayName": "Traduções"
+    },
+    {
+      "planId": "150001",
+      "id": "150004",
+      "name": "resumos",
+      "displayName": "Resumos"
+    },
+    {
+      "planId": "150001",
+      "id": "150005",
+      "name": "esbocos",
+      "displayName": "Esboços de Pregação"
+    },
+    {
+      "planId": "150001",
+      "id": "150006",
+      "name": "estudos_doutrinarios",
+      "displayName": "Estudos Doutrinários"
+    },
+    {
+      "planId": "150001",
+      "id": "150007",
+      "name": "analise_teologica",
+      "displayName": "Análise Teológica Comparada"
+    }
+  ],
+  "messages": [],
+  "stdout": "planId\tid\tname\tdisplayName\n150001\t150001\thermeneutica\tHermenêutica\n150001\t150003\ttraducoes\tTraduções\n150001\t150004\tresumos\tResumos\n150001\t150005\tesbocos\tEsboços de Pregação\n150001\t150006\testudos_doutrinarios\tEstudos Doutrinários\n150001\t150007\tanalise_teologica\tAnálise Teológica Comparada\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

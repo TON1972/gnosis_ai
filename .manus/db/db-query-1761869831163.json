@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE userCredits uc JOIN users u ON uc.userId = u.id SET uc.creditsDaily = 0 WHERE u.name LIKE '%TON%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute UPDATE userCredits uc JOIN users u ON uc.userId = u.id SET uc.creditsDaily = 0 WHERE u.name LIKE '%TON%'",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 55
+}

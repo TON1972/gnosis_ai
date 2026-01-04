@@ -1,0 +1,38 @@
+{
+  "query": "SELECT u.id, u.name, u.email, s.status, p.name as plan_name FROM users u LEFT JOIN subscriptions s ON u.id = s.userId LEFT JOIN plans p ON s.planId = p.id",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT u.id, u.name, u.email, s.status, p.name as plan_name FROM users u LEFT JOIN subscriptions s ON u.id = s.userId LEFT JOIN plans p ON s.planId = p.id",
+  "rows": [
+    {
+      "id": "1",
+      "name": "TON CECILIO",
+      "email": "pep.contatos01@gmail.com",
+      "status": "active",
+      "plan_name": "free"
+    },
+    {
+      "id": "1",
+      "name": "TON CECILIO",
+      "email": "pep.contatos01@gmail.com",
+      "status": "cancelled",
+      "plan_name": "free"
+    },
+    {
+      "id": "1",
+      "name": "TON CECILIO",
+      "email": "pep.contatos01@gmail.com",
+      "status": "cancelled",
+      "plan_name": "free"
+    },
+    {
+      "id": "1",
+      "name": "TON CECILIO",
+      "email": "pep.contatos01@gmail.com",
+      "status": "cancelled",
+      "plan_name": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tstatus\tplan_name\n1\tTON CECILIO\tpep.contatos01@gmail.com\tactive\tfree\n1\tTON CECILIO\tpep.contatos01@gmail.com\tcancelled\tfree\n1\tTON CECILIO\tpep.contatos01@gmail.com\tcancelled\tfree\n1\tTON CECILIO\tpep.contatos01@gmail.com\tcancelled\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 45
+}

@@ -1,0 +1,70 @@
+{
+  "query": "SELECT * FROM planTools LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT * FROM planTools LIMIT 10;",
+  "rows": [
+    {
+      "id": "60001",
+      "planId": "60001",
+      "toolId": "60001",
+      "createdAt": "2025-10-26 03:09:06"
+    },
+    {
+      "id": "60002",
+      "planId": "60001",
+      "toolId": "60003",
+      "createdAt": "2025-10-26 03:09:06"
+    },
+    {
+      "id": "60003",
+      "planId": "60001",
+      "toolId": "60004",
+      "createdAt": "2025-10-26 03:09:06"
+    },
+    {
+      "id": "60004",
+      "planId": "60001",
+      "toolId": "60005",
+      "createdAt": "2025-10-26 03:09:06"
+    },
+    {
+      "id": "60005",
+      "planId": "60002",
+      "toolId": "60001",
+      "createdAt": "2025-10-26 03:09:06"
+    },
+    {
+      "id": "60006",
+      "planId": "60002",
+      "toolId": "60003",
+      "createdAt": "2025-10-26 03:09:06"
+    },
+    {
+      "id": "60007",
+      "planId": "60002",
+      "toolId": "60004",
+      "createdAt": "2025-10-26 03:09:06"
+    },
+    {
+      "id": "60008",
+      "planId": "60002",
+      "toolId": "60005",
+      "createdAt": "2025-10-26 03:09:06"
+    },
+    {
+      "id": "60009",
+      "planId": "60002",
+      "toolId": "60006",
+      "createdAt": "2025-10-26 03:09:06"
+    },
+    {
+      "id": "60010",
+      "planId": "60002",
+      "toolId": "60007",
+      "createdAt": "2025-10-26 03:09:06"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplanId\ttoolId\tcreatedAt\n60001\t60001\t60001\t2025-10-26 03:09:06\n60002\t60001\t60003\t2025-10-26 03:09:06\n60003\t60001\t60004\t2025-10-26 03:09:06\n60004\t60001\t60005\t2025-10-26 03:09:06\n60005\t60002\t60001\t2025-10-26 03:09:06\n60006\t60002\t60003\t2025-10-26 03:09:06\n60007\t60002\t60004\t2025-10-26 03:09:06\n60008\t60002\t60005\t2025-10-26 03:09:06\n60009\t60002\t60006\t2025-10-26 03:09:06\n60010\t60002\t60007\t2025-10-26 03:09:06\n",
+  "stderr": "",
+  "execution_time_ms": 182
+}

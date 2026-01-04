@@ -1,0 +1,20 @@
+{
+  "query": "SELECT * FROM subscriptions;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT * FROM subscriptions;",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "planId": "1",
+      "status": "active",
+      "startDate": "2025-10-26 03:04:22",
+      "endDate": "2026-10-26 03:04:22",
+      "createdAt": "2025-10-26 03:04:22",
+      "updatedAt": "2025-10-26 03:04:22"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tplanId\tstatus\tstartDate\tendDate\tcreatedAt\tupdatedAt\n1\t1\t1\tactive\t2025-10-26 03:04:22\t2026-10-26 03:04:22\t2025-10-26 03:04:22\t2025-10-26 03:04:22\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

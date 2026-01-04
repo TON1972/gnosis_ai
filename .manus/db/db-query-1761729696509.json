@@ -1,0 +1,16 @@
+{
+  "query": "SELECT s.userId, s.planId as sub_planId, p.id as plan_id, p.displayName \nFROM subscriptions s \nLEFT JOIN plans p ON s.planId = p.id \nWHERE s.userId = 1260009",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT s.userId, s.planId as sub_planId, p.id as plan_id, p.displayName \nFROM subscriptions s \nLEFT JOIN plans p ON s.planId = p.id \nWHERE s.userId = 1260009",
+  "rows": [
+    {
+      "userId": "1260009",
+      "sub_planId": "150001",
+      "plan_id": "150001",
+      "displayName": "Plano FREE"
+    }
+  ],
+  "messages": [],
+  "stdout": "userId\tsub_planId\tplan_id\tdisplayName\n1260009\t150001\t150001\tPlano FREE\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}

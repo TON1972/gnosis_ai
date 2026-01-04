@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO tools (name, displayName, description, category, isActive, `order`) \nVALUES ('linha_tempo_teologica', 'Linha do Tempo Teológica', 'Gera uma linha do tempo teológica interativa e cronológica sobre qualquer tema ou doutrina', 'advanced', 1, 16);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute INSERT INTO tools (name, displayName, description, category, isActive, `order`) \nVALUES ('linha_tempo_teologica', 'Linha do Tempo Teológica', 'Gera uma linha do tempo teológica interativa e cronológica sobre qualquer tema ou doutrina', 'advanced', 1, 16);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 104
+}

@@ -1,0 +1,21 @@
+{
+  "query": "SELECT * FROM userCredits WHERE userId = 1260009",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT * FROM userCredits WHERE userId = 1260009",
+  "rows": [
+    {
+      "id": "120001",
+      "userId": "1260009",
+      "creditsInitial": "500",
+      "creditsInitialExpiry": "2025-11-26 01:26:55",
+      "creditsDaily": "50",
+      "creditsBonus": "0",
+      "lastDailyReset": "2025-10-27 01:26:55",
+      "createdAt": "2025-10-27 01:26:54",
+      "updatedAt": "2025-10-27 01:26:54"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tcreditsInitial\tcreditsInitialExpiry\tcreditsDaily\tcreditsBonus\tlastDailyReset\tcreatedAt\tupdatedAt\n120001\t1260009\t500\t2025-11-26 01:26:55\t50\t0\t2025-10-27 01:26:55\t2025-10-27 01:26:54\t2025-10-27 01:26:54\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

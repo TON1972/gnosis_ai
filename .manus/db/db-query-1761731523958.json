@@ -1,0 +1,29 @@
+{
+  "query": "SELECT s.*, p.* FROM subscriptions s INNER JOIN plans p ON s.planId = p.id WHERE s.userId = 1260009",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT s.*, p.* FROM subscriptions s INNER JOIN plans p ON s.planId = p.id WHERE s.userId = 1260009",
+  "rows": [
+    {
+      "id": "150001",
+      "userId": "1260009",
+      "planId": "150001",
+      "status": "active",
+      "startDate": "2025-10-27 01:26:41",
+      "endDate": "NULL",
+      "createdAt": "2025-10-29 01:54:30",
+      "updatedAt": "2025-10-29 08:22:51",
+      "name": "free",
+      "displayName": "Plano FREE",
+      "priceMonthly": "0",
+      "creditsInitial": "500",
+      "creditsDaily": "50",
+      "toolsCount": "6",
+      "description": "Plano gratuito com ferramentas básicas",
+      "isActive": "1",
+      "priceYearly": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tplanId\tstatus\tstartDate\tendDate\tcreatedAt\tupdatedAt\tid\tname\tdisplayName\tpriceMonthly\tcreditsInitial\tcreditsDaily\ttoolsCount\tdescription\tisActive\tcreatedAt\tpriceYearly\n150001\t1260009\t150001\tactive\t2025-10-27 01:26:41\tNULL\t2025-10-27 01:26:41\t2025-10-29 08:22:51\t150001\tfree\tPlano FREE\t0\t500\t50\t6\tPlano gratuito com ferramentas básicas\t1\t2025-10-29 01:54:30\t0\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

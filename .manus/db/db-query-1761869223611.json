@@ -1,0 +1,34 @@
+{
+  "query": "SHOW TABLES",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SHOW TABLES",
+  "rows": [
+    {
+      "Tables_in_Ab5C8Nq9pGbzQm4EwPJGu4": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_Ab5C8Nq9pGbzQm4EwPJGu4": "creditTransactions"
+    },
+    {
+      "Tables_in_Ab5C8Nq9pGbzQm4EwPJGu4": "planTools"
+    },
+    {
+      "Tables_in_Ab5C8Nq9pGbzQm4EwPJGu4": "plans"
+    },
+    {
+      "Tables_in_Ab5C8Nq9pGbzQm4EwPJGu4": "subscriptions"
+    },
+    {
+      "Tables_in_Ab5C8Nq9pGbzQm4EwPJGu4": "tools"
+    },
+    {
+      "Tables_in_Ab5C8Nq9pGbzQm4EwPJGu4": "userCredits"
+    },
+    {
+      "Tables_in_Ab5C8Nq9pGbzQm4EwPJGu4": "users"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_Ab5C8Nq9pGbzQm4EwPJGu4\n__drizzle_migrations\ncreditTransactions\nplanTools\nplans\nsubscriptions\ntools\nuserCredits\nusers\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

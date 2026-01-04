@@ -1,0 +1,118 @@
+import { pgTable, serial, text, varchar, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+
+// --- TABELA DE USUÁRIOS ---
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  name: text("name"),
+  email: varchar("email", { length: 320 }),
+  loginMethod: varchar("loginMethod", { length: 64 }),
+  password: text("password"),
+  role: varchar("role", { length: 20 }).notNull().default("user"),
+  lastSignedIn: timestamp("lastSignedIn"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(), // Adicionado para consistência
+});
+
+// --- TABELA DE PLANOS ---
+export const plans = pgTable("plans", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 50 }).notNull(),
+  displayName: varchar("displayName", { length: 100 }).notNull(),
+  description: text("description"),
+  price: integer("price").notNull().default(0), 
+  priceMonthly: integer("priceMonthly").notNull().default(0),
+  priceYearly: integer("priceYearly").notNull().default(0),
+  creditsInitial: integer("creditsInitial").default(500),
+  creditsDaily: integer("creditsDaily").default(50),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+
+// --- TABELA DE FERRAMENTAS ---
+export const tools = pgTable("tools", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  displayName: varchar("displayName", { length: 150 }), // Adicionado para exibir nomes legíveis
+  description: text("description"),
+  category: text("category"), // Adicionado para os filtros do Dashboard
+  icon: text("icon"), // Adicionado para os ícones dinâmicos
+  isActive: boolean("isActive").default(true),
+  order: integer("order").default(0), // Adicionado para ordenação
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+
+// --- RELAÇÃO PLANOS X FERRAMENTAS ---
+export const planTools = pgTable("plan_tools", {
+  id: serial("id").primaryKey(),
+  planId: integer("planId").references(() => plans.id).notNull(),
+  toolId: integer("toolId").references(() => tools.id).notNull(),
+});
+
+// --- TABELA DE ASSINATURAS ---
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id).notNull(),
+  planId: integer("planId").references(() => plans.id).notNull(),
+  status: varchar("status", { length: 20 }).default("active"), 
+  billingPeriod: varchar("billingPeriod", { length: 20 }).default("monthly"), // Adicionado (Erro 500)
+  startDate: timestamp("startDate").defaultNow(), // Adicionado (Erro 500)
+  endDate: timestamp("endDate"), // Adicionado (Erro 500)
+  nextBillingDate: timestamp("nextBillingDate"), // Adicionado (Erro 500)
+  gracePeriodEndsAt: timestamp("gracePeriodEndsAt"), // Adicionado (Erro 500)
+  lastPaymentDate: timestamp("lastPaymentDate"), // Adicionado (Erro 500)
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(), // Adicionado (Erro 500)
+});
+
+// --- TABELA DE CRÉDITOS (Ajustada para unificar com user_credits) ---
+export const credits = pgTable("credits", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id).notNull().unique(),
+  amount: integer("amount").notNull(), // Total (2000)
+  type: varchar("type", { length: 50 }).notNull(),
+  expiresAt: timestamp("expiresAt"), // ✅ Resolvido erro TS(2339)
+  isExpired: boolean("isExpired").default(false), // ✅ Resolvido erro TS(2339)
+  
+  // Colunas de lógica diária migradas para cá
+  creditsInitial: integer("creditsInitial").default(0),
+  creditsDaily: integer("creditsDaily").default(0),
+  creditsBonus: integer("creditsBonus").default(0),
+  lastDailyReset: timestamp("lastDailyReset").defaultNow(),
+  
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+
+// --- TABELA DE CONTROLE DE CRÉDITOS (user_credits) ---
+export const userCredits = pgTable("user_credits", { 
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  creditsInitial: integer("creditsInitial").default(500),
+  creditsDaily: integer("creditsDaily").default(50),
+  creditsBonus: integer("creditsBonus").default(0),
+  creditsInitialExpiry: timestamp("creditsInitialExpiry"),
+  lastDailyReset: timestamp("lastDailyReset").defaultNow(),
+});
+
+// --- LOG DE TRANSAÇÕES ---
+export const creditTransactions = pgTable("credit_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  amount: integer("amount").notNull(),
+  type: varchar("type", { length: 50 }).notNull(), 
+  description: text("description"),
+  toolUsed: varchar("toolUsed", { length: 100 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// --- TABELA DE ESTUDOS SALVOS ---
+export const savedStudies = pgTable("saved_studies", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  toolName: varchar("toolName", { length: 100 }).notNull(),
+  input: text("input").notNull(), 
+  output: text("output").notNull(), 
+  creditCost: integer("creditCost").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

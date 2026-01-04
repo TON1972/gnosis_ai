@@ -1,0 +1,22 @@
+{
+  "query": "SELECT s.*, p.displayName, p.toolsCount FROM subscriptions s LEFT JOIN plans p ON s.planId = p.id WHERE s.userId = 1260009",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT s.*, p.displayName, p.toolsCount FROM subscriptions s LEFT JOIN plans p ON s.planId = p.id WHERE s.userId = 1260009",
+  "rows": [
+    {
+      "id": "150001",
+      "userId": "1260009",
+      "planId": "150001",
+      "status": "active",
+      "startDate": "2025-10-27 01:26:41",
+      "endDate": "NULL",
+      "createdAt": "2025-10-27 01:26:41",
+      "updatedAt": "2025-10-29 08:22:51",
+      "displayName": "Plano FREE",
+      "toolsCount": "6"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tplanId\tstatus\tstartDate\tendDate\tcreatedAt\tupdatedAt\tdisplayName\ttoolsCount\n150001\t1260009\t150001\tactive\t2025-10-27 01:26:41\tNULL\t2025-10-27 01:26:41\t2025-10-29 08:22:51\tPlano FREE\t6\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

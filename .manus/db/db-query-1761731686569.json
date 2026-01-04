@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, userId, planId, status FROM subscriptions WHERE userId = 1260009",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT id, userId, planId, status FROM subscriptions WHERE userId = 1260009",
+  "rows": [
+    {
+      "id": "150001",
+      "userId": "1260009",
+      "planId": "150001",
+      "status": "active"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tplanId\tstatus\n150001\t1260009\t150001\tactive\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

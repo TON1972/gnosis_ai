@@ -1,0 +1,52 @@
+{
+  "query": "SELECT s.id, s.userId, s.planId, s.status, u.name FROM subscriptions s JOIN users u ON s.userId = u.id WHERE u.name LIKE '%TON%' AND s.status = 'active'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT s.id, s.userId, s.planId, s.status, u.name FROM subscriptions s JOIN users u ON s.userId = u.id WHERE u.name LIKE '%TON%' AND s.status = 'active'",
+  "rows": [
+    {
+      "id": "30001",
+      "userId": "1",
+      "planId": "90001",
+      "status": "active",
+      "name": "TON CECILIO"
+    },
+    {
+      "id": "2",
+      "userId": "1",
+      "planId": "150001",
+      "status": "active",
+      "name": "TON CECILIO"
+    },
+    {
+      "id": "1",
+      "userId": "1",
+      "planId": "150001",
+      "status": "active",
+      "name": "TON CECILIO"
+    },
+    {
+      "id": "60001",
+      "userId": "720001",
+      "planId": "120001",
+      "status": "active",
+      "name": "Winston C. Cecilio"
+    },
+    {
+      "id": "90001",
+      "userId": "1080001",
+      "planId": "120001",
+      "status": "active",
+      "name": "winston cunha cecilio"
+    },
+    {
+      "id": "150001",
+      "userId": "1260009",
+      "planId": "150001",
+      "status": "active",
+      "name": "WINSTON CECILIO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tplanId\tstatus\tname\n30001\t1\t90001\tactive\tTON CECILIO\n2\t1\t150001\tactive\tTON CECILIO\n1\t1\t150001\tactive\tTON CECILIO\n60001\t720001\t120001\tactive\tWinston C. Cecilio\n90001\t1080001\t120001\tactive\twinston cunha cecilio\n150001\t1260009\t150001\tactive\tWINSTON CECILIO\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}

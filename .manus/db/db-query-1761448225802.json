@@ -1,0 +1,9 @@
+{
+  "query": "SELECT p.id as planId, p.name as planName, t.id as toolId, t.name as toolName \nFROM planTools pt \nJOIN plans p ON pt.planId = p.id \nJOIN tools t ON pt.toolId = t.id \nWHERE p.id = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT p.id as planId, p.name as planName, t.id as toolId, t.name as toolName \nFROM planTools pt \nJOIN plans p ON pt.planId = p.id \nJOIN tools t ON pt.toolId = t.id \nWHERE p.id = 1;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 48
+}

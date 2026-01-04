@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, openId, name, email, role, createdAt FROM users WHERE email = 'pep.contatos01@gmail.com' ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT id, openId, name, email, role, createdAt FROM users WHERE email = 'pep.contatos01@gmail.com' ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "openId": "6DGxwDX5geQSZWYQpT6XZu",
+      "name": "TON CECILIO",
+      "email": "pep.contatos01@gmail.com",
+      "role": "admin",
+      "createdAt": "2025-10-24 03:39:35"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tname\temail\trole\tcreatedAt\n1\t6DGxwDX5geQSZWYQpT6XZu\tTON CECILIO\tpep.contatos01@gmail.com\tadmin\t2025-10-24 03:39:35\n",
+  "stderr": "",
+  "execution_time_ms": 138
+}

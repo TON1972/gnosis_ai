@@ -1,0 +1,65 @@
+{
+  "query": "SELECT * FROM users ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT * FROM users ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "openId": "6DGxwDX5geQSZWYQpT6XZu",
+      "name": "TON CECILIO",
+      "email": "pep.contatos01@gmail.com",
+      "loginMethod": "google",
+      "role": "super_admin",
+      "createdAt": "2025-10-24 03:39:35",
+      "updatedAt": "2025-11-02 00:13:51",
+      "lastSignedIn": "2025-11-02 00:13:51"
+    },
+    {
+      "id": "690001",
+      "openId": "cKfrJJmCvEJF5Him8zmSYn",
+      "name": "Jullia Rodrigues Cunha Cecilio",
+      "email": "julliarodriguescecilio@gmail.com",
+      "loginMethod": "google",
+      "role": "super_admin",
+      "createdAt": "2025-10-26 21:00:22",
+      "updatedAt": "2025-11-01 15:55:30",
+      "lastSignedIn": "2025-10-27 00:45:36"
+    },
+    {
+      "id": "720001",
+      "openId": "gq6ABzUXVftspCeAf4icaH",
+      "name": "Winston C. Cecilio",
+      "email": "ton.g.trafego@gmail.com",
+      "loginMethod": "google",
+      "role": "super_admin",
+      "createdAt": "2025-10-26 21:09:19",
+      "updatedAt": "2025-11-01 15:55:30",
+      "lastSignedIn": "2025-10-29 14:41:28"
+    },
+    {
+      "id": "1080001",
+      "openId": "BMw5LyavmPvGKDEMYnP8B7",
+      "name": "winston cunha cecilio",
+      "email": "ton2.cunha@gmail.com",
+      "loginMethod": "google",
+      "role": "super_admin",
+      "createdAt": "2025-10-27 00:04:33",
+      "updatedAt": "2025-11-01 15:55:30",
+      "lastSignedIn": "2025-10-27 23:37:56"
+    },
+    {
+      "id": "1260009",
+      "openId": "oE4i6q3ece6xm42xcfurXo",
+      "name": "WINSTON CECILIO",
+      "email": "orbita7.finance@gmail.com",
+      "loginMethod": "google",
+      "role": "super_admin",
+      "createdAt": "2025-10-27 01:26:41",
+      "updatedAt": "2025-11-01 15:55:30",
+      "lastSignedIn": "2025-10-27 01:39:16"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tname\temail\tloginMethod\trole\tcreatedAt\tupdatedAt\tlastSignedIn\n1\t6DGxwDX5geQSZWYQpT6XZu\tTON CECILIO\tpep.contatos01@gmail.com\tgoogle\tsuper_admin\t2025-10-24 03:39:35\t2025-11-02 00:13:51\t2025-11-02 00:13:51\n690001\tcKfrJJmCvEJF5Him8zmSYn\tJullia Rodrigues Cunha Cecilio\tjulliarodriguescecilio@gmail.com\tgoogle\tsuper_admin\t2025-10-26 21:00:22\t2025-11-01 15:55:30\t2025-10-27 00:45:36\n720001\tgq6ABzUXVftspCeAf4icaH\tWinston C. Cecilio\tton.g.trafego@gmail.com\tgoogle\tsuper_admin\t2025-10-26 21:09:19\t2025-11-01 15:55:30\t2025-10-29 14:41:28\n1080001\tBMw5LyavmPvGKDEMYnP8B7\twinston cunha cecilio\tton2.cunha@gmail.com\tgoogle\tsuper_admin\t2025-10-27 00:04:33\t2025-11-01 15:55:30\t2025-10-27 23:37:56\n1260009\toE4i6q3ece6xm42xcfurXo\tWINSTON CECILIO\torbita7.finance@gmail.com\tgoogle\tsuper_admin\t2025-10-27 01:26:41\t2025-11-01 15:55:30\t2025-10-27 01:39:16\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

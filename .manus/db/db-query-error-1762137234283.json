@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO tools (id, name, description, category, requiredPlan, creditCost, active) \nVALUES ('patristica', 'Patrística', 'Explora o pensamento dos Pais da Igreja sobre determinado tema ou texto, considerando o contexto e conectando-o à tradições posteriores', 'advanced', 'lumen', 75, 1);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute INSERT INTO tools (id, name, description, category, requiredPlan, creditCost, active) \nVALUES ('patristica', 'Patrística', 'Explora o pensamento dos Pais da Igreja sobre determinado tema ou texto, considerando o contexto e conectando-o à tradições posteriores', 'advanced', 'lumen', 75, 1);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'requiredPlan' in 'field list'"
+  ]
+}

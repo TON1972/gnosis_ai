@@ -1,0 +1,19 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.role, s.status, p.name as plan_name, p.displayName FROM users u LEFT JOIN subscriptions s ON u.id = s.userId LEFT JOIN plans p ON s.planId = p.id WHERE s.status = 'active' OR s.status IS NULL",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT u.id, u.name, u.email, u.role, s.status, p.name as plan_name, p.displayName FROM users u LEFT JOIN subscriptions s ON u.id = s.userId LEFT JOIN plans p ON s.planId = p.id WHERE s.status = 'active' OR s.status IS NULL",
+  "rows": [
+    {
+      "id": "1",
+      "name": "TON CECILIO",
+      "email": "pep.contatos01@gmail.com",
+      "role": "super_admin",
+      "status": "active",
+      "plan_name": "free",
+      "displayName": "Plano FREE"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tstatus\tplan_name\tdisplayName\n1\tTON CECILIO\tpep.contatos01@gmail.com\tsuper_admin\tactive\tfree\tPlano FREE\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

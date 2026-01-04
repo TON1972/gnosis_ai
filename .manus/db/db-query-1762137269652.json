@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO tools (name, displayName, description, category, isActive, `order`) \nVALUES ('patristica', 'Patrística', 'Explora o pensamento dos Pais da Igreja sobre determinado tema ou texto, considerando o contexto e conectando-o à tradições posteriores', 'advanced', 1, 15);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute INSERT INTO tools (name, displayName, description, category, isActive, `order`) \nVALUES ('patristica', 'Patrística', 'Explora o pensamento dos Pais da Igreja sobre determinado tema ou texto, considerando o contexto e conectando-o à tradições posteriores', 'advanced', 1, 15);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 66
+}

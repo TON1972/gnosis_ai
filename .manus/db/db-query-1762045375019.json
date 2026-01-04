@@ -1,0 +1,13 @@
+{
+  "query": "SELECT CAST(COUNT(*) AS UNSIGNED) as total FROM users",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT CAST(COUNT(*) AS UNSIGNED) as total FROM users",
+  "rows": [
+    {
+      "total": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\n1\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

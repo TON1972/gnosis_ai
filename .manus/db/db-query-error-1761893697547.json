@@ -1,0 +1,8 @@
+{
+  "query": "SELECT * FROM creditPackages ORDER BY price;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT * FROM creditPackages ORDER BY price;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'ab5c8nq9pgbzqm4ewpjgu4.creditPackages' doesn't exist"
+  ]
+}

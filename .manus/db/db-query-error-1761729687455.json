@@ -1,0 +1,8 @@
+{
+  "query": "SELECT typeof(planId) as planIdType FROM subscriptions LIMIT 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT typeof(planId) as planIdType FROM subscriptions LIMIT 1",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1305 (42000) at line 1: FUNCTION Ab5C8Nq9pGbzQm4EwPJGu4.typeof does not exist"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "query": "SELECT planId, COUNT(*) as toolCount FROM planTools GROUP BY planId ORDER BY planId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT planId, COUNT(*) as toolCount FROM planTools GROUP BY planId ORDER BY planId;",
+  "rows": [
+    {
+      "planId": "60001",
+      "toolCount": "4"
+    },
+    {
+      "planId": "60002",
+      "toolCount": "8"
+    },
+    {
+      "planId": "60003",
+      "toolCount": "15"
+    },
+    {
+      "planId": "60004",
+      "toolCount": "15"
+    }
+  ],
+  "messages": [],
+  "stdout": "planId\ttoolCount\n60001\t4\n60002\t8\n60003\t15\n60004\t15\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, name, displayName FROM plans ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT id, name, displayName FROM plans ORDER BY id;",
+  "rows": [
+    {
+      "id": "60001",
+      "name": "free",
+      "displayName": "Plano FREE"
+    },
+    {
+      "id": "60002",
+      "name": "alianca",
+      "displayName": "Plano Aliança"
+    },
+    {
+      "id": "60003",
+      "name": "lumen",
+      "displayName": "Plano Lumen"
+    },
+    {
+      "id": "60004",
+      "name": "premium",
+      "displayName": "Plano GNOSIS Premium"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tdisplayName\n60001\tfree\tPlano FREE\n60002\talianca\tPlano Aliança\n60003\tlumen\tPlano Lumen\n60004\tpremium\tPlano GNOSIS Premium\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

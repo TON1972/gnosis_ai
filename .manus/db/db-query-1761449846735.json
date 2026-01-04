@@ -1,0 +1,22 @@
+{
+  "query": "SELECT DISTINCT planId FROM planTools ORDER BY planId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT DISTINCT planId FROM planTools ORDER BY planId;",
+  "rows": [
+    {
+      "planId": "60001"
+    },
+    {
+      "planId": "60002"
+    },
+    {
+      "planId": "60003"
+    },
+    {
+      "planId": "60004"
+    }
+  ],
+  "messages": [],
+  "stdout": "planId\n60001\n60002\n60003\n60004\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

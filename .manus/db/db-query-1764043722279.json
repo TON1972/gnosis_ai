@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO tools (id, name, displayName, description, category, isActive, `order`) \nVALUES (\n  19,\n  'escatologia-biblica',\n  'Escatologia Bíblica',\n  'Análise escatológica profunda com rigor acadêmico em nível de doutorado. Abrange história da interpretação, exegese avançada, sistematização teológica e modelagem hermenêutica.',\n  'advanced',\n  1,\n  19\n);\n\nINSERT INTO planTools (planId, toolId) \nVALUES \n  (3, 19),\n  (4, 19);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute INSERT INTO tools (id, name, displayName, description, category, isActive, `order`) \nVALUES (\n  19,\n  'escatologia-biblica',\n  'Escatologia Bíblica',\n  'Análise escatológica profunda com rigor acadêmico em nível de doutorado. Abrange história da interpretação, exegese avançada, sistematização teológica e modelagem hermenêutica.',\n  'advanced',\n  1,\n  19\n);\n\nINSERT INTO planTools (planId, toolId) \nVALUES \n  (3, 19),\n  (4, 19);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 79
+}

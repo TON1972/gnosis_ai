@@ -1,0 +1,20 @@
+{
+  "query": "SELECT * FROM tools WHERE id = 19;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT * FROM tools WHERE id = 19;",
+  "rows": [
+    {
+      "id": "19",
+      "name": "escatologia-biblica",
+      "displayName": "Escatologia Bíblica",
+      "description": "Análise escatológica profunda com rigor acadêmico em nível de doutorado. Abrange história da interpretação, exegese avançada, sistematização teológica e modelagem hermenêutica.",
+      "category": "advanced",
+      "isActive": "1",
+      "order": "19",
+      "createdAt": "2025-11-25 04:08:42"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tdisplayName\tdescription\tcategory\tisActive\torder\tcreatedAt\n19\tescatologia-biblica\tEscatologia Bíblica\tAnálise escatológica profunda com rigor acadêmico em nível de doutorado. Abrange história da interpretação, exegese avançada, sistematização teológica e modelagem hermenêutica.\tadvanced\t1\t19\t2025-11-25 04:08:42\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

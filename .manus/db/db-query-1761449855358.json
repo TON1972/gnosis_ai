@@ -1,0 +1,90 @@
+{
+  "query": "SELECT pt.*, p.name as planName, t.name as toolName \nFROM planTools pt \nLEFT JOIN plans p ON pt.planId = p.id \nLEFT JOIN tools t ON pt.toolId = t.id \nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT pt.*, p.name as planName, t.name as toolName \nFROM planTools pt \nLEFT JOIN plans p ON pt.planId = p.id \nLEFT JOIN tools t ON pt.toolId = t.id \nLIMIT 10;",
+  "rows": [
+    {
+      "id": "60010",
+      "planId": "60002",
+      "toolId": "60007",
+      "createdAt": "2025-10-26 03:09:06",
+      "planName": "alianca",
+      "toolName": "analise_teologica"
+    },
+    {
+      "id": "60008",
+      "planId": "60002",
+      "toolId": "60005",
+      "createdAt": "2025-10-26 03:09:06",
+      "planName": "alianca",
+      "toolName": "esbocos"
+    },
+    {
+      "id": "60004",
+      "planId": "60001",
+      "toolId": "60005",
+      "createdAt": "2025-10-26 03:09:06",
+      "planName": "free",
+      "toolName": "esbocos"
+    },
+    {
+      "id": "60009",
+      "planId": "60002",
+      "toolId": "60006",
+      "createdAt": "2025-10-26 03:09:06",
+      "planName": "alianca",
+      "toolName": "estudos_doutrinarios"
+    },
+    {
+      "id": "60005",
+      "planId": "60002",
+      "toolId": "60001",
+      "createdAt": "2025-10-26 03:09:06",
+      "planName": "alianca",
+      "toolName": "hermeneutica"
+    },
+    {
+      "id": "60001",
+      "planId": "60001",
+      "toolId": "60001",
+      "createdAt": "2025-10-26 03:09:06",
+      "planName": "free",
+      "toolName": "hermeneutica"
+    },
+    {
+      "id": "60007",
+      "planId": "60002",
+      "toolId": "60004",
+      "createdAt": "2025-10-26 03:09:06",
+      "planName": "alianca",
+      "toolName": "resumos"
+    },
+    {
+      "id": "60003",
+      "planId": "60001",
+      "toolId": "60004",
+      "createdAt": "2025-10-26 03:09:06",
+      "planName": "free",
+      "toolName": "resumos"
+    },
+    {
+      "id": "60006",
+      "planId": "60002",
+      "toolId": "60003",
+      "createdAt": "2025-10-26 03:09:06",
+      "planName": "alianca",
+      "toolName": "traducoes"
+    },
+    {
+      "id": "60002",
+      "planId": "60001",
+      "toolId": "60003",
+      "createdAt": "2025-10-26 03:09:06",
+      "planName": "free",
+      "toolName": "traducoes"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplanId\ttoolId\tcreatedAt\tplanName\ttoolName\n60010\t60002\t60007\t2025-10-26 03:09:06\talianca\tanalise_teologica\n60008\t60002\t60005\t2025-10-26 03:09:06\talianca\tesbocos\n60004\t60001\t60005\t2025-10-26 03:09:06\tfree\tesbocos\n60009\t60002\t60006\t2025-10-26 03:09:06\talianca\testudos_doutrinarios\n60005\t60002\t60001\t2025-10-26 03:09:06\talianca\thermeneutica\n60001\t60001\t60001\t2025-10-26 03:09:06\tfree\thermeneutica\n60007\t60002\t60004\t2025-10-26 03:09:06\talianca\tresumos\n60003\t60001\t60004\t2025-10-26 03:09:06\tfree\tresumos\n60006\t60002\t60003\t2025-10-26 03:09:06\talianca\ttraducoes\n60002\t60001\t60003\t2025-10-26 03:09:06\tfree\ttraducoes\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}

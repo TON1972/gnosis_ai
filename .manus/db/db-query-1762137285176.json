@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, name, displayName FROM tools WHERE name IN ('patristica', 'linha_tempo_teologica');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute SELECT id, name, displayName FROM tools WHERE name IN ('patristica', 'linha_tempo_teologica');",
+  "rows": [
+    {
+      "id": "180001",
+      "name": "patristica",
+      "displayName": "Patrística"
+    },
+    {
+      "id": "180002",
+      "name": "linha_tempo_teologica",
+      "displayName": "Linha do Tempo Teológica"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tdisplayName\n180001\tpatristica\tPatrística\n180002\tlinha_tempo_teologica\tLinha do Tempo Teológica\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

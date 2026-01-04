@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO subscriptions (userId, planId, status, startDate, endDate) \nSELECT 1, id, 'active', NOW(), DATE_ADD(NOW(), INTERVAL 1 YEAR) \nFROM plans WHERE name = 'free' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2aCcRLuiw3NRRmZ.94419aeeb1ee --database Ab5C8Nq9pGbzQm4EwPJGu4 --execute INSERT INTO subscriptions (userId, planId, status, startDate, endDate) \nSELECT 1, id, 'active', NOW(), DATE_ADD(NOW(), INTERVAL 1 YEAR) \nFROM plans WHERE name = 'free' LIMIT 1;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 66
+}

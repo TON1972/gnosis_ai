@@ -1,0 +1,1 @@
+ALTER TABLE `chatbotContacts` ADD `assignedTo` int;

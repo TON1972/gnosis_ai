@@ -1,0 +1,221 @@
+/**
+ * GNOSIS AI - Dashboard Mobile Optimizations
+ * 
+ * Este arquivo contém media queries EXCLUSIVAS para o Dashboard mobile
+ * conforme instruções específicas do usuário.
+ * 
+ * ESTRUTURA REAL DO DOM:
+ * - div.grid > div:nth-child(1) = Sidebar (contém CreditsPanel + SavedStudiesSection)
+ * - div.grid > div:nth-child(2) = Main Content (contém Welcome + Category Filter + Tools Grid)
+ * 
+ * ORDEM MOBILE DESEJADA:
+ * 1. Seus Créditos (CreditsPanel) - centralizado, largura total
+ * 2. Meus Estudos (SavedStudiesSection) - carrossel horizontal
+ * 3. Ferramentas (Tools Grid) - grid 2x2
+ * 
+ * IMPORTANTE: Estas regras afetam APENAS o Dashboard, não outras páginas.
+ */
+
+@media (max-width: 1023px) {
+  
+  /* ===== LAYOUT PRINCIPAL DO DASHBOARD ===== */
+  
+  /* Transformar grid de 4 colunas em layout vertical (coluna única) */
+  .dashboard-container > div > div.grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+  }
+  
+  /* ===== SIDEBAR (div:nth-child(1)) - CRÉDITOS + MEUS ESTUDOS ===== */
+  
+  /* Sidebar: largura total, ordem 1, layout vertical */
+  .dashboard-container > div > div.grid > div:nth-child(1) {
+    order: 1 !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+  }
+  
+  /* ===== 1. CREDITS PANEL - CENTRALIZADO NO TOPO ===== */
+  
+  /* CreditsPanel já está no topo do sidebar, sem alterações de ordem necessárias */
+  
+  /* ===== 2. MEUS ESTUDOS - CARROSSEL HORIZONTAL ===== */
+  
+  /* Container de Saved Studies: manter ordem natural (após créditos) */
+  .dashboard-container > div > div.grid > div:nth-child(1) > div.mt-6 {
+    margin-top: 0 !important;
+  }
+  
+  /* Lista de estudos: transformar em carrossel horizontal */
+  .dashboard-container .saved-studies-list {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    gap: 1rem !important;
+    padding-bottom: 1rem !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: thin !important;
+    max-height: none !important;
+  }
+  
+  /* Cards de estudos no carrossel */
+  .dashboard-container .saved-studies-list > div {
+    flex: 0 0 85% !important;
+    min-width: 85% !important;
+    max-width: 85% !important;
+    scroll-snap-align: start !important;
+  }
+  
+  /* ===== 3. FERRAMENTAS - GRID 2x2 (ORDEM 2) ===== */
+  
+  /* Main Content: ferramentas vêm após sidebar */
+  .dashboard-container > div > div.grid > div:nth-child(2) {
+    order: 2 !important;
+    width: 100% !important;
+  }
+  
+  /* Welcome Section: ocultar em mobile para economizar espaço */
+  .dashboard-container > div > div.grid > div:nth-child(2) > div:first-child {
+    display: none !important;
+  }
+  
+  /* Category Filter: scroll horizontal se necessário */
+  .dashboard-container .mb-6.flex {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    scrollbar-width: thin !important;
+  }
+  
+  .dashboard-container .mb-6.flex button {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    font-size: 0.875rem !important;
+    padding: 0.5rem 1rem !important;
+  }
+  
+  /* Grid de ferramentas: 2 colunas com gap reduzido */
+  .dashboard-container .grid.grid-cols-1 {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Cards de ferramentas: padding reduzido e largura controlada */
+  .dashboard-container .grid.grid-cols-1 > div {
+    padding: 0.5rem !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Forçar layout vertical dentro dos cards (linha 368 do Dashboard.tsx) */
+  .dashboard-container .grid.grid-cols-1 > div > div.flex {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Ícones de ferramentas: tamanho reduzido */
+  .dashboard-container .grid.grid-cols-1 > div svg {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+  
+  /* Títulos de ferramentas: tamanho reduzido */
+  .dashboard-container .grid.grid-cols-1 > div h3 {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+  
+  /* Descrições de ferramentas: tamanho reduzido */
+  .dashboard-container .grid.grid-cols-1 > div p {
+    font-size: 0.65rem !important;
+    line-height: 0.9rem !important;
+  }
+  
+  /* Botões de ferramentas: tamanho reduzido */
+  .dashboard-container .grid.grid-cols-1 > div button {
+    font-size: 0.65rem !important;
+    padding: 0.375rem 0.5rem !important;
+  }
+  
+  /* ===== AJUSTES GERAIS ===== */
+  
+  /* Ajustes de padding e margens do container principal */
+  .dashboard-container > div {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Forçar container principal a não ultrapassar viewport */
+  .dashboard-container {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Main Content: garantir que não ultrapasse largura */
+  .dashboard-container > div > div.grid > div:nth-child(2) {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Scrollbar styling para carrossel */
+  .dashboard-container .saved-studies-list::-webkit-scrollbar {
+    height: 6px !important;
+  }
+  
+  .dashboard-container .saved-studies-list::-webkit-scrollbar-track {
+    background: rgba(212, 175, 55, 0.1) !important;
+    border-radius: 3px !important;
+  }
+  
+  .dashboard-container .saved-studies-list::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.5) !important;
+    border-radius: 3px !important;
+  }
+  
+  .dashboard-container .saved-studies-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.7) !important;
+  }
+  
+}
+
+/* ===== TOOL PAGE MOBILE OPTIMIZATIONS ===== */
+
+@media (max-width: 1023px) {
+  
+  /* Ocultar sidebar (CreditsPanel) na página de ferramentas */
+  .tool-page-container .tool-page-grid > div:first-child {
+    display: none !important;
+  }
+  
+  /* Tool Interface: largura total no mobile */
+  .tool-page-container .tool-page-grid > div:last-child {
+    grid-column: span 4 !important;
+    width: 100% !important;
+  }
+  
+  /* Grid principal: transformar em coluna única */
+  .tool-page-container .tool-page-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+  }
+  
+}
+
