@@ -2,6 +2,9 @@
   "name": "gnosis-ai",
   "version": "1.0.1",
   "license": "MIT",
+  "engines": {
+    "node": "20.x"
+  },
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development tsx watch server/index.ts",
