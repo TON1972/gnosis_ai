@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import pg from "pg";
-// ✅ Correção da tipagem: Importamos 'Pool' como valor e 'Pool' como tipo separadamente
 const { Pool } = pg;
 import type { Pool as PoolType } from "pg"; 
 
@@ -13,46 +12,51 @@ type InsertUser = typeof schema.users.$inferInsert;
 
 // ✅ Singleton para evitar múltiplas conexões em funções Serverless
 let _db: NodePgDatabase<typeof schema> | null = null;
-let pool: PoolType | null = null; // ✅ Agora usamos PoolType aqui
+let _pool: PoolType | null = null;
 
+/**
+ * Inicializa e retorna a instância do banco de dados.
+ * Otimizado para Vercel: Reutiliza a conexão se ela já existir.
+ */
 export async function getDb(): Promise<NodePgDatabase<typeof schema> | null> {
-  // ✅ Prioriza a URL do objeto ENV centralizado que configuramos
-  const dbUrl = ENV.databaseUrl || process.env.DATABASE_URL;
+  // ✅ Prioriza a URL injetada pela Vercel. 
+  // Lembre-se: O '@' na sua senha deve ser '%40' na variável de ambiente.
+  const dbUrl = process.env.DATABASE_URL || ENV.databaseUrl;
   
   if (!dbUrl) {
-    console.error("[Database] DATABASE_URL não definida nas variáveis de ambiente.");
+    console.error("[Database] Erro: DATABASE_URL não definida.");
     return null;
   }
 
-  // Se já existe uma instância ativa, reutilizamos para economizar recursos na Vercel
   if (_db) return _db;
 
   try {
-    console.log("[Database] Iniciando conexão com o pool (Vercel Optimised)...");
+    console.log("[Database] Conectando ao Supabase (SSL ativo)...");
     
-    // ✅ Criamos uma nova instância do Pool
-    const newPool = new Pool({
+    _pool = new Pool({
       connectionString: dbUrl,
       ssl: {
-        rejectUnauthorized: false, // Necessário para conexões externas com Supabase/Neon
+        rejectUnauthorized: false, // Mandatório para conexões externas Supabase
       },
-      // ✅ Configurações críticas para evitar erro 500 por excesso de conexões na Vercel
+      // Configurações críticas para evitar erro 500 em Serverless
       max: 1, 
-      idleTimeoutMillis: 10000,
-      connectionTimeoutMillis: 5000,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
     });
 
-    pool = newPool as unknown as PoolType;
-    _db = drizzle(pool, { schema });
-    
-    // ✅ Teste de conexão imediato para validar a DATABASE_URL
-    const client = await pool.connect();
+    // Teste de conexão (fail-fast)
+    const client = await _pool.connect();
     client.release(); 
     
-    console.log("[Database] Conexão estabelecida com sucesso!");
+    _db = drizzle(_pool, { schema });
+    console.log("[Database] Conectado com sucesso!");
     return _db;
   } catch (error: any) {
-    console.error("[Database] Falha crítica na conexão:", error.message);
+    console.error("[Database] Falha na conexão:", error.message);
+    if (_pool) {
+      await _pool.end().catch(() => {});
+      _pool = null;
+    }
     _db = null;
     return null;
   }
@@ -63,10 +67,10 @@ export async function getDb(): Promise<NodePgDatabase<typeof schema> | null> {
  */
 
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) throw new Error("User openId é obrigatório para o upsert.");
+  if (!user.openId) throw new Error("User openId é obrigatório.");
 
   const db = await getDb();
-  if (!db) return;
+  if (!db) throw new Error("Banco de dados offline.");
 
   try {
     const result = await db.insert(schema.users)
@@ -99,7 +103,6 @@ export async function upsertUser(user: InsertUser): Promise<void> {
           .limit(1);
         
         if (freePlan.length > 0) {
-          // ✅ Criação automática de assinatura para novos usuários
           await db.insert(schema.subscriptions).values({
             userId: newUser.id,
             planId: freePlan[0].id,
@@ -126,7 +129,6 @@ export async function getUserByOpenId(openId: string) {
 export async function getAllPlans() {
   const db = await getDb();
   if (!db) return [];
-  // ✅ Busca apenas planos marcados como ativos no banco
   return await db.select().from(schema.plans).where(eq(schema.plans.isActive, true));
 }
 
