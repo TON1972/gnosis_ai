@@ -6,17 +6,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "server/index.ts"
+      "destination": "/api/index.ts"
     },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "server/index.ts": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  }
+  ]
 }
