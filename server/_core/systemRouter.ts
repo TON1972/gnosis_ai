@@ -2,7 +2,7 @@ import { z } from "zod";
 import { notifyOwner } from "./notification";
 import { adminProcedure, publicProcedure, router } from "./trpc";
 import { getDb } from "../db";
-import { users, userCredits, plans } from "../../drizzle/schema";
+import { users, credits, plans } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 export const systemRouter = router({
@@ -52,7 +52,7 @@ export const systemRouter = router({
       for (const user of allUsers) {
         try {
           // Check if user already has credits
-          const existingCredits = await db.select().from(userCredits).where(eq(userCredits.userId, user.id)).limit(1);
+          const existingCredits = await db.select().from(credits).where(eq(credits.userId, user.id)).limit(1);
           
           if (existingCredits.length > 0) {
             skipped++;
@@ -62,14 +62,14 @@ export const systemRouter = router({
           // Create credits for user
           const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
           
-          await db.insert(userCredits).values({
+          await db.insert(credits).values({
             userId: user.id,
             creditsInitial: freePlan.creditsInitial,
             creditsDaily: freePlan.creditsDaily,
             creditsBonus: 0,
             creditsInitialExpiry: expiryDate,
             lastDailyReset: new Date(),
-          });
+          }as any);
 
           migrated++;
         } catch (error) {
