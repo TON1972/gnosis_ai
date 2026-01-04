@@ -24,13 +24,9 @@ export async function getDb(): Promise<NodePgDatabase<typeof schema> | null> {
 
   try {
     _pool = new Pool({
-      connectionString,
-      ssl: {
-        rejectUnauthorized: false, // Necessário para Supabase/Neon
-      },
-      max: 1, // Limita a 1 conexão por instância serverless para evitar "too many clients"
-      connectionTimeoutMillis: 10000,
-      idleTimeoutMillis: 20000,
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }, // ISSO É OBRIGATÓRIO NA VERCEL
+      max: 1
     });
 
     _db = drizzle(_pool, { schema });

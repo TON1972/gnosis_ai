@@ -41,6 +41,10 @@ app.use("/api", oauthRouter);
  */
 // server/index.ts
 
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", time: new Date().toISOString() });
+});
+
 app.post("/api/register", async (req, res) => {
   try {
     const { name, email, password, planId } = req.body;
