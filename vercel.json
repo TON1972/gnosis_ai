@@ -12,10 +12,5 @@
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "api/index.ts": {
-      "runtime": "vercel-node@latest"
-    }
-  }
+  ]
 }
