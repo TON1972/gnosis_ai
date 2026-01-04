@@ -18,15 +18,17 @@ import { handleMercadoPagoWebhook } from "./webhookHandler";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./cookies";
 
+// Integração com Banco de Dados e Schema
 import { getDb } from "../db";
 import { users, credits, plans, subscriptions } from "../../shared/schema"; 
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+
+// ✅ Import do cliente Admin (essencial para evitar o erro "User not allowed")
 import { supabaseAdmin } from "./supabaseAdmin";
 
 const app = express();
 
-// Configurações básicas
 app.use(cookieParser());
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "50mb" }));
@@ -37,6 +39,8 @@ app.use("/api", oauthRouter);
 /**
  * 🚀 REGISTRO - SUPABASE + PLANOS + CRÉDITOS
  */
+// server/index.ts
+
 app.post("/api/register", async (req, res) => {
   try {
     const { name, email, password, planId } = req.body;
@@ -44,6 +48,7 @@ app.post("/api/register", async (req, res) => {
     
     if (!db) return res.status(500).json({ success: false, message: "Banco indisponível." });
 
+    // 1. Criar no Supabase (Admin API)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -53,9 +58,11 @@ app.post("/api/register", async (req, res) => {
 
     if (authError) return res.status(400).json({ success: false, message: authError.message });
 
+    // 2. Localização do Plano
     const [selectedPlan] = await db.select().from(plans).where(eq(plans.id, Number(planId))).limit(1);
     if (!selectedPlan) throw new Error("Plano selecionado não existe.");
 
+    // 3. Persistência no Banco Local com openId para evitar erro de constraint
     const hashedPassword = await bcrypt.hash(password, 10);
     const openId = `supabase:${authData.user.id}`;
 
@@ -69,6 +76,7 @@ app.post("/api/register", async (req, res) => {
       role: "user"
     } as any).returning({ id: users.id, email: users.email, role: users.role });
 
+    // 4. Ativação de Assinatura e Créditos
     await db.insert(subscriptions).values({
       userId: newUser.id,
       planId: selectedPlan.id,
@@ -89,19 +97,23 @@ app.post("/api/register", async (req, res) => {
       createdAt: new Date(),
     } as any);
 
+    // ✅ 5. LOGAR AUTOMATICAMENTE: Gerar Token JWT imediatamente
     const token = jwt.sign(
       { userId: newUser.id, email: newUser.email, role: newUser.role },
       process.env.JWT_SECRET || "sua_chave_secreta_aqui",
       { expiresIn: "7d" }
     );
 
+    // Definir o cookie de sessão
     const cookieOptions = getSessionCookieOptions(req);
     res.cookie(COOKIE_NAME, token, {
       ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000, 
     });
 
+    console.log(`✅ Registro e Login Automático concluídos: ${email}`);
     return res.status(200).json({ success: true });
+
   } catch (error: any) {
     console.error("Erro interno no registro:", error);
     return res.status(500).json({ success: false, message: error.message });
@@ -115,13 +127,21 @@ app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const db = await getDb();
+    
     if (!db) return res.status(500).json({ success: false, message: "Erro de banco" });
 
-    const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({ email, password });
+    // Autenticação via Supabase
+    const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
+      email,
+      password
+    });
+
     if (authError) return res.status(401).json({ success: false, message: "Credenciais inválidas" });
 
+    // Busca usuário local para gerar o JWT do sistema
     const userResults = await db.select().from(users).where(eq(users.email, email)).limit(1);
     const user = userResults[0];
+
     if (!user) return res.status(404).json({ success: false, message: "Usuário não sincronizado." });
 
     const token = jwt.sign(
@@ -131,7 +151,10 @@ app.post("/api/login", async (req, res) => {
     );
 
     const cookieOptions = getSessionCookieOptions(req);
-    res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie(COOKIE_NAME, token, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
+    });
 
     return res.status(200).json({ success: true });
   } catch (error: any) {
@@ -140,21 +163,18 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.post("/api/webhooks/mercadopago", handleMercadoPagoWebhook);
+
 app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
 
-// ✅ AJSUTE PARA VERCEL: Lógica de inicialização diferenciada
+const PORT = Number(process.env.PORT) || 3000;
 if (process.env.NODE_ENV === "development") {
-  const PORT = Number(process.env.PORT) || 3000;
   const server = createServer(app);
-  setupVite(app, server); // Vite só deve rodar em dev
+  setupVite(app, server);
   server.listen(PORT, "0.0.0.0", () => {
-    console.log(`🔥 Servidor local: http://localhost:${PORT}`);
+    console.log(`🔥 Gnosis AI rodando em http://localhost:${PORT}`);
   });
 } else {
-  // Em produção na Vercel, apenas servimos os estáticos se necessário,
-  // mas o 'export default app' é quem manda.
   serveStatic(app);
 }
 
-// ✅ OBRIGATÓRIO PARA VERCEL
 export default app;
