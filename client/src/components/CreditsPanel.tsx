@@ -3,19 +3,18 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "./ui/button";
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import NoCreditsModal from "./NoCreditsModal";
 
-interface CreditsPanelProps {
-  onNeedCredits?: () => void;
-}
-
-export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
+export default function CreditsPanel() {
   const { user } = useAuth();
+  const [modalConfig, setModalConfig] = useState<{ open: boolean; tab: 'plans' | 'credits' }>({
+    open: false,
+    tab: 'plans'
+  });
   
-  // ✅ Chamadas mantidas conforme sua estrutura
   const { data: credits, isLoading: isLoadingCredits } = trpc.credits.balance.useQuery();
   const { data: activePlan, isLoading: isLoadingPlan } = trpc.credits.activePlan.useQuery();
 
-  // Consolida o estado de carregamento
   const isLoading = isLoadingCredits || isLoadingPlan;
 
   if (isLoading) {
@@ -29,7 +28,6 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
     );
   }
 
-  // ✅ Ajuste de mapeamento: No seu backend 'getUserCredits' retorna initial, daily, bonus e total direto.
   const totalCredits = credits?.total || 0;
   const isLowCredits = totalCredits < 100;
 
@@ -44,11 +42,10 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
           <div>
             <h3 className="text-lg md:text-xl font-bold text-[#1e3a5f]">Seus Créditos</h3>
             <p className="text-xs md:text-sm text-[#8b6f47]">
-              {/* ✅ Ajuste: activePlan no seu router retorna { subscription, plan } */}
               {activePlan?.plan?.displayName || "Plano Inicial"}
-              {user?.role === 'admin' || user?.role === 'super_admin' ? (
+              {(user?.role === 'admin' || user?.role === 'super_admin') && (
                 <span className="ml-2 px-2 py-0.5 bg-[#d4af37] text-white text-xs font-bold rounded">ADMIN</span>
-              ) : null}
+              )}
             </p>
           </div>
         </div>
@@ -58,94 +55,72 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
       <div className="bg-white/80 rounded-xl p-4 md:p-6 mb-4 border-2 border-[#d4af37]">
         <div className="text-center">
           <p className="text-xs md:text-sm text-[#8b6f47] mb-2">Saldo Total</p>
-          <p className={`text-3xl md:text-5xl font-bold ${isLowCredits ? 'text-red-600' : 'text-[#1e3a5f]'}`}>
+          <p className={`text-4xl md:text-5xl font-extrabold ${isLowCredits ? 'text-red-600' : 'text-[#1e3a5f]'}`}>
             {totalCredits.toLocaleString('pt-BR')}
           </p>
-          <p className="text-sm text-[#8b6f47] mt-2">créditos disponíveis</p>
+          <p className="text-sm text-[#8b6f47] mt-2 font-medium">créditos disponíveis</p>
         </div>
       </div>
 
       {/* Credit Breakdown */}
-      <div className="space-y-3 mb-4">
-        {/* Daily Credits */}
-        <div className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-[#d4af37]">
-          <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-[#d4af37]" />
-            <span className="text-sm font-semibold text-[#1e3a5f]">Créditos Diários</span>
-          </div>
-          <span className="text-lg font-bold text-[#1e3a5f]">
-            {credits?.daily || 0}
-          </span>
-        </div>
-
-        {/* Initial Credits */}
-        <div className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-[#d4af37]">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-[#d4af37]" />
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-[#1e3a5f]">Créditos Iniciais</span>
-              {/* ✅ Ajuste: initialExpiry conforme retornado pelo balance query */}
-              {credits?.initialExpiry && (
-                <span className="text-xs text-[#8b6f47]">
-                  Expira: {new Date(credits.initialExpiry).toLocaleDateString('pt-BR')}
-                </span>
-              )}
+      <div className="grid grid-cols-1 gap-2 mb-4">
+        {[
+          { label: "Diários", value: credits?.daily, icon: Zap, color: "text-amber-500" },
+          { label: "Iniciais", value: credits?.initial, icon: Calendar, color: "text-blue-500", expiry: credits?.initialExpiry },
+          { label: "Avulsos", value: credits?.bonus, icon: Gift, color: "text-purple-500" }
+        ].map((item, idx) => (
+          <div key={idx} className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-[#d4af37]/40">
+            <div className="flex items-center gap-2">
+              <item.icon className={`w-5 h-5 ${item.color}`} />
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-[#1e3a5f]">{item.label}</span>
+                {item.expiry && (
+                  <span className="text-[10px] text-[#8b6f47]">
+                    Expira: {new Date(item.expiry).toLocaleDateString('pt-BR')}
+                  </span>
+                )}
+              </div>
             </div>
+            <span className="text-lg font-bold text-[#1e3a5f]">{item.value || 0}</span>
           </div>
-          <span className="text-lg font-bold text-[#1e3a5f]">
-            {credits?.initial || 0}
-          </span>
-        </div>
-
-        {/* Bonus Credits */}
-        <div className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-[#d4af37]">
-          <div className="flex items-center gap-2">
-            <Gift className="w-5 h-5 text-[#d4af37]" />
-            <span className="text-sm font-semibold text-[#1e3a5f]">Créditos Avulsos</span>
-          </div>
-          <span className="text-lg font-bold text-[#1e3a5f]">
-            {credits?.bonus || 0}
-          </span>
-        </div>
+        ))}
       </div>
 
       {/* Info Box */}
-      <div className="bg-[#1e3a5f]/10 rounded-lg p-3 mb-4">
+      <div className="bg-[#1e3a5f]/5 rounded-lg p-3 mb-6 border border-[#1e3a5f]/10">
         <div className="flex items-start gap-2">
           <Info className="w-4 h-4 text-[#1e3a5f] mt-0.5 shrink-0" />
-          <p className="text-xs text-[#8b6f47]">
-            <strong>Ordem de uso:</strong> Diários → Iniciais → Avulsos. 
-            Créditos diários renovam todo dia, iniciais expiram em 30 dias, avulsos são permanentes.
+          <p className="text-[11px] leading-tight text-[#8b6f47]">
+            <strong>Ordem de uso:</strong> Diários → Iniciais → Avulsos. Créditos diários renovam todo dia, iniciais expiram em 30 dias, avulsos são permanentes.
           </p>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="space-y-2">
-        {isLowCredits && (
-          <div className="bg-red-100 border-2 border-red-400 rounded-lg p-3 mb-3">
-            <p className="text-sm text-red-700 font-semibold text-center">
-              ⚠️ Créditos baixos! Considere fazer upgrade ou comprar créditos avulsos.
-            </p>
-          </div>
-        )}
-        
+      <div className="space-y-3">
         <Button
-          onClick={onNeedCredits}
-          className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] font-bold flex items-center justify-center gap-2"
+          onClick={() => setModalConfig({ open: true, tab: 'plans' })}
+          className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-12 shadow-lg font-bold flex items-center justify-center gap-2 transition-transform active:scale-95"
         >
           <TrendingUp className="w-5 h-5" />
-          Upgrade de Plano
+          Fazer Upgrade Agora
         </Button>
         
         <Button
-          onClick={onNeedCredits}
-          className="w-full bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B] font-bold flex items-center justify-center gap-2"
+          onClick={() => setModalConfig({ open: true, tab: 'credits' })}
+          variant="outline"
+          className="w-full border-2 border-[#d4af37] text-[#1e3a5f] hover:bg-[#d4af37]/10 h-12 font-bold flex items-center justify-center gap-2 transition-transform active:scale-95"
         >
           <ShoppingCart className="w-5 h-5" />
           Comprar Créditos Avulsos
         </Button>
       </div>
+
+      <NoCreditsModal 
+        open={modalConfig.open} 
+        onClose={() => setModalConfig({ ...modalConfig, open: false })}
+        initialTab={modalConfig.tab}
+      />
     </div>
   );
 }

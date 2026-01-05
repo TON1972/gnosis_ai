@@ -284,7 +284,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   // 2. Montagem do Payload para OpenAI
   const payload: Record<string, unknown> = {
-    model: "gpt-4o-mini", // ✅ Recomendado para velocidade/custo. Use "gpt-4o" para máxima qualidade.
+    model: "gpt-4.1-mini", // ✅ Recomendado para velocidade/custo. Use "gpt-4o" para máxima qualidade.
     messages: messages.map(normalizeMessage),
   };
 

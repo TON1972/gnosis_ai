@@ -15,7 +15,6 @@ if (process.env.NODE_ENV !== "production") {
     hasMp: !!process.env.MERCADOPAGO_ACCESS_TOKEN
   });
 } else {
-} else {
   // Debug Vercel (Production) - Status básico
   console.log("Variáveis de Ambiente (Vercel):", {
     NODE_ENV: process.env.NODE_ENV,

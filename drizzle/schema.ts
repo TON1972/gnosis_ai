@@ -208,3 +208,18 @@ export const ticketMessages = pgTable("ticket_messages", {
   isRead: integer("isRead").default(0).notNull(), 
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+/**
+ * ✅ Definição local da tabela payments (já que não está no seu schema.ts)
+ * Isso permite que o Drizzle entenda a tabela que você criou via SQL.
+ */
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  amount: integer("amount").notNull(),
+  currency: varchar("currency", { length: 3 }).default("BRL").notNull(),
+  status: varchar("status", { length: 20 }).notNull(),
+  paymentMethod: varchar("paymentMethod", { length: 50 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
