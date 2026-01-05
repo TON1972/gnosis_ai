@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { ENV } from "./_core/env";
 import * as schema from "../drizzle/schema";
 
 // Tipos auxiliares
@@ -11,8 +12,8 @@ let _db: NodePgDatabase<typeof schema> | null = null;
 let _pool: Pool | null = null;
 
 export async function getDb(): Promise<NodePgDatabase<typeof schema> | null> {
-  // ✅ Pega a URL diretamente do ambiente da Vercel
-  const connectionString = process.env.DATABASE_URL;
+  // ✅ Pega a URL diretamente do objeto ENV (já com trim() e validações)
+  const connectionString = ENV.databaseUrl;
 
   if (!connectionString) {
     console.error("[Database] Erro: DATABASE_URL não encontrada.");
@@ -23,7 +24,7 @@ export async function getDb(): Promise<NodePgDatabase<typeof schema> | null> {
 
   try {
     _pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       ssl: { rejectUnauthorized: false }, // ISSO É OBRIGATÓRIO NA VERCEL
       max: 1
     });
