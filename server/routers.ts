@@ -15,7 +15,9 @@ import {
   toolCategories,
   studyMessages,
   plans,
-  payments
+  payments,
+  credits,
+  subscriptions,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { eq, desc, sql, and, lt, gte, or, asc } from "drizzle-orm";
@@ -27,7 +29,7 @@ import { invokeLLM } from "./_core/llm";
 import { notifyOwner } from "./_core/notification";
 import { chatbotContacts, ticketMessages } from "../drizzle/schema";
 import { z } from "zod";
-import { credits, subscriptions, userCredits } from "@shared/schema";
+//import {  userCredits } from "@shared/schema";
 
 // Helper para garantir conexão com DB
 async function getValidatedDb() {
