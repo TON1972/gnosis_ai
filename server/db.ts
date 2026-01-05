@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
-import pg from "pg";
-const { Pool } = pg;
+import { Pool } from "pg";
 import * as schema from "../shared/schema";
 
 // Tipos auxiliares
@@ -30,11 +29,11 @@ export async function getDb(): Promise<NodePgDatabase<typeof schema> | null> {
     });
 
     _db = drizzle(_pool, { schema });
-    
+
     // Teste de conexão (fail-fast)
     const client = await _pool.connect();
     client.release();
-    
+
     console.log("[Database] Conectado com sucesso à base de dados.");
     return _db;
   } catch (error: any) {
@@ -73,12 +72,12 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       const existingSub = await db.select().from(schema.subscriptions)
         .where(eq(schema.subscriptions.userId, newUser.id))
         .limit(1);
-      
+
       if (existingSub.length === 0) {
         const freePlan = await db.select().from(schema.plans)
           .where(eq(schema.plans.name, "free"))
           .limit(1);
-        
+
         if (freePlan.length > 0) {
           await db.insert(schema.subscriptions).values({
             userId: newUser.id,

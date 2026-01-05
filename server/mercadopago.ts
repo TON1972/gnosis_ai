@@ -1,15 +1,24 @@
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 
-// Inicializar cliente Mercado Pago
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '',
-  options: {
-    timeout: 5000,
-  },
-});
+// Inicializar cliente Mercado Pago (Lazy)
+let client: MercadoPagoConfig | null = null;
+let preference: Preference | null = null;
+let payment: Payment | null = null;
 
-const preference = new Preference(client);
-const payment = new Payment(client);
+function getMercadoPago() {
+  if (!client) {
+    const token = process.env.MERCADOPAGO_ACCESS_TOKEN || '';
+    if (!token) console.warn("[MercadoPago] Token não configurado!");
+
+    client = new MercadoPagoConfig({
+      accessToken: token,
+      options: { timeout: 5000 },
+    });
+    preference = new Preference(client);
+    payment = new Payment(client);
+  }
+  return { client, preference: preference!, payment: payment! };
+}
 
 /**
  * Criar preferência de pagamento para assinatura
@@ -63,8 +72,9 @@ export async function createSubscriptionCheckout(params: {
       },
     };
 
+    const { preference } = getMercadoPago();
     const response = await preference.create({ body: preferenceData });
-    
+
     return {
       id: response.id,
       init_point: response.init_point, // URL para checkout
@@ -122,8 +132,9 @@ export async function createCreditsCheckout(params: {
       },
     };
 
+    const { preference } = getMercadoPago();
     const response = await preference.create({ body: preferenceData });
-    
+
     return {
       id: response.id,
       init_point: response.init_point,
@@ -186,8 +197,9 @@ export async function createManualPaymentCheckout(params: {
       },
     };
 
+    const { preference } = getMercadoPago();
     const response = await preference.create({ body: preferenceData });
-    
+
     return {
       id: response.id,
       init_point: response.init_point,
@@ -204,8 +216,9 @@ export async function createManualPaymentCheckout(params: {
  */
 export async function getPaymentStatus(paymentId: string) {
   try {
+    const { payment } = getMercadoPago();
     const paymentData = await payment.get({ id: paymentId });
-    
+
     return {
       id: paymentData.id,
       status: paymentData.status,
@@ -247,4 +260,3 @@ export async function processWebhook(data: any) {
     throw error;
   }
 }
-
