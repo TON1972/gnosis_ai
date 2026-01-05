@@ -1,13 +1,13 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME } from "../shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getAllPlans, getToolsForPlan, getAllTools } from "./db";
 // Gnosis.log removido - usando OAuth apenas
-import { 
-  savedStudies, 
-  users, 
-  creditTransactions, 
+import {
+  savedStudies,
+  users,
+  creditTransactions,
   // chatbotContacts, 
   // ticketMessages,
   tools,      // ✅ Adicionado
@@ -67,7 +67,7 @@ export const appRouter = router({
      */
     me: publicProcedure.query(async ({ ctx }) => {
       if (!ctx.user?.id) return null;
-      
+
       const db = await getDb();
       if (!db) return null;
 
@@ -79,7 +79,7 @@ export const appRouter = router({
 
       return result[0] || null;
     }),
-    
+
     // logout: publicProcedure.mutation(async ({ ctx }) => {
     //   await new Promise<void>((resolve, reject) => {
     //     ctx.req.logout((err) => {
@@ -97,7 +97,7 @@ export const appRouter = router({
     // }),
     logout: publicProcedure.mutation(async ({ ctx }) => {
       // Em vez de ctx.req.logout(), limpamos o cookie manualmente
-      ctx.res.setHeader(
+      ctx.resHeaders.append(
         "Set-Cookie",
         `${COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax`
       );
@@ -135,26 +135,26 @@ export const appRouter = router({
     /**
        * ✅ AJUSTADO: Agora retorna categoria e ícone para o Dashboard validar permissões
        */
-      getTools: publicProcedure
-        .input(z.object({ planId: z.number() }))
-        .query(async ({ input }) => {
-          const db = await getDb();
-          if (!db) return [];
+    getTools: publicProcedure
+      .input(z.object({ planId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
 
-          const toolsAllowed = await db
-            .select({
-              id: tools.id,
-              name: tools.name,         
-              displayName: tools.displayName,
-              category: tools.category, // Adicionado para o filtro
-              icon: tools.icon          // Adicionado para o ícone
-            })
-            .from(tools)
-            .innerJoin(planTools, eq(planTools.toolId, tools.id))
-            .where(eq(planTools.planId, input.planId));
+        const toolsAllowed = await db
+          .select({
+            id: tools.id,
+            name: tools.name,
+            displayName: tools.displayName,
+            category: tools.category, // Adicionado para o filtro
+            icon: tools.icon          // Adicionado para o ícone
+          })
+          .from(tools)
+          .innerJoin(planTools, eq(planTools.toolId, tools.id))
+          .where(eq(planTools.planId, input.planId));
 
-          return toolsAllowed;
-        }),
+        return toolsAllowed;
+      }),
   }),
 
   tools: router({
@@ -164,7 +164,7 @@ export const appRouter = router({
     list: publicProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
-      
+
       return await db
         .select()
         .from(tools)
@@ -231,7 +231,7 @@ export const appRouter = router({
       }),
   }),
 
-  studies: router({ 
+  studies: router({
     // server/routers.ts
 
     save: protectedProcedure
@@ -248,21 +248,21 @@ export const appRouter = router({
 
         // 1. Grava o estudo no histórico
         await db.insert(savedStudies).values({
-          userId: ctx.user.id,        
+          userId: ctx.user.id,
           toolId: input.toolId,
-          toolName: input.toolName,   
+          toolName: input.toolName,
           input: input.input,
           output: input.output,
-          creditCost: input.creditCost, 
-          wordCount: input.wordCount,   
+          creditCost: input.creditCost,
+          wordCount: input.wordCount,
         } as any);
 
         // 2. ✅ COMANDO DE SUBTRAÇÃO: Debita o saldo do usuário
         // Esta função atualiza a tabela 'users' e registra a transação
         await useCredits(
-          ctx.user.id, 
+          ctx.user.id,
           input.creditCost, // O valor dinâmico calculado (ex: 90, 115)
-          input.toolName, 
+          input.toolName,
           input.toolId
         );
 
@@ -318,66 +318,66 @@ export const appRouter = router({
         return { success: true };
       }),
 
-      // ✅ ADICIONE ESTE PROCEDIMENTO
-      getWithMessages: protectedProcedure
-        .input(z.object({ id: z.number() }))
-        .query(async ({ ctx, input }) => {
-          const db = await getValidatedDb();
+    // ✅ ADICIONE ESTE PROCEDIMENTO
+    getWithMessages: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const db = await getValidatedDb();
 
-          // 1. Procura o estudo principal
-          const [study] = await db
-            .select()
-            .from(savedStudies)
-            .where(
-              and(
-                eq(savedStudies.id, input.id),
-                eq(savedStudies.userId, ctx.user.id)
-              )
+        // 1. Procura o estudo principal
+        const [study] = await db
+          .select()
+          .from(savedStudies)
+          .where(
+            and(
+              eq(savedStudies.id, input.id),
+              eq(savedStudies.userId, ctx.user.id)
             )
-            .limit(1);
+          )
+          .limit(1);
 
-          if (!study) throw new Error("Estudo não encontrado");
+        if (!study) throw new Error("Estudo não encontrado");
 
-          // 2. BUSCA AS MENSAGENS (Aqui é onde o carregamento falha geralmente)
-          const messages = await db
-            .select()
-            .from(studyMessages) // Certifica-te que este nome de tabela está correto no schema
-            .where(eq(studyMessages.studyId, input.id))
-            .orderBy(asc(studyMessages.createdAt));
+        // 2. BUSCA AS MENSAGENS (Aqui é onde o carregamento falha geralmente)
+        const messages = await db
+          .select()
+          .from(studyMessages) // Certifica-te que este nome de tabela está correto no schema
+          .where(eq(studyMessages.studyId, input.id))
+          .orderBy(asc(studyMessages.createdAt));
 
-          // O retorno PRECISA ter esta estrutura para o frontend funcionar
-          return {
-            study,
-            messages: messages || [] 
-          };
-        }),
+        // O retorno PRECISA ter esta estrutura para o frontend funcionar
+        return {
+          study,
+          messages: messages || []
+        };
+      }),
 
-        // Mantenha o addMessage que criamos anteriormente
-        addMessage: protectedProcedure
-          .input(z.object({
-            studyId: z.number(),
-            role: z.enum(["user", "assistant"]),
-            content: z.string(),
-            wordCount: z.number(),
-            creditCost: z.number(),
-          }))
-          .mutation(async ({ ctx, input }) => {
-            const db = await getValidatedDb(); //
-            
-            await db.insert(studyMessages).values({
-              studyId: input.studyId,
-              role: input.role,
-              content: input.content,
-              wordCount: input.wordCount,
-              creditCost: input.creditCost,
-            });
+    // Mantenha o addMessage que criamos anteriormente
+    addMessage: protectedProcedure
+      .input(z.object({
+        studyId: z.number(),
+        role: z.enum(["user", "assistant"]),
+        content: z.string(),
+        wordCount: z.number(),
+        creditCost: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getValidatedDb(); //
 
-            if (input.role === "assistant" && input.creditCost > 0) {
-              await useCredits(ctx.user.id, input.creditCost, "Continuidade de Estudo", 0);
-            }
+        await db.insert(studyMessages).values({
+          studyId: input.studyId,
+          role: input.role,
+          content: input.content,
+          wordCount: input.wordCount,
+          creditCost: input.creditCost,
+        });
 
-            return { success: true };
-          }),
+        if (input.role === "assistant" && input.creditCost > 0) {
+          await useCredits(ctx.user.id, input.creditCost, "Continuidade de Estudo", 0);
+        }
+
+        return { success: true };
+      }),
   }),
 
   credits: router({
@@ -398,9 +398,9 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         // ✅ CORREÇÃO: Passando o toolId para a função que processa o banco
         return await useCredits(
-          ctx.user.id, 
-          input.amount, 
-          input.toolName, 
+          ctx.user.id,
+          input.amount,
+          input.toolName,
           input.toolId ?? undefined // Passa o ID se existir
         );
       }),
@@ -430,7 +430,7 @@ export const appRouter = router({
         .orderBy(desc(creditTransactions.createdAt)); // Ordenar do mais novo para o mais antigo
 
       const dailyUsage = new Map<string, number>();
-      
+
       transactions.forEach(tx => {
         const date = (tx.createdAt as Date).toISOString().split('T')[0];
         const current = dailyUsage.get(date) || 0;
@@ -514,7 +514,7 @@ export const appRouter = router({
         if (input.department && input.department !== 'all') {
           conditions.push(eq(chatbotContacts.department, input.department));
         }
-        
+
         if (ctx.user.role === 'admin') {
           conditions.push(eq(chatbotContacts.assignedTo, ctx.user.id));
         }
@@ -717,7 +717,7 @@ export const appRouter = router({
 
         await db.insert(ticketMessages).values({
           ticketId: input.ticketId,
-          senderId: 0, 
+          senderId: 0,
           senderName: input.clientName,
           senderType: 'client',
           message: input.message,
@@ -861,148 +861,148 @@ export const appRouter = router({
         return { success: true };
       }),
 
-      // ✅ 1. Listagem completa para a tabela (com o JOIN para a categoria)
-      listAllTools: protectedProcedure.query(async ({ ctx }) => {
-        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
-        const db = await getDb();
-        if (!db) throw new Error("Falha ao conectar com o banco de dados");
+    // ✅ 1. Listagem completa para a tabela (com o JOIN para a categoria)
+    listAllTools: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+      const db = await getDb();
+      if (!db) throw new Error("Falha ao conectar com o banco de dados");
 
-        return await db.select({
-          id: tools.id,
-          displayName: tools.displayName,
-          description: tools.description,
-          creditCost: tools.creditCost,
-          isActive: tools.isActive,
-          categoryName: toolCategories.name, // Nome da categoria via Join
-          categoryId: tools.categoryId,
-          promptTemplate: tools.promptTemplate
-        })
+      return await db.select({
+        id: tools.id,
+        displayName: tools.displayName,
+        description: tools.description,
+        creditCost: tools.creditCost,
+        isActive: tools.isActive,
+        categoryName: toolCategories.name, // Nome da categoria via Join
+        categoryId: tools.categoryId,
+        promptTemplate: tools.promptTemplate
+      })
         .from(tools)
         .leftJoin(toolCategories, eq(tools.categoryId, toolCategories.id))
         .orderBy(tools.id);
-      }),
+    }),
 
-      // ✅ 2. Listagem de categorias para o Select do Modal
-      listCategories: protectedProcedure.query(async () => {
-        const db = await getDb();
-        if (!db) throw new Error("Banco de dados não disponível");
-        return await db.select().from(toolCategories).orderBy(toolCategories.name);
-      }),
+    // ✅ 2. Listagem de categorias para o Select do Modal
+    listCategories: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) throw new Error("Banco de dados não disponível");
+      return await db.select().from(toolCategories).orderBy(toolCategories.name);
+    }),
 
-      // ✅ 3. Mutation para Criar ou Editar (Upsert)
-      // server/routers.ts
+    // ✅ 3. Mutation para Criar ou Editar (Upsert)
+    // server/routers.ts
 
-      // server/routers.ts -> dentro de admin: router({ ... })
+    // server/routers.ts -> dentro de admin: router({ ... })
 
-      // server/routers.ts -> dentro do router 'admin'
-      // server/routers.ts -> admin: router({ ... })
+    // server/routers.ts -> dentro do router 'admin'
+    // server/routers.ts -> admin: router({ ... })
 
-// server/routers.ts
+    // server/routers.ts
 
-upsertTool: protectedProcedure
-  .input(z.object({
-    id: z.number().optional().nullable(),
-    displayName: z.string().min(1),
-    description: z.string().optional().nullable(),
-    promptTemplate: z.string().optional().nullable(),
-    creditCost: z.number().min(0),
-    categoryId: z.number().optional().nullable(),
-    isActive: z.boolean().default(true),
-    planIds: z.array(z.number()).optional(),
-  }))
-  .mutation(async ({ ctx, input }) => {
-    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
-    const db = await getValidatedDb();
+    upsertTool: protectedProcedure
+      .input(z.object({
+        id: z.number().optional().nullable(),
+        displayName: z.string().min(1),
+        description: z.string().optional().nullable(),
+        promptTemplate: z.string().optional().nullable(),
+        creditCost: z.number().min(0),
+        categoryId: z.number().optional().nullable(),
+        isActive: z.boolean().default(true),
+        planIds: z.array(z.number()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+        const db = await getValidatedDb();
 
-    const toolData = {
-      displayName: input.displayName,
-      description: input.description,
-      promptTemplate: input.promptTemplate,
-      creditCost: input.creditCost,
-      categoryId: input.categoryId,
-      isActive: input.isActive ? "true" : "false", // Ajuste conforme seu schema
-      name: input.displayName.toLowerCase().replace(/\s+/g, '_'), 
-    };
+        const toolData = {
+          displayName: input.displayName,
+          description: input.description,
+          promptTemplate: input.promptTemplate,
+          creditCost: input.creditCost,
+          categoryId: input.categoryId,
+          isActive: input.isActive ? "true" : "false", // Ajuste conforme seu schema
+          name: input.displayName.toLowerCase().replace(/\s+/g, '_'),
+        };
 
-    let toolId = input.id;
+        let toolId = input.id;
 
-    // 1. Salva a ferramenta principal
-    if (toolId) {
-      await db.update(tools).set(toolData as any).where(eq(tools.id, toolId));
-    } else {
-      const inserted = await db.insert(tools).values(toolData as any).returning({ id: tools.id });
-      toolId = inserted[0].id;
-    }
+        // 1. Salva a ferramenta principal
+        if (toolId) {
+          await db.update(tools).set(toolData as any).where(eq(tools.id, toolId));
+        } else {
+          const inserted = await db.insert(tools).values(toolData as any).returning({ id: tools.id });
+          toolId = inserted[0].id;
+        }
 
-    // 2. ✅ GERENCIAMENTO DE PLANOS COM SQL PURO
-    if (toolId && input.planIds !== undefined) {
-      // Limpa vínculos antigos
-      await db.execute(sql`DELETE FROM plan_tools WHERE "toolId" = ${toolId}`);
+        // 2. ✅ GERENCIAMENTO DE PLANOS COM SQL PURO
+        if (toolId && input.planIds !== undefined) {
+          // Limpa vínculos antigos
+          await db.execute(sql`DELETE FROM plan_tools WHERE "toolId" = ${toolId}`);
 
-      if (input.planIds.length > 0) {
-        // Inserimos um por um usando SQL puro para garantir que o banco ignore o ID e createdAt
-        for (const pId of input.planIds) {
-          await db.execute(sql`
+          if (input.planIds.length > 0) {
+            // Inserimos um por um usando SQL puro para garantir que o banco ignore o ID e createdAt
+            for (const pId of input.planIds) {
+              await db.execute(sql`
             INSERT INTO plan_tools ("planId", "toolId") 
             VALUES (${pId}, ${toolId})
           `);
-        }
-      }
-    }
-
-    return { success: true };
-  }),
-      // ✅ 4. Mutation para Deletar
-      deleteTool: protectedProcedure
-        .input(z.object({ id: z.number() }))
-        .mutation(async ({ ctx, input }) => {
-          if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
-          const db = await getDb();
-          if (!db) throw new Error('Database not available');
-          
-          // Remove vínculos em planos antes de deletar a ferramenta
-          await db.delete(planTools).where(eq(planTools.toolId, input.id));
-          return await db.delete(tools).where(eq(tools.id, input.id));
-        }),
-
-      // ✅ 5. Listar quais planos estão vinculados a uma ferramenta específica
-      getToolPlans: protectedProcedure
-        .input(z.object({ toolId: z.number().optional().nullable() }))
-        .query(async ({ input }) => {
-          if (!input.toolId) return [];
-          const db = await getDb();
-          if (!db) throw new Error("Database not available");
-
-          return await db
-            .select({ planId: planTools.planId })
-            .from(planTools)
-            .where(eq(planTools.toolId, input.toolId));
-        }),
-
-      // ✅ 6. Atualizar os vínculos (Múltiplos planos para uma ferramenta)
-      updateToolPlans: protectedProcedure
-        .input(z.object({
-          toolId: z.number(),
-          planIds: z.array(z.number()) 
-        }))
-        .mutation(async ({ input }) => {
-          const db = await getDb();
-          if (!db) throw new Error("Database not available");
-
-          await db.delete(planTools).where(eq(planTools.toolId, input.toolId));
-
-          if (input.planIds.length > 0) {
-            const valuesToInsert = input.planIds.map(planId => ({
-              toolId: input.toolId,
-              planId: planId
-            }));
-            await db.insert(planTools).values(valuesToInsert);
+            }
           }
+        }
 
-          return { success: true };
-        }),
-        
+        return { success: true };
       }),
+    // ✅ 4. Mutation para Deletar
+    deleteTool: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+        const db = await getDb();
+        if (!db) throw new Error('Database not available');
+
+        // Remove vínculos em planos antes de deletar a ferramenta
+        await db.delete(planTools).where(eq(planTools.toolId, input.id));
+        return await db.delete(tools).where(eq(tools.id, input.id));
+      }),
+
+    // ✅ 5. Listar quais planos estão vinculados a uma ferramenta específica
+    getToolPlans: protectedProcedure
+      .input(z.object({ toolId: z.number().optional().nullable() }))
+      .query(async ({ input }) => {
+        if (!input.toolId) return [];
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+
+        return await db
+          .select({ planId: planTools.planId })
+          .from(planTools)
+          .where(eq(planTools.toolId, input.toolId));
+      }),
+
+    // ✅ 6. Atualizar os vínculos (Múltiplos planos para uma ferramenta)
+    updateToolPlans: protectedProcedure
+      .input(z.object({
+        toolId: z.number(),
+        planIds: z.array(z.number())
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+
+        await db.delete(planTools).where(eq(planTools.toolId, input.toolId));
+
+        if (input.planIds.length > 0) {
+          const valuesToInsert = input.planIds.map(planId => ({
+            toolId: input.toolId,
+            planId: planId
+          }));
+          await db.insert(planTools).values(valuesToInsert);
+        }
+
+        return { success: true };
+      }),
+
+  }),
 
   subscription: router({
     status: protectedProcedure.query(async ({ ctx }) => {
@@ -1024,7 +1024,7 @@ upsertTool: protectedProcedure
       .mutation(async ({ ctx, input }) => {
         const plans = await getAllPlans();
         const plan = plans.find(p => p.id === Number(input.planId) || p.id === input.planId);
-        
+
         if (!plan) throw new Error('Plano não encontrado');
 
         const isYearly = input.billingPeriod === 'yearly';
@@ -1051,7 +1051,7 @@ upsertTool: protectedProcedure
       .mutation(async ({ ctx, input }) => {
         const plans = await getAllPlans();
         const plan = plans.find(p => p.id === Number(input.planId) || p.id === input.planId);
-        
+
         if (!plan) throw new Error('Plano não encontrado');
 
         const isYearly = input.billingPeriod === 'yearly';
@@ -1096,7 +1096,7 @@ upsertTool: protectedProcedure
       }))
       .mutation(async ({ input }) => {
         try {
-          const systemPrompt = `Você é o assistente virtual da GNOSIS AI...`; 
+          const systemPrompt = `Você é o assistente virtual da GNOSIS AI...`;
           const messages = [
             { role: 'system' as const, content: systemPrompt },
             ...(input.conversationHistory || []),
@@ -1104,7 +1104,7 @@ upsertTool: protectedProcedure
           ];
 
           const response = await invokeLLM({ messages });
-          
+
           return {
             response: response.choices[0]?.message?.content || 'Desculpe, não consegui processar sua pergunta.',
           };
@@ -1133,7 +1133,7 @@ upsertTool: protectedProcedure
         return { success: true };
       }),
   }),
-    
+
 });
 
 // No final do server/routers.ts

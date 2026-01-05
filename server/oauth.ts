@@ -1,16 +1,16 @@
 import { Request, Response, Router } from "express";
 import jwt from "jsonwebtoken";
 import { getDb } from "./db";
-import { users } from "../shared/schema"; 
+import { users } from "../shared/schema";
 import { eq } from "drizzle-orm";
 import { ENV } from "./_core/env";
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME } from "../shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 
 const router = Router();
 
-const CALLBACK_URL_BASE = process.env.NODE_ENV === "development" 
-  ? "http://localhost:3000" 
+const CALLBACK_URL_BASE = process.env.NODE_ENV === "development"
+  ? "http://localhost:3000"
   : (process.env.NEXTAUTH_URL || "https://gnosis-ai-platform.vercel.app");
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
@@ -71,7 +71,7 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
     const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
-    
+
     const userData = await userRes.json();
     const { email, name } = userData;
     const openId = `google:${email}`;
@@ -80,7 +80,7 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
     if (!db) throw new Error("Database connection failed");
 
     const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    
+
     let authUser: AuthUser;
 
     if (existing.length > 0) {
@@ -95,7 +95,7 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
         role: "user",
         loginMethod: "google",
       }).returning();
-      
+
       authUser = { id: inserted.id, email, name: name || null, role: "user", loginMethod: "google" };
     }
 

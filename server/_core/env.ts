@@ -4,7 +4,7 @@ import path from "path";
 
 // ✅ Carrega o .env localmente. 
 // Em produção (Vercel), as variáveis já estão no process.env, então o dotenv apenas ignora se não achar o arquivo.
-dotenv.config(); 
+dotenv.config();
 
 // Se quiser garantir o path absoluto apenas em desenvolvimento:
 if (process.env.NODE_ENV !== "production") {
@@ -23,28 +23,31 @@ export const ENV = {
   jwtSecret: process.env.JWT_SECRET ?? "default_secret_gnosis",
   cookieSecret: process.env.JWT_SECRET ?? "default_secret_gnosis",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
-  
+
   // Database
   databaseUrl: process.env.DATABASE_URL ?? "",
-  
+
   // Infraestrutura
   isProduction: process.env.NODE_ENV === "production",
   appId: process.env.VITE_APP_ID ?? "",
-  
+
   // OpenAI
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
-  
+
   // Integrações de Pagamento
   mercadoPagoAccessToken: process.env.MERCADOPAGO_ACCESS_TOKEN ?? "",
-  
+
   // APIs Externas
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
-  
+
+  // OAuth Server
+  oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
+
   // OAuth Google
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-  
+
   // Configurações de Sessão e Segurança
   sessionSecret: process.env.SESSION_SECRET ?? process.env.JWT_SECRET ?? "session_secret_gnosis",
   cookieSecure: process.env.NODE_ENV === "production",

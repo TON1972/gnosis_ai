@@ -15,7 +15,7 @@ import { oauthRouter } from "../oauth";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleMercadoPagoWebhook } from "./webhookHandler";
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME } from "../../shared/const";
 import { getSessionCookieOptions } from "./cookies";
 
 // Integração com Banco de Dados e Schema

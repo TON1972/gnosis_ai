@@ -1,20 +1,18 @@
-import { Request, Response } from 'express';
 import { processWebhook } from '../mercadopago';
 import { getDb } from '../db';
 import { subscriptions, creditTransactions } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 
-/**
- * Handler para webhooks do Mercado Pago
- */
-export async function handleMercadoPagoWebhook(req: Request, res: Response) {
+// Lógica agnóstica de framework para processar o webhook
+export async function processWebhookLogic(body: any): Promise<{ status: number, body: any }> {
   try {
-    console.log('[Webhook] Recebido webhook do Mercado Pago:', req.body);
+    console.log('[Webhook] Recebido webhook do Mercado Pago:', body);
 
-    const webhookData = await processWebhook(req.body);
+    const webhookData = await processWebhook(body);
 
     if (!webhookData) {
-      return res.status(200).json({ received: true });
+      return { status: 200, body: { received: true } };
     }
 
     const { type, status, metadata, externalReference } = webhookData;
@@ -22,7 +20,7 @@ export async function handleMercadoPagoWebhook(req: Request, res: Response) {
     // Processar apenas pagamentos aprovados
     if (status !== 'approved') {
       console.log(`[Webhook] Pagamento ${status}, ignorando`);
-      return res.status(200).json({ received: true });
+      return { status: 200, body: { received: true } };
     }
 
     const db = await getDb();
@@ -85,10 +83,29 @@ export async function handleMercadoPagoWebhook(req: Request, res: Response) {
       console.log(`[Webhook] ${credits} créditos adicionados para usuário ${userId}`);
     }
 
-    res.status(200).json({ received: true, processed: true });
+    return { status: 200, body: { received: true, processed: true } };
   } catch (error) {
     console.error('[Webhook] Erro ao processar webhook:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return { status: 500, body: { error: 'Internal server error' } };
   }
 }
 
+/**
+ * Handler para webhooks do Mercado Pago (Express)
+ */
+export async function handleMercadoPagoWebhook(req: ExpressRequest, res: ExpressResponse) {
+  const result = await processWebhookLogic(req.body);
+  res.status(result.status).json(result.body);
+}
+
+/**
+ * Handler para webhooks do Mercado Pago (Vercel Serverless / Standard Request)
+ */
+export async function handleMercadoPagoWebhookStandard(req: Request): Promise<Response> {
+  const body = await req.json();
+  const result = await processWebhookLogic(body);
+  return new Response(JSON.stringify(result.body), {
+    status: result.status,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}

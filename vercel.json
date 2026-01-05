@@ -5,8 +5,12 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/index.ts"
+      "source": "/api/trpc/:trpc",
+      "destination": "/api/trpc/[trpc]"
+    },
+    {
+      "source": "/api/((?!trpc/).*)",
+      "destination": "/api/$1"
     },
     {
       "source": "/((?!api/).*)",
