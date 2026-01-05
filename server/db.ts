@@ -8,7 +8,7 @@ type InsertUser = typeof schema.users.$inferInsert;
 
 // Singleton: Mantém a conexão ativa entre execuções na Vercel (evita Cold Start lento)
 let _db: NodePgDatabase<typeof schema> | null = null;
-let _pool: pg.Pool | null = null;
+let _pool: Pool | null = null;
 
 export async function getDb(): Promise<NodePgDatabase<typeof schema> | null> {
   // ✅ Pega a URL diretamente do ambiente da Vercel

@@ -1,5 +1,5 @@
-// server/_core/context.ts
 import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import jwt from "jsonwebtoken";
 import { COOKIE_NAME } from "../../shared/const";
 import { ENV } from "./env";
@@ -12,44 +12,84 @@ export type TrpcUser = {
 };
 
 export type TrpcContext = {
-  req: Request;
+  req: Request | any;
   resHeaders: Headers;
   user: TrpcUser | null;
 };
 
-export async function createContext({
-  req,
-  resHeaders,
-}: FetchCreateContextFnOptions): Promise<TrpcContext> {
+export async function createContext(
+  opts: FetchCreateContextFnOptions | CreateExpressContextOptions
+): Promise<TrpcContext> {
   let user: TrpcUser | null = null;
 
-  // Em serverless, cookies vêm no header 'cookie'
-  const cookieHeader = req.headers.get("cookie");
+  // Normalização para suportar tanto Express (local) quanto Vercel Function (Request/Response standard)
+  const isExpress = !('headers' in opts.req && typeof (opts.req as any).headers.get === 'function');
 
+  let req: any = opts.req;
+  let resHeaders: Headers;
+  let cookieHeader: string | undefined | null;
+
+  if (isExpress) {
+    // --- AMBIENTE EXPRESS (Local Dev) ---
+    // Em Express, headers é um objeto simples
+    const expressReq = opts.req as any;
+    const expressRes = (opts as any).res;
+
+    cookieHeader = expressReq.headers['cookie'];
+
+    // Polyfill do Headers para que o routers.ts funcione sem alteração
+    resHeaders = new Headers();
+
+    // Intercepta .append e .set para escrever diretamente no response do Express
+    const originalAppend = resHeaders.append.bind(resHeaders);
+    resHeaders.append = (name: string, value: string) => {
+      originalAppend(name, value);
+      if (expressRes && !expressRes.headersSent) {
+        expressRes.append(name, value);
+      }
+    };
+
+    const originalSet = resHeaders.set.bind(resHeaders);
+    resHeaders.set = (name: string, value: string) => {
+      originalSet(name, value);
+      if (expressRes && !expressRes.headersSent) {
+        expressRes.setHeader(name, value);
+      }
+    };
+
+  } else {
+    // --- AMBIENTE VERCEL (Fetch API) ---
+    req = opts.req as Request;
+    // O adapter fetch já fornece resHeaders que serão usados na resposta final
+    resHeaders = (opts as FetchCreateContextFnOptions).resHeaders;
+    cookieHeader = req.headers.get("cookie");
+  }
+
+  // Lógica de Autenticação (Comum a ambos)
   if (cookieHeader) {
     try {
       const cookies = Object.fromEntries(
-        cookieHeader.split("; ").map((c) => c.split("="))
+        cookieHeader.split("; ").map((c: string) => c.split("="))
       );
       const token = cookies[COOKIE_NAME];
 
       if (token) {
-        // Solução: Usar fallback para process.env caso ENV.jwtSecret seja undefined
+        // Fallback seguro para secret
         const secret = ENV.jwtSecret || process.env.JWT_SECRET || "sua_chave_secreta_aqui";
 
-        const decoded = jwt.verify(token, secret) as any;
-
-        user = {
-          id: decoded.userId,
-          email: decoded.email,
-          role: decoded.role,
-        };
+        try {
+          const decoded = jwt.verify(token, secret) as any;
+          user = {
+            id: decoded.userId,
+            email: decoded.email,
+            role: decoded.role,
+          };
+        } catch (jwtError) {
+          // Token inválido ou expirado - ignorar silenciosamente
+        }
       }
     } catch (err) {
-      console.error("[tRPC Context] Erro ao validar token:", err);
-      if (err instanceof TypeError && err.message.includes("secret")) {
-        console.error("🚨 CRÍTICO: JWT_SECRET não foi encontrado nas variáveis de ambiente!");
-      }
+      console.error("[tRPC Context] Erro ao processar cookies:", err);
     }
   }
 
