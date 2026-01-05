@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import pg from "pg";
+const { Pool } = pg;
 import { ENV } from "./_core/env";
 import * as schema from "../drizzle/schema";
 
@@ -9,36 +10,62 @@ type InsertUser = typeof schema.users.$inferInsert;
 
 // Singleton: Mantém a conexão ativa entre execuções na Vercel (evita Cold Start lento)
 let _db: NodePgDatabase<typeof schema> | null = null;
-let _pool: Pool | null = null;
+let _pool: pg.Pool | null = null;
 
 export async function getDb(): Promise<NodePgDatabase<typeof schema> | null> {
   // ✅ Pega a URL diretamente do objeto ENV (já com trim() e validações)
   const connectionString = ENV.databaseUrl;
 
   if (!connectionString) {
-    console.error("[Database] Erro: DATABASE_URL não encontrada.");
+    console.error("[Database] Erro: DATABASE_URL não encontrada (string vazia ou undefined).");
     return null;
+  }
+
+  // Debug avançado para identificar caracteres invisíveis ou formatação errada
+  console.log(`[Database] Debug URL: Length=${connectionString.length}, Chars=[${connectionString.substring(0, 10)}...]`);
+  console.log(`[Database] Validando formato...`);
+  try {
+    const u = new URL(connectionString);
+    console.log(`[Database] URL válida! Protocol: ${u.protocol}, Host: ${u.hostname}, Port: ${u.port}, Path: ${u.pathname}`);
+  } catch (e: any) {
+    console.error(`[Database] ❌ URL INVÁLIDA detetada pelo parser nativo: ${e.message}`);
+    console.error(`[Database] Verifique se sua DATABASE_URL no .env contém espaços, aspas ou caracteres especiais não codificados.`);
   }
 
   if (_db) return _db;
 
   try {
-    _pool = new Pool({
-      connectionString,
-      ssl: { rejectUnauthorized: false }, // ISSO É OBRIGATÓRIO NA VERCEL
-      max: 1
-    });
+    console.log("[Database] Criando Pool com configuração manual (Bypassing pg-connection-string)...");
 
+    // Parse manual da URL para evitar erro 'searchParams' no driver
+    const dbUrl = new URL(connectionString);
+    const config = {
+      host: dbUrl.hostname,
+      port: Number(dbUrl.port) || 5432,
+      user: dbUrl.username,
+      password: dbUrl.password,
+      database: dbUrl.pathname.slice(1), // Remove a barra inicial
+      ssl: { rejectUnauthorized: false },
+      max: 1
+    };
+
+    console.log(`[Database] Config gerada - Host: ${config.host}, DB: ${config.database}, User: ${config.user ? '***' : 'missing'}`);
+
+    _pool = new Pool(config);
+
+    console.log("[Database] Pool criado. Inicializando Drizzle...");
     _db = drizzle(_pool, { schema });
 
     // Teste de conexão (fail-fast)
+    console.log("[Database] Testando conexão com .connect()...");
     const client = await _pool.connect();
     client.release();
 
     console.log("[Database] Conectado com sucesso à base de dados.");
     return _db;
   } catch (error: any) {
-    console.error("[Database] Falha crítica na conexão:", error.message);
+    console.error(`[Database] Falha crítica na conexão (Line unknown): ${error.message}`);
+    console.error(error.stack); // Log do stack para debug
     _db = null;
     return null;
   }

@@ -15,16 +15,12 @@ if (process.env.NODE_ENV !== "production") {
     hasMp: !!process.env.MERCADOPAGO_ACCESS_TOKEN
   });
 } else {
-  // Debug Vercel (Production) - SEM EXIBIR VALORES REAIS
+} else {
+  // Debug Vercel (Production) - Status básico
   console.log("Variáveis de Ambiente (Vercel):", {
     NODE_ENV: process.env.NODE_ENV,
     hasDb: !!process.env.DATABASE_URL,
-    dbUrlLength: process.env.DATABASE_URL?.length,
-    hasSupabase: !!process.env.SUPABASE_URL,
-    supabaseUrlVal: process.env.SUPABASE_URL ? (process.env.SUPABASE_URL.substring(0, 10) + "...") : "MISSING",
-    hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    hasJwt: !!process.env.JWT_SECRET,
-    hasMp: !!process.env.MERCADOPAGO_ACCESS_TOKEN
+    hasSupabase: !!process.env.SUPABASE_URL
   });
 }
 
