@@ -1,5 +1,5 @@
 import { getDb } from "../server/db";
-import { users } from "../shared/schema";
+import { users } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { COOKIE_NAME } from "../shared/const";

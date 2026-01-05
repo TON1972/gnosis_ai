@@ -61,7 +61,8 @@ export async function createContext(
     // --- AMBIENTE VERCEL (Fetch API) ---
     req = opts.req as Request;
     // O adapter fetch já fornece resHeaders que serão usados na resposta final
-    resHeaders = (opts as FetchCreateContextFnOptions).resHeaders;
+    // Segurança: se undefined, inicializa um novo Headers (embora não vá persistir na resposta do fetch handler se não for o mesmo objeto)
+    resHeaders = (opts as FetchCreateContextFnOptions).resHeaders || new Headers();
     cookieHeader = req.headers.get("cookie");
   }
 

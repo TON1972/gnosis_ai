@@ -1,5 +1,5 @@
 import { getDb } from "../server/db";
-import { users, credits, plans, subscriptions } from "../shared/schema";
+import { users, credits, plans, subscriptions } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
