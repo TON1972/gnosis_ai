@@ -60,7 +60,7 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[98vw] md:max-w-7xl h-[95vh] md:h-auto md:max-h-[92vh] overflow-y-auto bg-gradient-to-br from-[#FFFACD] to-[#F0E68C] border-4 border-[#d4af37] p-4 md:p-8 custom-scrollbar">
+      <DialogContent className="w-[98vw] md:max-w-7xl h-[95vh] md:h-auto md:max-h-[92vh] overflow-y-auto bg-linear-to-br from-[#FFFACD] to-[#F0E68C] border-4 border-[#d4af37] p-4 md:p-8 custom-scrollbar">
         
         {successMessage ? (
           <div className="flex flex-col items-center justify-center py-12 text-center animate-in zoom-in-95 duration-300">

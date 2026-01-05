@@ -14,15 +14,6 @@ import SubscriptionWarningBanner from "@/components/SubscriptionWarningBanner";
 import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import "../dashboard-mobile.css";
 
-const PLACEHOLDERS: Record<string, string> = {
-  hermeneutica: "Digite a referência bíblica ou cole o texto que deseja analisar...",
-  exegese: "Digite a passagem bíblica para análise exegética detalhada...",
-  traducoes: "Digite a referência bíblica ou palavra específica para análise de tradução...",
-  resumos: "Digite o que deseja resumir...",
-  esbocos: "Digite o tema ou passagem para criar um esboço de pregação...",
-  "escatologia-biblica": "Digite o tema escatológico que deseja analisar...",
-};
-
 export default function ToolPage() {
   const [, params] = useRoute("/tool/:toolId");
   const [, setLocation] = useLocation();
@@ -40,7 +31,10 @@ export default function ToolPage() {
 
   // Queries
   const { data: allTools, isLoading: loadingTools } = trpc.tools.list.useQuery();
+  
+  // Localiza a ferramenta no banco de dados
   const dbTool = allTools?.find(t => t.id === Number(toolIdFromParams) || t.name === toolIdFromParams);
+  
   const { data: dbUser } = trpc.auth.me.useQuery(undefined, { enabled: !!authUser });
   const user = dbUser || authUser;
   const { data: credits, refetch: refetchCredits } = trpc.credits.balance.useQuery();
@@ -111,16 +105,23 @@ export default function ToolPage() {
   };
 
   if (loadingTools) {
-    return <div className="min-h-screen flex items-center justify-center bg-[#1e3a5f] text-[#d4af37]">Carregando ferramenta...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#1e3a5f] text-[#d4af37]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin" />
+          <p className="font-bold">Carregando ferramenta teológica...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!dbTool) {
     return (
       <div className="min-h-screen bg-gradient-radial from-[#d4af37] via-[#DAA520] to-[#FFFACD] flex items-center justify-center">
-        <div className="text-center bg-white/90 p-8 rounded-2xl border-4 border-[#d4af37]">
+        <div className="text-center bg-white/90 p-8 rounded-2xl border-4 border-[#d4af37] shadow-2xl">
           <h1 className="text-2xl font-bold text-[#1e3a5f] mb-4">Ferramenta não localizada</h1>
           <Link href="/dashboard">
-            <Button className="bg-[#1e3a5f] text-[#d4af37]">Voltar ao Dashboard</Button>
+            <Button className="bg-[#1e3a5f] text-[#d4af37] font-bold">Voltar ao Dashboard</Button>
           </Link>
         </div>
       </div>
@@ -154,7 +155,7 @@ export default function ToolPage() {
           <div className="lg:col-span-1">
             <CreditsPanel onNeedCredits={() => setShowNoCreditsModal(true)} />
             <Link href="/dashboard">
-              <Button variant="outline" className="w-full mt-4 border-[#d4af37] text-[#1e3a5f] hover:bg-[#d4af37] hover:text-white">
+              <Button variant="outline" className="w-full mt-4 border-[#d4af37] text-[#1e3a5f] hover:bg-[#d4af37] hover:text-white font-bold transition-all">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
               </Button>
             </Link>
@@ -179,16 +180,17 @@ export default function ToolPage() {
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={PLACEHOLDERS[dbTool.name] || "Digite o texto para análise..."}
-                className="min-h-50 border-2 border-[#d4af37] focus:border-[#B8860B] rounded-lg p-4 text-[#1e3a5f]"
+                // ✅ Placeholder agora é carregado dinamicamente do banco de dados
+                placeholder={dbTool.inputPlaceholder || "Digite o texto para análise..."}
+                className="min-h-50 border-2 border-[#d4af37] focus:border-[#B8860B] rounded-lg p-4 text-[#1e3a5f] bg-white"
               />
               <Button
                 onClick={handleGenerate}
                 disabled={generateMutation.isPending || !input.trim()}
-                className="mt-4 w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] font-bold text-lg py-6"
+                className="mt-4 w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] font-bold text-lg py-6 shadow-lg transition-all active:scale-95"
               >
                 {generateMutation.isPending ? (
-                  <><Loader2 className="mr-2 animate-spin" /> Processando...</>
+                  <><Loader2 className="mr-2 animate-spin" /> Processando Análise...</>
                 ) : (
                   <><Send className="mr-2" /> Gerar {dbTool.displayName}</>
                 )}
@@ -199,7 +201,7 @@ export default function ToolPage() {
               <div className="bg-white/95 rounded-2xl p-8 shadow-2xl border-4 border-[#d4af37] animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center justify-between mb-6 border-b-2 border-[#d4af37] pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-[#1e3a5f] p-2 rounded-lg">
+                    <div className="bg-[#1e3a5f] p-2 rounded-lg shadow-md">
                       <BookOpen className="w-6 h-6 text-[#d4af37]" />
                     </div>
                     <label className="text-xl font-black text-[#1e3a5f] tracking-tight uppercase">
@@ -208,11 +210,11 @@ export default function ToolPage() {
                   </div>
                   
                   <div className="flex gap-2">
-                    <Button onClick={handleCopy} variant="outline" size="sm" className="border-2 border-[#d4af37] text-[#1e3a5f] hover:bg-[#d4af37] font-bold">
+                    <Button onClick={handleCopy} variant="outline" size="sm" className="border-2 border-[#d4af37] text-[#1e3a5f] hover:bg-[#d4af37] font-bold transition-all">
                       {copied ? <CheckCircle className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
                       Copiar
                     </Button>
-                    <Button onClick={handleDownloadTxt} variant="outline" size="sm" className="border-2 border-[#1e3a5f] text-[#1e3a5f] hover:bg-[#1e3a5f] font-bold">
+                    <Button onClick={handleDownloadTxt} variant="outline" size="sm" className="border-2 border-[#1e3a5f] text-[#1e3a5f] hover:bg-[#1e3a5f] font-bold transition-all">
                       <Download className="w-4 h-4 mr-2" /> TXT
                     </Button>
                   </div>
@@ -222,9 +224,9 @@ export default function ToolPage() {
                   <article className="prose prose-slate prose-lg max-w-none prose-headings:text-[#1e3a5f] prose-strong:text-[#1e3a5f] text-[#1e3a5f] font-serif leading-relaxed italic-quotes">
                     <ReactMarkdown
                       components={{
-                        h3: ({node, ...props}) => <h3 className="text-2xl border-b border-[#d4af37]/30 pb-2 mt-8 mb-4 uppercase" {...props} />,
+                        h3: ({node, ...props}) => <h3 className="text-2xl border-b border-[#d4af37]/30 pb-2 mt-8 mb-4 uppercase font-bold" {...props} />,
                         p: ({node, ...props}) => <p className="mb-4 text-justify" {...props} />,
-                        strong: ({node, ...props}) => <strong className="text-[#a0522d]" {...props} />,
+                        strong: ({node, ...props}) => <strong className="text-[#a0522d] font-bold" {...props} />,
                       }}
                     >
                       {result}
@@ -232,7 +234,7 @@ export default function ToolPage() {
                     
                     {/* ✅ Rodapé Informativo com os valores capturados do estado */}
                     <div className="mt-8 pt-4 border-t-2 border-[#d4af37]/30 flex flex-wrap gap-4 justify-between items-center text-[#1e3a5f] font-bold">
-                      <div className="flex items-center gap-2 bg-[#fdfaf0] px-4 py-2 rounded-lg border border-[#d4af37]/50">
+                      <div className="flex items-center gap-2 bg-[#fdfaf0] px-4 py-2 rounded-lg border border-[#d4af37]/50 shadow-sm">
                         <span className="text-xs uppercase opacity-70 tracking-widest">Extensão</span>
                         <span className="text-lg">{wordCount} palavras</span>
                       </div>

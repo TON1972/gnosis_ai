@@ -894,6 +894,7 @@ export const appRouter = router({
         id: tools.id,
         displayName: tools.displayName,
         description: tools.description,
+        inputPlaceholder: tools.inputPlaceholder,
         creditCost: tools.creditCost,
         isActive: tools.isActive,
         categoryName: toolCategories.name, // Nome da categoria via Join
@@ -927,6 +928,7 @@ export const appRouter = router({
         id: z.number().optional().nullable(),
         displayName: z.string().min(1),
         description: z.string().optional().nullable(),
+        inputPlaceholder: z.string().nullable(),
         promptTemplate: z.string().optional().nullable(),
         creditCost: z.number().min(0),
         categoryId: z.number().optional().nullable(),
@@ -940,6 +942,7 @@ export const appRouter = router({
         const toolData = {
           displayName: input.displayName,
           description: input.description,
+          inputPlaceholder: input.inputPlaceholder,
           promptTemplate: input.promptTemplate,
           creditCost: input.creditCost,
           categoryId: input.categoryId,

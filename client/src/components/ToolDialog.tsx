@@ -19,12 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck, Type, AlignLeft } from "lucide-react";
 
 interface Tool {
   id?: number;
   displayName: string;
   description: string | null;
+  inputPlaceholder?: string | null;
   promptTemplate: string | null;
   creditCost: number;
   categoryId: number | null;
@@ -43,6 +44,7 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
   const [formData, setFormData] = useState<Tool>({
     displayName: "",
     description: "",
+    inputPlaceholder: "",
     promptTemplate: "",
     creditCost: 50,
     categoryId: null,
@@ -50,7 +52,6 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
     planIds: [],
   });
 
-  // Queries para popular o modal
   const { data: categories } = (trpc.admin as any).listCategories.useQuery(undefined, {
     enabled: isOpen,
   });
@@ -59,36 +60,32 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
     enabled: isOpen,
   });
 
-  // ✅ Busca os vínculos existentes para marcar os checkboxes
   const { data: toolPlans, isLoading: isLoadingPlans } = (trpc.admin as any).getToolPlans.useQuery(
     { toolId: editingTool?.id },
     { 
       enabled: !!editingTool?.id && isOpen,
-      // Garante que não usaremos cache antigo ao trocar de ferramenta
       refetchOnWindowFocus: false 
     }
   );
 
-  // ✅ Efeito de Sincronização: Monitora a abertura e a chegada dos dados dos planos
   useEffect(() => {
     if (editingTool && isOpen) {
-      // Extrai os IDs dos planos que vieram da query de relacionamento
       const planIdsFromDb = toolPlans?.map((p: any) => p.planId) || [];
 
       setFormData({
         ...editingTool,
         description: editingTool.description || "",
+        inputPlaceholder: editingTool.inputPlaceholder || "",
         promptTemplate: editingTool.promptTemplate || "",
         categoryId: editingTool.categoryId || null,
-        // Garante que isActive seja tratado como boolean real
         isActive: editingTool.isActive === true || String(editingTool.isActive) === "true",
         planIds: planIdsFromDb, 
       });
     } else if (!editingTool && isOpen) {
-      // Reset para nova ferramenta
       setFormData({
         displayName: "",
         description: "",
+        inputPlaceholder: "",
         promptTemplate: "",
         creditCost: 50,
         categoryId: null,
@@ -96,7 +93,6 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
         planIds: [],
       });
     }
-    // 'toolPlans' é a dependência crucial para marcar os checkboxes após o carregamento da API
   }, [editingTool, isOpen, toolPlans]); 
 
   const togglePlan = (planId: number) => {
@@ -111,13 +107,13 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[650px] bg-white border-4 border-[#d4af37] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-162.5 bg-white border-4 border-[#d4af37] max-h-[90vh] overflow-y-auto custom-scrollbar">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-[#1e3a5f]">
             {editingTool ? "Editar Ferramenta" : "Nova Ferramenta Teológica"}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Configurações de IA, custos e permissões por plano.
+            Configurações de IA, placeholders com quebra de linha, custos e permissões por plano.
           </DialogDescription>
         </DialogHeader>
         
@@ -130,6 +126,7 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
                 value={formData.displayName}
                 onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                 className="border-2 border-[#d4af37]"
+                placeholder="Ex: Hermenêutica Avançada"
               />
             </div>
 
@@ -153,26 +150,43 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="desc" className="text-[#1e3a5f] font-bold">Descrição</Label>
+            <Label htmlFor="desc" className="text-[#1e3a5f] font-bold">Descrição (Subtítulo)</Label>
             <Input
               id="desc"
               value={formData.description || ""}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="border-2 border-[#d4af37]"
+              placeholder="Breve explicação da função da ferramenta"
             />
           </div>
 
+          {/* ✅ ALTERADO PARA TEXTAREA: Placeholder do Input */}
           <div className="grid gap-2">
-            <Label htmlFor="prompt" className="text-[#1e3a5f] font-bold">Prompt do Sistema</Label>
+            <Label htmlFor="placeholder" className="text-[#1e3a5f] font-bold flex items-center gap-2">
+              <AlignLeft className="w-4 h-4" /> Placeholder (Suporta quebra de linha / Exemplos)
+            </Label>
+            <Textarea
+              id="placeholder"
+              value={formData.inputPlaceholder || ""}
+              onChange={(e) => setFormData({ ...formData, inputPlaceholder: e.target.value })}
+              className="border-2 border-[#d4af37] bg-blue-50/20 min-h-25 resize-none"
+              placeholder={"Exemplo:\nDigite a referência bíblica...\n\nJoão 3:16"}
+            />
+            <p className="text-[10px] text-slate-500 italic">Pressione Enter no campo acima para criar quebras de linha no exemplo que o usuário verá.</p>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="prompt" className="text-[#1e3a5f] font-bold">Prompt do Sistema (Instruções da IA)</Label>
             <Textarea
               id="prompt"
               value={formData.promptTemplate || ""}
               onChange={(e) => setFormData({ ...formData, promptTemplate: e.target.value })}
-              className="border-2 border-[#d4af37] h-28 font-mono text-xs"
+              className="border-2 border-[#d4af37] h-32 font-mono text-xs"
+              placeholder="Instruções detalhadas de como a IA deve se comportar..."
             />
           </div>
 
-          {/* ✅ Seção de Planos com Checkboxes */}
+          {/* Seção de Planos com Checkboxes */}
           <div className="grid gap-2 p-4 border-2 border-[#d4af37] bg-[#fdfaf0] rounded-lg">
             <Label className="text-[#1e3a5f] font-bold flex items-center gap-2">
               <ShieldCheck className="w-4 h-4" /> Planos Autorizados
@@ -195,7 +209,7 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label className="text-[#1e3a5f] font-bold">Custo (Créditos)</Label>
+              <Label className="text-[#1e3a5f] font-bold">Custo Base (Créditos)</Label>
               <Input
                 type="number"
                 value={formData.creditCost}
@@ -204,7 +218,7 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
               />
             </div>
             <div className="grid gap-2">
-              <Label className="text-[#1e3a5f] font-bold">Status</Label>
+              <Label className="text-[#1e3a5f] font-bold">Status de Visibilidade</Label>
               <Select 
                 value={formData.isActive ? "true" : "false"} 
                 onValueChange={(val) => setFormData({ ...formData, isActive: val === "true" })}
@@ -213,24 +227,28 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="true">Ativo</SelectItem>
-                  <SelectItem value="false">Inativo</SelectItem>
+                  <SelectItem value="true">Ativo (Visível)</SelectItem>
+                  <SelectItem value="false">Inativo (Oculto)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={onClose} className="border-gray-300 font-bold">Cancelar</Button>
           <Button 
             onClick={() => onSave(formData)} 
-            className="bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
+            className="bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] font-bold"
           >
             {editingTool ? "Salvar Alterações" : "Criar Ferramenta"}
           </Button>
         </DialogFooter>
       </DialogContent>
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
+      `}</style>
     </Dialog>
   );
 }

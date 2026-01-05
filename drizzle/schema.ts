@@ -148,6 +148,7 @@ export const tools = pgTable("tools", {
   name: varchar("name", { length: 100 }).notNull().unique(),
   displayName: varchar("displayName", { length: 150 }).notNull(),
   description: text("description"),
+  inputPlaceholder: text("inputPlaceholder"), // ✅ Nova Coluna
   promptTemplate: text("prompt_template"),
   creditCost: integer("creditCost").default(50), 
   category: text("category"),

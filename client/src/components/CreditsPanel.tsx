@@ -5,7 +5,13 @@ import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import NoCreditsModal from "./NoCreditsModal";
 
-export default function CreditsPanel() {
+// ✅ Interface definida corretamente
+interface CreditsPanelProps {
+  onNeedCredits?: () => void;
+}
+
+// ✅ Adicionado { onNeedCredits } na assinatura da função
+export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
   const { user } = useAuth();
   const [modalConfig, setModalConfig] = useState<{ open: boolean; tab: 'plans' | 'credits' }>({
     open: false,
@@ -30,6 +36,15 @@ export default function CreditsPanel() {
 
   const totalCredits = credits?.total || 0;
   const isLowCredits = totalCredits < 100;
+
+  // ✅ Função para abrir o modal (prioriza a prop externa, se existir)
+  const handleOpenModal = (tab: 'plans' | 'credits') => {
+    if (onNeedCredits) {
+      onNeedCredits();
+    } else {
+      setModalConfig({ open: true, tab });
+    }
+  };
 
   return (
     <div className="bg-linear-to-br from-[#FFFACD] to-[#F0E68C] rounded-2xl p-4 md:p-6 shadow-xl border-4 border-[#d4af37]">
@@ -99,7 +114,7 @@ export default function CreditsPanel() {
       {/* Action Buttons */}
       <div className="space-y-3">
         <Button
-          onClick={() => setModalConfig({ open: true, tab: 'plans' })}
+          onClick={() => handleOpenModal('plans')}
           className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-12 shadow-lg font-bold flex items-center justify-center gap-2 transition-transform active:scale-95"
         >
           <TrendingUp className="w-5 h-5" />
@@ -107,7 +122,7 @@ export default function CreditsPanel() {
         </Button>
         
         <Button
-          onClick={() => setModalConfig({ open: true, tab: 'credits' })}
+          onClick={() => handleOpenModal('credits')}
           variant="outline"
           className="w-full border-2 border-[#d4af37] text-[#1e3a5f] hover:bg-[#d4af37]/10 h-12 font-bold flex items-center justify-center gap-2 transition-transform active:scale-95"
         >
@@ -116,11 +131,14 @@ export default function CreditsPanel() {
         </Button>
       </div>
 
-      <NoCreditsModal 
-        open={modalConfig.open} 
-        onClose={() => setModalConfig({ ...modalConfig, open: false })}
-        initialTab={modalConfig.tab}
-      />
+      {/* Só renderiza o modal interno se não estiver vindo uma função externa */}
+      {!onNeedCredits && (
+        <NoCreditsModal 
+          open={modalConfig.open} 
+          onClose={() => setModalConfig({ ...modalConfig, open: false })}
+          initialTab={modalConfig.tab}
+        />
+      )}
     </div>
   );
 }
