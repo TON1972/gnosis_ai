@@ -1,12 +1,12 @@
-import { 
-  pgTable, 
-  serial, 
-  text, 
-  varchar, 
-  timestamp, 
-  integer, 
-  boolean, 
-  pgEnum 
+import {
+  pgTable,
+  serial,
+  text,
+  varchar,
+  timestamp,
+  integer,
+  boolean,
+  pgEnum
 } from "drizzle-orm/pg-core";
 
 /**
@@ -46,11 +46,11 @@ export const plans = pgTable("plans", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 50 }).notNull().unique(),
   displayName: varchar("displayName", { length: 100 }).notNull(),
-  priceMonthly: integer("priceMonthly").notNull(), 
-  priceYearly: integer("priceYearly").notNull(), 
-  creditsInitial: integer("creditsInitial").notNull(), 
-  creditsDaily: integer("creditsDaily").notNull(), 
-  toolsCount: integer("toolsCount").notNull(), 
+  priceMonthly: integer("priceMonthly").notNull(),
+  priceYearly: integer("priceYearly").notNull(),
+  creditsInitial: integer("creditsInitial").notNull(),
+  creditsDaily: integer("creditsDaily").notNull(),
+  toolsCount: integer("toolsCount").notNull(),
   description: text("description"),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -69,12 +69,13 @@ export const subscriptions = pgTable("subscriptions", {
   status: subStatusEnum("status").default("active").notNull(),
   billingPeriod: billingPeriodEnum("billingPeriod").default("monthly").notNull(),
   startDate: timestamp("startDate").defaultNow().notNull(),
-  endDate: timestamp("endDate"), 
-  nextBillingDate: timestamp("nextBillingDate"), 
-  gracePeriodEndsAt: timestamp("gracePeriodEndsAt"), 
-  lastPaymentDate: timestamp("lastPaymentDate"), 
+  endDate: timestamp("endDate"),
+  nextBillingDate: timestamp("nextBillingDate"),
+  gracePeriodEndsAt: timestamp("gracePeriodEndsAt"),
+  lastPaymentDate: timestamp("lastPaymentDate"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  mercadoPagoSubscriptionId: varchar("mercadoPagoSubscriptionId", { length: 100 }), // ✅ Novo campo para assinatura recorrente
 });
 
 /**
@@ -84,13 +85,14 @@ export const credits = pgTable("credits", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull().unique(),
   amount: integer("amount").notNull().default(0),
-  type: varchar("type", { length: 50 }).notNull(), 
-  expiresAt: timestamp("expiresAt"), 
+  type: varchar("type", { length: 50 }).notNull(),
+  expiresAt: timestamp("expiresAt"),
   creditsInitial: integer("creditsInitial").default(0),
   creditsDaily: integer("creditsDaily").default(0),
   creditsBonus: integer("creditsBonus").default(0),
   lastDailyReset: timestamp("lastDailyReset").defaultNow(),
   createdAt: timestamp("createdAt").defaultNow(),
+
 });
 
 
@@ -98,7 +100,7 @@ export const savedStudies = pgTable("saved_studies", {
   id: serial("id").primaryKey(),
   // ✅ Usamos "userId" exatamente como no seu SQL (case-sensitive)
   toolId: integer("toolId"), // ✅ Certifique-se que esta linha existe
-  userId: integer("userId").notNull(), 
+  userId: integer("userId").notNull(),
   toolName: varchar("toolName", { length: 100 }).notNull(),
   input: text("input").notNull(),
   output: text("output").notNull(),
@@ -125,7 +127,7 @@ export const studyMessages = pgTable("study_messages", {
 export const creditTransactions = pgTable("credit_transactions", {
   id: serial("id").primaryKey(),
   // Forçamos o Drizzle a usar as aspas para manter o case-sensitive do seu SQL
-  userId: integer("userId").notNull(), 
+  userId: integer("userId").notNull(),
   toolId: integer("toolId"),
   amount: integer("amount").notNull(),
   type: varchar("type", { length: 20 }).notNull(),
@@ -150,7 +152,7 @@ export const tools = pgTable("tools", {
   description: text("description"),
   inputPlaceholder: text("inputPlaceholder"), // ✅ Nova Coluna
   promptTemplate: text("prompt_template"),
-  creditCost: integer("creditCost").default(50), 
+  creditCost: integer("creditCost").default(50),
   category: text("category"),
   categoryId: integer("categoryId").references(() => toolCategories.id), // ✅ A nova coluna
   icon: text("icon"),
@@ -190,8 +192,8 @@ export const chatbotContacts = pgTable("chatbot_contacts", {
   department: departmentEnum("department").notNull(),
   message: text("message"),
   status: contactStatusEnum("status").default("pending").notNull(),
-  assignedTo: integer("assignedTo"), 
-  archived: boolean("archived").default(false).notNull(), 
+  assignedTo: integer("assignedTo"),
+  archived: boolean("archived").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -201,12 +203,12 @@ export const chatbotContacts = pgTable("chatbot_contacts", {
  */
 export const ticketMessages = pgTable("ticket_messages", {
   id: serial("id").primaryKey(),
-  ticketId: integer("ticketId").notNull(), 
-  senderId: integer("senderId"), 
+  ticketId: integer("ticketId").notNull(),
+  senderId: integer("senderId"),
   senderName: varchar("senderName", { length: 255 }).notNull(),
   senderType: senderTypeEnum("senderType").notNull(),
   message: text("message").notNull(),
-  isRead: integer("isRead").default(0).notNull(), 
+  isRead: integer("isRead").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -217,10 +219,15 @@ export const ticketMessages = pgTable("ticket_messages", {
 export const payments = pgTable("payments", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),
+  subscriptionId: integer("subscriptionId").references(() => subscriptions.id), // ✅ Adicionado
   amount: integer("amount").notNull(),
   currency: varchar("currency", { length: 3 }).default("BRL").notNull(),
   status: varchar("status", { length: 20 }).notNull(),
   paymentMethod: varchar("paymentMethod", { length: 50 }),
+  mercadoPagoId: varchar("mercadoPagoId", { length: 100 }),
+  externalId: varchar("externalId", { length: 100 }),
+  type: varchar("type", { length: 50 }), // 'credit', 'plan_monthly', 'plan_yearly', 'plan_manual'
+  creditsAmount: integer("creditsAmount").default(0), // Quantidade de créditos comprados (se aplicável)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });

@@ -146,7 +146,7 @@ export default function ToolPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={dbTool?.inputPlaceholder || "Digite o texto..."}
-                className="min-h-[200px] border-2 border-[#d4af37] rounded-lg p-4 bg-white"
+                className="min-h-50 border-2 border-[#d4af37] rounded-lg p-4 bg-white"
               />
               <Button
                 onClick={handleGenerate}
@@ -203,7 +203,7 @@ export default function ToolPage() {
                     <Link href={`/study/${generatedStudyId}`}>
                       <button className="premium-btn group relative flex items-center justify-center gap-4 px-12 py-6 text-2xl font-black uppercase tracking-tighter text-[#1e3a5f] transition-all hover:scale-105 active:scale-95">
                         {/* Efeito de Brilho Interno */}
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#d4af37] via-[#f7e695] to-[#d4af37] shadow-[0_10px_40px_-10px_rgba(212,175,55,0.5)]"></div>
+                        <div className="absolute inset-0 rounded-2xl bg-linear-to-r from-[#d4af37] via-[#f7e695] to-[#d4af37] shadow-[0_10px_40px_-10px_rgba(212,175,55,0.5)]"></div>
                         <div className="btn-shine absolute inset-0 rounded-2xl"></div>
                         
                         {/* Conteúdo */}

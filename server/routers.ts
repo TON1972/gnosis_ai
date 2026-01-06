@@ -28,7 +28,9 @@ import { createSubscriptionCheckout, createCreditsCheckout, createManualPaymentC
 import { invokeLLM } from "./_core/llm";
 import { notifyOwner } from "./_core/notification";
 import { chatbotContacts, ticketMessages } from "../drizzle/schema";
+import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 //import {  userCredits } from "@shared/schema";
 
 // Helper para garantir conexão com DB
@@ -38,6 +40,10 @@ async function getValidatedDb() {
   return db;
 }
 
+const client = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN!
+});
+
 function calculateDynamicCost(text: string): { words: number; cost: number } {
   // Remove espaços extras e conta palavras
   const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
@@ -45,23 +51,23 @@ function calculateDynamicCost(text: string): { words: number; cost: number } {
   let cost = 50; // Valor base inicial
 
   if (words <= 500) cost = 50;
-    else if (words <= 750) cost = 90;
-    else if (words <= 1000) cost = 115;
-    else if (words <= 1250) cost = 150;
-    else if (words <= 1500) cost = 190;
-    else if (words <= 1800) cost = 220;
-    else if (words <= 2100) cost = 260;
-    else if (words <= 2400) cost = 300;
-    else if (words <= 2700) cost = 335;
-    else if (words <= 3000) cost = 375;
-    else if (words <= 3400) cost = 425;
-    else if (words <= 3800) cost = 480;
-    else if (words <= 4200) cost = 525;
-    else if (words <= 5000) cost = 625;
-    else cost = 625; // Teto máximo conforme sua tabela
+  else if (words <= 750) cost = 90;
+  else if (words <= 1000) cost = 115;
+  else if (words <= 1250) cost = 150;
+  else if (words <= 1500) cost = 190;
+  else if (words <= 1800) cost = 220;
+  else if (words <= 2100) cost = 260;
+  else if (words <= 2400) cost = 300;
+  else if (words <= 2700) cost = 335;
+  else if (words <= 3000) cost = 375;
+  else if (words <= 3400) cost = 425;
+  else if (words <= 3800) cost = 480;
+  else if (words <= 4200) cost = 525;
+  else if (words <= 5000) cost = 625;
+  else cost = 625; // Teto máximo conforme sua tabela
 
-    return { words, cost };
-  }
+  return { words, cost };
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -140,7 +146,7 @@ export const appRouter = router({
 
         // 1. Busca os planos
         const plansData = await db.select().from(plans);
-        
+
         // 2. Busca apenas as colunas existentes na tabela de junção
         // Removido o "id" que causava o erro
         const allRelations = await db.select({
@@ -298,9 +304,9 @@ export const appRouter = router({
         }
 
         // ✅ Agora o result[0] vai funcionar perfeitamente
-        return { 
-          success: true, 
-          id: result[0]?.insertedId 
+        return {
+          success: true,
+          id: result[0]?.insertedId
         };
       }),
 
@@ -466,7 +472,19 @@ export const appRouter = router({
 
       return result;
     }),
+
+    paymentHistory: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      return await db
+        .select()
+        .from(payments)
+        .where(eq(payments.userId, ctx.user.id))
+        .orderBy(desc(payments.createdAt));
+    }),
   }),
+
   admin: router({
     userStats: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
@@ -1036,6 +1054,52 @@ export const appRouter = router({
 
   payments: router({
     /**
+   * ✅ GERA LINK MERCADO PAGO PARA CRÉDITOS OU PLANOS
+   */
+    createCheckoutSession: protectedProcedure
+      .input(z.object({
+        type: z.enum(['credits', 'plan']),
+        id: z.string(),
+        price: z.number(),
+        title: z.string(),
+        billingPeriod: z.enum(['monthly', 'yearly']).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const db = await getDb();
+          if (!db) throw new Error("Database error");
+
+          // Precisamos do email do usuário para o checkout
+          const [user] = await db.select().from(users).where(eq(users.id, ctx.user.id));
+          if (!user || !user.email) throw new Error("Usuário não encontrado");
+
+          if (input.type === 'credits') {
+            // Delegate to shared helper
+            return await createCreditsCheckout({
+              credits: Number(input.id), // id is the amount of credits for this type
+              price: input.price,
+              userId: ctx.user.id,
+              userEmail: user.email
+            });
+          } else {
+            // Delegate to shared helper (Plan)
+            // Note: createSubscriptionCheckout expects valid plan details passed in
+            return await createSubscriptionCheckout({
+              planId: Number(input.id),
+              planName: input.title.replace('Plano ', '').replace(' - Gnosis AI', ''),
+              price: input.price,
+              duration: input.billingPeriod === 'yearly' ? 12 : 1,
+              billingPeriod: input.billingPeriod || 'monthly',
+              userId: ctx.user.id,
+              userEmail: user.email
+            });
+          }
+        } catch (error: any) {
+          console.error("❌ ERRO NO MP:", error.message);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
+        }
+      }),
+    /**
      * ✅ COMPRA DE CRÉDITOS AVULSOS
      */
     createCreditsCheckout: protectedProcedure
@@ -1047,78 +1111,73 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new Error("Conexão com o banco falhou");
 
-        // 1. Registrar na tabela 'payments'
-        await db.insert(payments).values({
+        const [user] = await db.select().from(users).where(eq(users.id, ctx.user.id));
+        if (!user || !user.email) throw new Error("Usuário inválido");
+
+        // Chama a função do Mercado Pago importada das linhas 27
+        const result = await createCreditsCheckout({
+          credits: input.credits,
+          price: input.price,
           userId: ctx.user.id,
-          amount: Math.round(input.price * 100), // Armazenar em cents
-          currency: 'BRL',
-          status: 'approved',
-          paymentMethod: 'credit_purchase'
+          userEmail: user.email
         });
 
-        // 2. Atualizar o saldo (creditsBonus e amount total)
-        await db.update(credits)
-          .set({
-            creditsBonus: sql`${credits.creditsBonus} + ${input.credits}`,
-            amount: sql`${credits.amount} + ${input.credits}`
-          })
-          .where(eq(credits.userId, ctx.user.id));
-
-        return { success: true, message: "Créditos adicionados!" };
+        // Retorna o init_point para o frontend redirecionar
+        return result;
       }),
 
     /**
      * ✅ UPGRADE DE PLANO
      */
     createSubscriptionCheckout: protectedProcedure
-    .input(z.object({
-      planId: z.union([z.number(), z.string()]),
-      billingPeriod: z.enum(['monthly', 'yearly']).default('monthly'),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Conexão com o banco falhou");
+      .input(z.object({
+        planId: z.union([z.number(), z.string()]),
+        billingPeriod: z.enum(['monthly', 'yearly']).default('monthly'),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Conexão com o banco falhou");
 
-      const targetPlanId = Number(input.planId);
-      const [targetPlan] = await db.select().from(plans).where(eq(plans.id, targetPlanId));
-      if (!targetPlan) throw new Error('Plano destino não encontrado');
+        const targetPlanId = Number(input.planId);
+        const [targetPlan] = await db.select().from(plans).where(eq(plans.id, targetPlanId));
+        if (!targetPlan) throw new Error('Plano destino não encontrado');
 
-      const amount = input.billingPeriod === 'yearly' ? targetPlan.priceYearly : targetPlan.priceMonthly;
+        const amount = input.billingPeriod === 'yearly' ? targetPlan.priceYearly : targetPlan.priceMonthly;
 
-      // 1. Registrar transação
-      await db.insert(payments).values({
-        userId: ctx.user.id,
-        amount: amount,
-        currency: 'BRL',
-        status: 'approved',
-        paymentMethod: 'plan_transition'
-      });
+        // 1. Registrar transação
+        await db.insert(payments).values({
+          userId: ctx.user.id,
+          amount: amount,
+          currency: 'BRL',
+          status: 'approved',
+          paymentMethod: 'plan_transition'
+        });
 
-      // 2. Atualizar Assinatura
-      const intervalPeriod = input.billingPeriod === 'yearly' ? '1 year' : '1 month';
-      await db.update(subscriptions)
-        .set({
-          planId: targetPlanId,
-          billingPeriod: input.billingPeriod,
-          updatedAt: new Date(),
-          endDate: sql`NOW() + ${sql.raw(`interval '${intervalPeriod}'`)}`,
-          status: 'active'
-        })
-        .where(eq(subscriptions.userId, ctx.user.id));
+        // 2. Atualizar Assinatura
+        const intervalPeriod = input.billingPeriod === 'yearly' ? '1 year' : '1 month';
+        await db.update(subscriptions)
+          .set({
+            planId: targetPlanId,
+            billingPeriod: input.billingPeriod,
+            updatedAt: new Date(),
+            endDate: sql`NOW() + ${sql.raw(`interval '${intervalPeriod}'`)}`,
+            status: 'active'
+          })
+          .where(eq(subscriptions.userId, ctx.user.id));
 
-      // 3. Atualizar Créditos (CORREÇÃO DA SOMA SQL)
-      // Usamos cast explícito para garantir que o Postgres trate os inputs como inteiros
-      await db.update(credits)
-        .set({
-          creditsInitial: targetPlan.creditsInitial,
-          creditsDaily: targetPlan.creditsDaily,
-          expiresAt: sql`NOW() + interval '30 days'`, 
-          amount: sql`(${targetPlan.creditsInitial}::integer + ${targetPlan.creditsDaily}::integer + ${credits.creditsBonus})`
-        })
-        .where(eq(credits.userId, ctx.user.id));
+        // 3. Atualizar Créditos (CORREÇÃO DA SOMA SQL)
+        // Usamos cast explícito para garantir que o Postgres trate os inputs como inteiros
+        await db.update(credits)
+          .set({
+            creditsInitial: targetPlan.creditsInitial,
+            creditsDaily: targetPlan.creditsDaily,
+            expiresAt: sql`NOW() + interval '30 days'`,
+            amount: sql`(${targetPlan.creditsInitial}::integer + ${targetPlan.creditsDaily}::integer + ${credits.creditsBonus})`
+          })
+          .where(eq(credits.userId, ctx.user.id));
 
-      return { success: true, newPlanName: targetPlan.displayName };
-    }),
+        return { success: true, newPlanName: targetPlan.displayName };
+      }),
   }),
 
   chatbot: router({

@@ -1,13 +1,17 @@
-import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
+import { MercadoPagoConfig, Preference, Payment, PreApproval } from 'mercadopago';
 
 // Inicializar cliente Mercado Pago (Lazy)
 let client: MercadoPagoConfig | null = null;
 let preference: Preference | null = null;
 let payment: Payment | null = null;
+let preapproval: PreApproval | null = null;
+
+// Use APP_URL se definido, senão constrói a URL do Vercel (que vem sem https://), ou fallback para localhost
+const BASE_URL = process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://unobstructed-speculatively-ricky.ngrok-free.dev');
 
 function getMercadoPago() {
   if (!client) {
-    const token = process.env.MERCADOPAGO_ACCESS_TOKEN || '';
+    const token = process.env.MP_ACCESS_TOKEN || '';
     if (!token) console.warn("[MercadoPago] Token não configurado!");
 
     client = new MercadoPagoConfig({
@@ -16,73 +20,57 @@ function getMercadoPago() {
     });
     preference = new Preference(client);
     payment = new Payment(client);
+    preapproval = new PreApproval(client);
   }
-  return { client, preference: preference!, payment: payment! };
+  return { client, preference: preference!, payment: payment!, preapproval: preapproval! };
 }
 
 /**
- * Criar preferência de pagamento para assinatura
+ * Criar assinatura recorrente (PreApproval)
+ * "Netflix Style" - Cobrança automática
  */
 export async function createSubscriptionCheckout(params: {
   planId: number;
   planName: string;
   price: number;
-  duration: number;
+  duration: number; // Ignorado na lógica de recorrência, usado apenas se necessário
   billingPeriod: 'monthly' | 'yearly';
   userId: number;
   userEmail: string;
 }) {
-  const { planId, planName, price, duration, billingPeriod, userId, userEmail } = params;
+  const { planId, planName, price, billingPeriod, userId, userEmail } = params;
 
   try {
-    const preferenceData = {
-      items: [
-        {
-          id: `plan-${planId}`,
-          title: `Assinatura ${planName} - GNOSIS AI`,
-          description: `Plano ${planName} ${billingPeriod === 'yearly' ? 'anual' : 'mensal'} com renovação automática`,
-          quantity: 1,
-          unit_price: price,
-          currency_id: 'BRL',
-        },
-      ],
-      payer: {
-        email: userEmail,
-      },
-      back_urls: {
-        success: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/payment/success',
-        failure: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/payment/failure',
-        pending: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/payment/pending',
-      },
-      notification_url: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/api/webhooks/mercadopago',
-      metadata: {
-        user_id: userId,
-        plan_id: planId,
-        type: 'subscription',
-        duration: duration,
-        billing_period: billingPeriod,
-      },
-      statement_descriptor: 'GNOSIS AI',
-      external_reference: `sub-${userId}-${planId}-${Date.now()}`,
-      payment_methods: {
-        excluded_payment_methods: billingPeriod === 'yearly' ? [{ id: 'pix' }] : [], // PIX apenas para pagamentos mensais
-        excluded_payment_types: [], // Aceitar todos os tipos de pagamento (cartão, débito, boleto, etc)
-        installments: 12, // Permitir parcelamento em até 12x
-        default_installments: 1,
-      },
-    };
+    const { preapproval } = getMercadoPago();
 
-    const { preference } = getMercadoPago();
-    const response = await preference.create({ body: preferenceData });
+    const frequency = billingPeriod === 'yearly' ? 12 : 1;
+    const frequencyType = 'months';
+
+    const response = await preapproval.create({
+      body: {
+        reason: `Assinatura ${planName} - GNOSIS AI`,
+        auto_recurring: {
+          frequency: frequency,
+          frequency_type: frequencyType,
+          transaction_amount: price,
+          currency_id: 'BRL',
+          // billing_day e billing_day_proportional removidos para evitar erro de TS
+          // O padrão é cobrar no momento da criação
+        },
+        payer_email: userEmail,
+        back_url: `${BASE_URL}/dashboard?payment=success`,
+        external_reference: `sub-${userId}-${planId}-${Date.now()}`, // Identificador para Webhook
+      }
+    });
 
     return {
       id: response.id,
-      init_point: response.init_point, // URL para checkout
-      sandbox_init_point: response.sandbox_init_point, // URL para testes
+      init_point: response.init_point!, // URL para o fluxo de assinatura
+      // sandbox_init_point não existe no tipo PreApprovalResponse, usamos init_point padrão
     };
   } catch (error) {
-    console.error('[MercadoPago] Erro ao criar checkout de assinatura:', error);
-    throw new Error('Falha ao criar checkout de pagamento');
+    console.error('[MercadoPago] Erro ao criar assinatura recorrente:', error);
+    throw new Error('Falha ao criar assinatura autom\u00e1tica');
   }
 }
 
@@ -113,11 +101,11 @@ export async function createCreditsCheckout(params: {
         email: userEmail,
       },
       back_urls: {
-        success: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/payment/success',
-        failure: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/payment/failure',
-        pending: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/payment/pending',
+        success: `${BASE_URL}/dashboard?payment=success`,
+        failure: `${BASE_URL}/dashboard?payment=failure`,
+        pending: `${BASE_URL}/dashboard?payment=pending`,
       },
-      notification_url: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/api/webhooks/mercadopago',
+      notification_url: `${BASE_URL}/api/webhooks/mercadopago`,
       metadata: {
         user_id: userId,
         credits: credits,
@@ -176,11 +164,11 @@ export async function createManualPaymentCheckout(params: {
         email: userEmail,
       },
       back_urls: {
-        success: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/payment/success',
-        failure: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/payment/failure',
-        pending: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/payment/pending',
+        success: `${BASE_URL}/dashboard?payment=success`,
+        failure: `${BASE_URL}/dashboard?payment=failure`,
+        pending: `${BASE_URL}/dashboard?payment=pending`,
       },
-      notification_url: 'https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/api/webhooks/mercadopago',
+      notification_url: `${BASE_URL}/api/webhooks/mercadopago`,
       metadata: {
         user_id: userId,
         plan_id: planId,

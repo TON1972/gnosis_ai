@@ -1,111 +1,246 @@
-import { processWebhook } from '../mercadopago';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { getDb } from '../db';
-import { subscriptions, creditTransactions } from '../../drizzle/schema';
-import { eq } from 'drizzle-orm';
+import { subscriptions, creditTransactions, payments, credits, plans } from '../../drizzle/schema';
+import { eq, sql, desc, and } from 'drizzle-orm';
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 
-// Lógica agnóstica de framework para processar o webhook
-export async function processWebhookLogic(body: any): Promise<{ status: number, body: any }> {
-  try {
-    console.log('[Webhook] Recebido webhook do Mercado Pago:', body);
+const mpToken = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN || '';
+const client = new MercadoPagoConfig({ accessToken: mpToken });
 
-    const webhookData = await processWebhook(body);
-
-    if (!webhookData) {
-      return { status: 200, body: { received: true } };
-    }
-
-    const { type, status, metadata, externalReference } = webhookData;
-
-    // Processar apenas pagamentos aprovados
-    if (status !== 'approved') {
-      console.log(`[Webhook] Pagamento ${status}, ignorando`);
-      return { status: 200, body: { received: true } };
-    }
-
-    const db = await getDb();
-    if (!db) {
-      throw new Error('Database not available');
-    }
-
-    // Processar baseado no tipo
-    if (metadata.type === 'subscription') {
-      // Atualizar assinatura do usuário
-      const userId = metadata.user_id;
-      const planId = metadata.plan_id;
-      const duration = metadata.duration || 1; // Duração em meses (1 = mensal, 12 = anual)
-      const billingPeriod = metadata.billing_period || 'monthly';
-
-      // Calcular data de término baseada na duração
-      const daysToAdd = duration * 30; // Aproximadamente 30 dias por mês
-      const endDate = new Date(Date.now() + daysToAdd * 24 * 60 * 60 * 1000);
-
-      // Verificar se já existe assinatura ativa
-      const existingSubscription = await db
-        .select()
-        .from(subscriptions)
-        .where(eq(subscriptions.userId, userId))
-        .limit(1);
-
-      if (existingSubscription.length > 0) {
-        // Atualizar assinatura existente
-        await db
-          .update(subscriptions)
-          .set({
-            planId: planId,
-            status: 'active',
-            endDate: endDate,
-          })
-          .where(eq(subscriptions.userId, userId));
-      } else {
-        // Criar nova assinatura
-        await db.insert(subscriptions).values({
-          userId: userId,
-          planId: planId,
-          status: 'active',
-          endDate: endDate,
-        });
-      }
-
-      console.log(`[Webhook] Assinatura ${billingPeriod} atualizada para usuário ${userId}, plano ${planId}, válida até ${endDate.toISOString()}`);
-    } else if (metadata.type === 'credits') {
-      // Adicionar créditos avulsos
-      const userId = metadata.user_id;
-      const credits = metadata.credits;
-
-      await db.insert(creditTransactions).values({
-        userId: userId,
-        amount: credits,
-        type: 'bonus',
-        description: `Compra de ${credits} créditos avulsos`,
-      });
-
-      console.log(`[Webhook] ${credits} créditos adicionados para usuário ${userId}`);
-    }
-
-    return { status: 200, body: { received: true, processed: true } };
-  } catch (error) {
-    console.error('[Webhook] Erro ao processar webhook:', error);
-    return { status: 500, body: { error: 'Internal server error' } };
-  }
-}
-
-/**
- * Handler para webhooks do Mercado Pago (Express)
- */
 export async function handleMercadoPagoWebhook(req: ExpressRequest, res: ExpressResponse) {
-  const result = await processWebhookLogic(req.body);
-  res.status(result.status).json(result.body);
+    try {
+        console.log("🔔 [Webhook] Recebido:", JSON.stringify(req.body, null, 2));
+        await processPaymentLogic(req.body);
+        res.setHeader("ngrok-skip-browser-warning", "true");
+        return res.status(200).send("OK");
+    } catch (error: any) {
+        console.error("❌ [Webhook Express Error]:", error.message);
+        return res.status(200).send("OK");
+    }
 }
 
-/**
- * Handler para webhooks do Mercado Pago (Vercel Serverless / Standard Request)
- */
-export async function handleMercadoPagoWebhookStandard(req: Request): Promise<Response> {
-  const body = await req.json();
-  const result = await processWebhookLogic(body);
-  return new Response(JSON.stringify(result.body), {
-    status: result.status,
-    headers: { 'Content-Type': 'application/json' }
-  });
+export async function handleMercadoPagoWebhookStandard(req: Request) {
+    try {
+        const body = await req.json();
+        console.log("🔔 [Webhook Standard] Recebido:", JSON.stringify(body, null, 2));
+        await processPaymentLogic(body);
+        return new Response("OK", {
+            status: 200,
+            headers: { "ngrok-skip-browser-warning": "true" }
+        });
+    } catch (error: any) {
+        console.error("❌ [Webhook Standard Error]:", error.message);
+        return new Response("OK", { status: 200 });
+    }
+}
+
+export async function processPaymentLogic(body: any) {
+    const { type, data } = body;
+
+    // Suporte a diferentes formatos de webhook (alguns enviam type='payment', outros topic='payment')
+    const eventType = type || body.topic;
+
+    // Suporte a eventos de assinatura (criação/aprovação)
+    if (eventType === 'subscription_preapproval') {
+        const preapprovalId = String(data?.id || body.resource);
+        console.log(`✅ [Webhook] Assinatura criada/atualizada. ID: ${preapprovalId}`);
+        // Aqui poderíamos ativar a assinatura imediatamente se já não estiver
+        return;
+    }
+
+    if (eventType !== "payment") return;
+
+    const paymentId = String(data?.id || body.resource);
+    if (!paymentId) {
+        console.error("❌ Erro: Webhook sem Payment ID.");
+        return;
+    }
+
+    const paymentClient = new Payment(client);
+    const paymentDetails = await paymentClient.get({ id: paymentId });
+
+    if (paymentDetails.status === "approved") {
+        const database = await getDb();
+        if (!database) return;
+
+        const meta = paymentDetails.metadata || {};
+        const externalRef = paymentDetails.external_reference || "";
+
+        // ✅ LÓGICA DE RECUPERAÇÃO DE USER ID
+        let userId = Number(meta.user_id);
+
+        // ... (lógica de extração de userID mantida pelos trechos anteriores, mas vamos reforçar)
+        if (isNaN(userId) && externalRef) {
+            const parts = externalRef.split('-');
+            if (parts.length >= 2 && !isNaN(Number(parts[1]))) {
+                userId = Number(parts[1]);
+            }
+        }
+
+        if (!userId || isNaN(userId)) {
+            console.error(`❌ Erro: User ID não identificado.`);
+            return;
+        }
+
+        // ✅ TENTA RECUPERAR ASSINATURA ATIVA
+        let subscriptionId: number | null = null;
+        const currentSub = await database.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
+        if (currentSub.length > 0) {
+            subscriptionId = currentSub[0].id;
+        }
+
+        // 3. IDENTIFICAÇÃO DO TIPO (ANTECIPADA PARA O INSERT)
+        const hasCreditsMeta = meta.credits !== undefined && meta.credits !== null;
+        const isSubscriptionRef = externalRef.startsWith('sub-');
+        const isSubscription = (meta.type === 'subscription' || isSubscriptionRef) && !hasCreditsMeta;
+        const isManualSubscription = meta.type === 'manual_subscription';
+        const isCredits = hasCreditsMeta || meta.type === 'credits' || externalRef.startsWith('credits-');
+
+        let transactionType = 'unknown';
+        let creditsAmount = 0;
+
+        if (isCredits) {
+            transactionType = 'credit';
+            // Tenta pegar amount (repetindo lógica abaixo)
+            let amountToAdd = Number(meta.credits || meta.target_id);
+            if ((!amountToAdd || isNaN(amountToAdd)) && externalRef) {
+                const parts = externalRef.split('-');
+                if (parts.length >= 3 && parts[0] === 'credits' && !isNaN(Number(parts[2]))) {
+                    amountToAdd = Number(parts[2]);
+                }
+            }
+            creditsAmount = amountToAdd || 0;
+        } else if (isSubscription) {
+            const period = meta.billing_period || meta.billingPeriod;
+            transactionType = period === 'yearly' ? 'plan_yearly' : 'plan_monthly';
+        } else if (isManualSubscription) {
+            transactionType = 'plan_manual';
+        }
+
+        // 1. REGISTRA O PAGAMENTO (Atualizado com novos campos)
+        await database.insert(payments).values({
+            userId: userId,
+            subscriptionId: subscriptionId,
+            amount: Math.round((paymentDetails.transaction_amount || 0) * 100),
+            currency: 'BRL',
+            status: 'approved',
+            paymentMethod: paymentDetails.payment_method_id,
+            mercadoPagoId: paymentId,
+            externalId: externalRef,
+            // ✅ NOVOS CAMPOS
+            type: transactionType,
+            creditsAmount: creditsAmount,
+            createdAt: new Date()
+        } as any).onConflictDoUpdate({
+            target: [payments.id],
+            set: { status: 'approved', mercadoPagoId: paymentId } as any
+        }).catch((err) => console.error("Erro ao salvar pagamento:", err));
+
+        // 2. CREDITS (Type safety fix)
+        await database.insert(credits)
+            .values({
+                userId,
+                amount: 0,
+                creditsBonus: 0,
+                creditsInitial: 0,
+                creditsDaily: 0,
+                type: 'initial'
+            } as any)
+            .onConflictDoNothing();
+
+        // 3. LÓGICA DE ATUALIZAÇÃO (Reusa as variáveis definidas acima)
+        console.log(`[Debug] Type Check: Sub=${isSubscription}, Manual=${isManualSubscription}, Credits=${isCredits}`);
+
+        // --- FLUXO DE PLANOS ---
+        if (isSubscription || isManualSubscription) {
+            let planId = Number(meta.plan_id || meta.target_id);
+
+            // Fallback: Extrair Plan ID do external_reference (sub-UserID-PlanID-Date)
+            if (!planId && isSubscriptionRef) {
+                const parts = externalRef.split('-');
+                if (parts.length >= 3 && !isNaN(Number(parts[2]))) {
+                    planId = Number(parts[2]);
+                    console.log(`[Debug] PlanID extraído do ExternalRef: ${planId}`);
+                }
+            }
+
+            if (!planId) {
+                console.error("❌ Erro: Plan ID não encontrado.");
+                return;
+            }
+
+            const [plan] = await database.select().from(plans).where(eq(plans.id, planId));
+
+            if (plan) {
+                // Se for 'yearly', adiciona 1 ano, senão 1 mês
+                // Verifica tanto 'billing_period' quanto 'billingPeriod'
+                const billingPeriod = meta.billing_period || meta.billingPeriod || 'monthly';
+                const interval = billingPeriod === 'yearly' ? '1 year' : '1 month';
+
+                await database.update(subscriptions)
+                    .set({
+                        planId,
+                        status: 'active',
+                        billingPeriod: billingPeriod,
+                        updatedAt: new Date(),
+                        lastPaymentDate: new Date(), // ✅ Registra a data do pagamento
+                        // Apenas atualiza endDate se estiver expirado ou se for uma nova compra explícita
+                        // Mas como é webhook de aprovação, renovamos o período
+                        endDate: sql`NOW() + ${sql.raw(`interval '${interval}'`)}`
+                    } as any)
+                    .where(eq(subscriptions.userId, userId));
+
+                // Atualiza os créditos BASE do plano
+                await database.update(credits)
+                    .set({
+                        creditsInitial: plan.creditsInitial,
+                        creditsDaily: plan.creditsDaily,
+                        // Recalcula o total mantendo os bônus acumulados
+                        amount: sql`(${plan.creditsInitial} + ${plan.creditsDaily} + COALESCE(${credits.creditsBonus}, 0))`
+                    })
+                    .where(eq(credits.userId, userId));
+
+                console.log(`✅ Plano ${plan.displayName} ativado para User ${userId}.`);
+            }
+        }
+
+        // --- FLUXO DE CRÉDITOS AVULSOS ---
+        else if (isCredits) {
+            // Tenta pegar amount de 'credits' (novo) ou 'target_id' (antigo)
+            let amountToAdd = Number(meta.credits || meta.target_id);
+
+            // Fallback: Se não achar no metadata, tenta extrair do external_reference (ex: credits-9-6000-123123)
+            if ((!amountToAdd || isNaN(amountToAdd)) && externalRef) {
+                const parts = externalRef.split('-');
+                // Formato esperado: credits-{userId}-{amount}-{timestamp}
+                // Logo, parts[0]=credits, parts[1]=userId, parts[2]=amount
+                if (parts.length >= 3 && parts[0] === 'credits' && !isNaN(Number(parts[2]))) {
+                    amountToAdd = Number(parts[2]);
+                    console.log(`[Debug] Amount extraído do ExternalRef: ${amountToAdd}`);
+                }
+            }
+
+            // Fallback 2: Se ainda assim falhar, tenta estimar pelo valor pago (ex: R$1 = 10 créditos - apenas exemplo)
+            // Mas idealmente o metadado ou external_reference deve vir correto.
+
+            if (amountToAdd > 0) {
+                await database.update(credits)
+                    .set({
+                        creditsBonus: sql`COALESCE(${credits.creditsBonus}, 0) + ${amountToAdd}`,
+                        amount: sql`COALESCE(${credits.amount}, 0) + ${amountToAdd}`
+                    })
+                    .where(eq(credits.userId, userId));
+
+                await database.insert(creditTransactions).values({
+                    userId,
+                    amount: amountToAdd,
+                    type: 'bonus',
+                    description: `Recarga via Mercado Pago: ${amountToAdd} créditos`
+                });
+                console.log(`✅ ${amountToAdd} Créditos adicionados para User ${userId}.`);
+            } else {
+                console.warn(`⚠️ Webhook de créditos recebido mas quantidade zerada ou não identificada. Meta: ${JSON.stringify(meta)}`);
+            }
+        }
+    }
 }

@@ -67,7 +67,7 @@
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.453.0",
-    "mercadopago": "^2.9.0",
+    "mercadopago": "^2.11.0",
     "mysql2": "^3.16.0",
     "nanoid": "^5.1.5",
     "next-auth": "^4",

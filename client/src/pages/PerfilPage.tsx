@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import NoCreditsModal from "@/components/NoCreditsModal";
+import PaymentHistory from "@/components/PaymentHistory";
 import { User, CreditCard, Package, Zap, Calendar, Gift, Info, TrendingUp } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -60,7 +61,7 @@ export default function PerfilPage() {
                 <h1 className="block md:hidden text-3xl font-bold text-[#d4af37]">GNOSIS AI</h1>
               </span>
             </Link>
-            
+
             {/* Ícone de Perfil e Menu Hambúrguer */}
             <div className="flex items-center gap-3">
               <Link href="/perfil">
@@ -68,8 +69,8 @@ export default function PerfilPage() {
                   <User className="w-6 h-6" />
                 </button>
               </Link>
-              
-              <DashboardMobileMenu 
+
+              <DashboardMobileMenu
                 user={user}
                 onLogout={logout}
               />
@@ -120,7 +121,7 @@ export default function PerfilPage() {
           {/* Painel de Créditos - Igual ao Dashboard */}
           <Card className="bg-gradient-to-br from-[#FFFACD] to-[#F0E68C] border-4 border-[#d4af37] p-6 mb-6">
             <h2 className="text-2xl font-bold text-[#1e3a5f] mb-4">Seus Créditos</h2>
-            
+
             {/* Total Credits Display */}
             <div className="bg-white/80 rounded-xl p-6 mb-4 border-2 border-[#d4af37]">
               <div className="text-center">
@@ -180,7 +181,7 @@ export default function PerfilPage() {
               <div className="flex items-start gap-2">
                 <Info className="w-4 h-4 text-[#1e3a5f] mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-[#8b6f47]">
-                  <strong>Ordem de uso:</strong> Diários → Iniciais → Avulsos. 
+                  <strong>Ordem de uso:</strong> Diários → Iniciais → Avulsos.
                   Créditos diários renovam todo dia, iniciais expiram em 30 dias, avulsos são permanentes.
                 </p>
               </div>
@@ -201,7 +202,7 @@ export default function PerfilPage() {
               <TrendingUp className="w-6 h-6 text-[#d4af37]" />
               <h2 className="text-2xl font-bold text-[#d4af37]">Consumo dos Últimos 30 Dias</h2>
             </div>
-            
+
             {isLoadingHistory ? (
               <div className="h-64 flex items-center justify-center">
                 <div className="text-[#d4af37]">Carregando histórico...</div>
@@ -211,8 +212,8 @@ export default function PerfilPage() {
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={usageHistory}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#d4af37" opacity={0.3} />
-                    <XAxis 
-                      dataKey="date" 
+                    <XAxis
+                      dataKey="date"
                       stroke="#1e3a5f"
                       tick={{ fill: '#1e3a5f', fontSize: 12 }}
                       tickFormatter={(value) => {
@@ -220,14 +221,14 @@ export default function PerfilPage() {
                         return `${date.getDate()}/${date.getMonth() + 1}`;
                       }}
                     />
-                    <YAxis 
+                    <YAxis
                       stroke="#1e3a5f"
                       tick={{ fill: '#1e3a5f', fontSize: 12 }}
                       label={{ value: 'Créditos Usados', angle: -90, position: 'insideLeft', fill: '#1e3a5f' }}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#FFFACD', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#FFFACD',
                         border: '2px solid #d4af37',
                         borderRadius: '8px'
                       }}
@@ -237,17 +238,17 @@ export default function PerfilPage() {
                       }}
                       formatter={(value: number) => [`${value} créditos`, 'Uso']}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="usage" 
-                      stroke="#1e3a5f" 
+                    <Line
+                      type="monotone"
+                      dataKey="usage"
+                      stroke="#1e3a5f"
                       strokeWidth={3}
                       dot={{ fill: '#d4af37', r: 4 }}
                       activeDot={{ r: 6, fill: '#d4af37' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
-                
+
                 <div className="mt-4 p-3 bg-[#FFFACD] rounded-lg border-2 border-[#d4af37]">
                   <p className="text-sm text-[#1e3a5f] text-center">
                     <strong>Total consumido nos últimos 30 dias:</strong> {usageHistory.reduce((sum, day) => sum + day.usage, 0).toLocaleString('pt-BR')} créditos
@@ -260,6 +261,9 @@ export default function PerfilPage() {
               </div>
             )}
           </Card>
+
+          {/* Histórico de Pagamentos */}
+          <PaymentHistory />
 
           {/* Botões de Ação */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -286,7 +290,7 @@ export default function PerfilPage() {
       </main>
 
       {/* Modal de Planos e Créditos */}
-      <NoCreditsModal 
+      <NoCreditsModal
         open={showModal}
         onClose={() => setShowModal(false)}
       />
