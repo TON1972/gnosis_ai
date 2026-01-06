@@ -9,7 +9,7 @@ let preapproval: PreApproval | null = null;
 // Use APP_URL se definido, senão constrói a URL do Vercel (que vem sem https://), ou fallback para localhost
 const BASE_URL = process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://unobstructed-speculatively-ricky.ngrok-free.dev');
 
-function getMercadoPago() {
+export function getMercadoPago() {
   if (!client) {
     const token = process.env.MP_ACCESS_TOKEN || '';
     if (!token) console.warn("[MercadoPago] Token não configurado!");

@@ -1,11 +1,10 @@
-import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { getMercadoPago } from '../mercadopago';
 import { getDb } from '../db';
 import { subscriptions, creditTransactions, payments, credits, plans } from '../../drizzle/schema';
 import { eq, sql, desc, and } from 'drizzle-orm';
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 
-const mpToken = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN || '';
-const client = new MercadoPagoConfig({ accessToken: mpToken });
+
 
 export async function handleMercadoPagoWebhook(req: ExpressRequest, res: ExpressResponse) {
     try {
@@ -56,8 +55,8 @@ export async function processPaymentLogic(body: any) {
         return;
     }
 
-    const paymentClient = new Payment(client);
-    const paymentDetails = await paymentClient.get({ id: paymentId });
+    const { payment } = getMercadoPago();
+    const paymentDetails = await payment.get({ id: paymentId });
 
     if (paymentDetails.status === "approved") {
         const database = await getDb();
