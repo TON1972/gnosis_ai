@@ -79,6 +79,13 @@ export default function Dashboard() {
               </span>
             </Link>
             <div className="flex items-center gap-3">
+              {user && (user.role === 'admin' || user.role === 'super_admin') && (
+                <Link href="/admin">
+                  <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
+                    Painel Admin
+                  </span>
+                </Link>
+              )}
               <Link href="/perfil">
                 <button className="p-2 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors">
                   <User className="w-6 h-6" />

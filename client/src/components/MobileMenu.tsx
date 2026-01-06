@@ -101,13 +101,13 @@ export default function MobileMenu({ isAuthenticated, onLogout, loginUrl, user }
                   </Link>
                 )}
 
-                {user && (user.role === 'admin' || user.role === 'super_admin') && (
+                {/* {user && (user.role === 'admin' || user.role === 'super_admin') && (
                   <Link href="admin/tools" onClick={closeMenu}>
                     <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
                       Ferramentas
                     </span>
                   </Link>
-                )}
+                )} */}
                 
                 {/* Ajuste realizado aqui para garantir a execução do logout */}
                 <button

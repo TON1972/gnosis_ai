@@ -263,14 +263,14 @@ export const appRouter = router({
         toolName: z.string(),
         input: z.string(),
         output: z.string(),
-        creditCost: z.number(), // Valor dinâmico baseado nas palavras
-        wordCount: z.number(),  // Total de palavras contadas
+        creditCost: z.number(),
+        wordCount: z.number(),
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await getValidatedDb();
 
-        // 1. Grava o estudo no histórico
-        await db.insert(savedStudies).values({
+        // 1. Grava o estudo e ARMAZENA na variável 'result'
+        const result = await db.insert(savedStudies).values({
           userId: ctx.user.id,
           toolId: input.toolId,
           toolName: input.toolName,
@@ -278,18 +278,12 @@ export const appRouter = router({
           output: input.output,
           creditCost: input.creditCost,
           wordCount: input.wordCount,
-        } as any);
+        } as any).returning({ insertedId: savedStudies.id }); // ✅ Agora 'result' existe
 
-        // 2. ✅ COMANDO DE SUBTRAÇÃO: Debita o saldo do usuário
-        // Esta função atualiza a tabela 'users' e registra a transação
-        await useCredits(
-          ctx.user.id,
-          input.creditCost, // O valor dinâmico calculado (ex: 90, 115)
-          input.toolName,
-          input.toolId
-        );
+        // 2. Debita o saldo
+        await useCredits(ctx.user.id, input.creditCost, input.toolName, input.toolId);
 
-        // 3. Cleanup: Mantém apenas os 100 últimos estudos
+        // 3. Cleanup (Mantém 100)
         const thresholdStudy = await db
           .select({ id: savedStudies.id })
           .from(savedStudies)
@@ -300,15 +294,14 @@ export const appRouter = router({
 
         if (thresholdStudy.length > 0) {
           await db.delete(savedStudies)
-            .where(
-              and(
-                eq(savedStudies.userId, ctx.user.id),
-                lt(savedStudies.id, thresholdStudy[0].id)
-              )
-            );
+            .where(and(eq(savedStudies.userId, ctx.user.id), lt(savedStudies.id, thresholdStudy[0].id)));
         }
 
-        return { success: true };
+        // ✅ Agora o result[0] vai funcionar perfeitamente
+        return { 
+          success: true, 
+          id: result[0]?.insertedId 
+        };
       }),
 
     list: protectedProcedure.query(async ({ ctx }) => {

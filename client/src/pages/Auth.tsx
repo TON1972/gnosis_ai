@@ -1,8 +1,3 @@
-/**
- * 🔐 Autenticação - GNOSIS AI
- * Login com Email/Senha ou Google + Seleção de Planos
- */
-
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -27,11 +22,9 @@ export default function Auth() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
 
-  // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
-  // Register state
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
@@ -49,10 +42,16 @@ export default function Auth() {
     if (tabParam === "register") setActiveTab("register");
   }, []);
 
+  // ✅ NOVO: Lógica de Login Social preservando o plano
+  const handleGoogleLogin = () => {
+    // Salvamos o plano escolhido para recuperar no backend após o login
+    document.cookie = `pending_plan_id=${selectedPlan}; path=/; max-age=3600`;
+    window.location.href = "/api/oauth/google";
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) return toast.error("Preencha todos os campos");
-
     setLoading(true);
     try {
       const response = await fetch("/api/login", {
@@ -60,16 +59,15 @@ export default function Auth() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
       });
-
       const data = await response.json();
       if (data.success) {
-        toast.success("Bem-vindo de volta!");
+        toast.success("Bem-vindo!");
         window.location.href = "/dashboard";
       } else {
         toast.error(data.message || "Credenciais inválidas");
       }
     } catch (error) {
-      toast.error("Erro ao conectar com o servidor.");
+      toast.error("Erro no servidor.");
     } finally {
       setLoading(false);
     }
@@ -92,10 +90,9 @@ export default function Auth() {
           planId: Number(selectedPlan),
         }),
       });
-
       const data = await response.json();
       if (data.success) {
-        toast.success("Conta criada com sucesso!");
+        toast.success("Conta criada!");
         window.location.href = "/dashboard";
       } else {
         toast.error(data.message || "Erro ao criar conta");
@@ -131,12 +128,11 @@ export default function Auth() {
               <TabsTrigger value="register" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">Cadastrar</TabsTrigger>
             </TabsList>
 
-            {/* Google Login Only */}
             <div className="mb-6">
               <Button 
                 variant="outline" 
-                onClick={() => window.location.href = "/api/oauth/google"}
-                className="w-full border-[#d4af37]/50 bg-transparent hover:bg-[#d4af37]/10 text-[#1e3a5f] font-bold h-12"
+                onClick={handleGoogleLogin} 
+                className="w-full border-[#d4af37]/50 bg-transparent hover:bg-[#d4af37]/10 text-[#1e3a5f] font-bold h-12 transition-all active:scale-95"
               >
                 <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -150,20 +146,20 @@ export default function Auth() {
 
             <div className="relative mb-6">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-[#d4af37]/30" /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#FFFACD] px-2 text-[#1e3a5f]/60 font-bold">Ou E-mail</span></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#FFFACD] px-2 text-[#1e3a5f]/60 font-bold">Ou via E-mail</span></div>
             </div>
 
             <TabsContent value="login" className="space-y-4">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-[#1e3a5f] font-bold">Email</Label>
-                  <Input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="border-[#d4af37]/40 bg-white/50" />
+                  <Input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="border-[#d4af37]/40 bg-white" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[#1e3a5f] font-bold">Senha</Label>
-                  <Input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="border-[#d4af37]/40 bg-white/50" />
+                  <Input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="border-[#d4af37]/40 bg-white" />
                 </div>
-                <Button type="submit" disabled={loading} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold">
+                <Button type="submit" disabled={loading} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold transition-all active:scale-95">
                   {loading ? <Loader2 className="animate-spin" /> : "Entrar e Estudar"}
                 </Button>
               </form>
@@ -173,24 +169,23 @@ export default function Auth() {
               <form onSubmit={handleRegister} className="space-y-3">
                 <div className="space-y-1">
                   <Label className="text-[#1e3a5f] font-bold">Nome Completo</Label>
-                  <Input value={registerName} onChange={(e) => setRegisterName(e.target.value)} className="border-[#d4af37]/40 bg-transparent h-10" />
+                  <Input value={registerName} onChange={(e) => setRegisterName(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-[#1e3a5f] font-bold">Email</Label>
-                    <Input type="email" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} className="border-[#d4af37]/40 bg-white/50 h-10" />
+                    <Input type="email" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-[#1e3a5f] font-bold">Plano Desejado</Label>
                     <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                      <SelectTrigger className="border-[#d4af37]/40 bg-transparent h-10">
+                      <SelectTrigger className="border-[#d4af37]/40 bg-white h-10">
                         <SelectValue placeholder="Plano" />
                       </SelectTrigger>
-                      {/* ✅ Fundo branco/bege definido no SelectContent para não ficar transparente */}
-                      <SelectContent className="bg-[#FFFACD] border-[#d4af37] shadow-xl">
+                      <SelectContent className="bg-white border-[#d4af37]">
                         {plans?.map((p) => (
-                          <SelectItem key={p.id} value={p.id.toString()} className="font-bold text-[#1e3a5f] hover:bg-[#d4af37]/10">
+                          <SelectItem key={p.id} value={p.id.toString()} className="font-bold text-[#1e3a5f]">
                             {p.displayName.toUpperCase()}
                           </SelectItem>
                         ))}
@@ -202,23 +197,22 @@ export default function Auth() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-[#1e3a5f] font-bold">Senha</Label>
-                    <Input type="password" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} className="border-[#d4af37]/40 bg-white/50 h-10" />
+                    <Input type="password" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-[#1e3a5f] font-bold">Confirmar</Label>
-                    <Input type="password" value={registerConfirmPassword} onChange={(e) => setRegisterConfirmPassword(e.target.value)} className="border-[#d4af37]/40 bg-transparent h-10" />
+                    <Input type="password" value={registerConfirmPassword} onChange={(e) => setRegisterConfirmPassword(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                   </div>
                 </div>
 
                 <div className="bg-[#1e3a5f]/5 p-3 rounded-lg border border-[#d4af37]/20 flex items-start gap-2 mt-2">
                   <CheckCircle2 className="w-4 h-4 text-[#d4af37] mt-0.5" />
                   <p className="text-[10px] text-[#1e3a5f]/80 italic">
-                    Ao criar sua conta, você receberá automaticamente os créditos iniciais do plano 
-                    <strong> {plans?.find(p => p.id.toString() === selectedPlan)?.displayName}</strong>.
+                    Ao criar conta, você recebe os créditos de <strong> {plans?.find(p => p.id.toString() === selectedPlan)?.displayName}</strong>.
                   </p>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold mt-2">
+                <Button type="submit" disabled={loading} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold mt-2 shadow-lg transition-all active:scale-95">
                   {loading ? <Loader2 className="animate-spin" /> : "Criar Conta e Começar"}
                 </Button>
               </form>

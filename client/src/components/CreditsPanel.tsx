@@ -5,12 +5,11 @@ import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import NoCreditsModal from "./NoCreditsModal";
 
-// ✅ Interface definida corretamente
+// ✅ Atualizado para aceitar o tipo da aba opcionalmente
 interface CreditsPanelProps {
-  onNeedCredits?: () => void;
+  onNeedCredits?: (tab: 'plans' | 'credits') => void;
 }
 
-// ✅ Adicionado { onNeedCredits } na assinatura da função
 export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
   const { user } = useAuth();
   const [modalConfig, setModalConfig] = useState<{ open: boolean; tab: 'plans' | 'credits' }>({
@@ -37,12 +36,12 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
   const totalCredits = credits?.total || 0;
   const isLowCredits = totalCredits < 100;
 
-  // ✅ Função para abrir o modal (prioriza a prop externa, se existir)
+  // ✅ CORREÇÃO: Agora passa a 'tab' para a função externa
   const handleOpenModal = (tab: 'plans' | 'credits') => {
     if (onNeedCredits) {
-      onNeedCredits();
+      onNeedCredits(tab); // Passa a aba escolhida para o pai (ToolPage)
     } else {
-      setModalConfig({ open: true, tab });
+      setModalConfig({ open: true, tab }); // Usa o estado interno (Dashboard)
     }
   };
 
@@ -51,7 +50,7 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-4 md:mb-6">
         <div className="flex items-center gap-2 md:gap-3">
-          <div className="p-3 bg-[#1e3a5f] rounded-lg">
+          <div className="p-3 bg-[#1e3a5f] rounded-lg shadow-md">
             <Coins className="w-6 h-6 text-[#d4af37]" />
           </div>
           <div>
@@ -59,7 +58,7 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
             <p className="text-xs md:text-sm text-[#8b6f47]">
               {activePlan?.plan?.displayName || "Plano Inicial"}
               {(user?.role === 'admin' || user?.role === 'super_admin') && (
-                <span className="ml-2 px-2 py-0.5 bg-[#d4af37] text-white text-xs font-bold rounded">ADMIN</span>
+                <span className="ml-2 px-2 py-0.5 bg-[#d4af37] text-white text-[10px] font-bold rounded shadow-sm">ADMIN</span>
               )}
             </p>
           </div>
@@ -67,13 +66,13 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
       </div>
 
       {/* Total Credits Display */}
-      <div className="bg-white/80 rounded-xl p-4 md:p-6 mb-4 border-2 border-[#d4af37]">
+      <div className="bg-white/80 rounded-xl p-4 md:p-6 mb-4 border-2 border-[#d4af37] shadow-inner">
         <div className="text-center">
-          <p className="text-xs md:text-sm text-[#8b6f47] mb-2">Saldo Total</p>
-          <p className={`text-4xl md:text-5xl font-extrabold ${isLowCredits ? 'text-red-600' : 'text-[#1e3a5f]'}`}>
+          <p className="text-xs md:text-sm text-[#8b6f47] mb-2 font-bold uppercase tracking-widest">Saldo Total</p>
+          <p className={`text-4xl md:text-5xl font-black ${isLowCredits ? 'text-red-600' : 'text-[#1e3a5f]'}`}>
             {totalCredits.toLocaleString('pt-BR')}
           </p>
-          <p className="text-sm text-[#8b6f47] mt-2 font-medium">créditos disponíveis</p>
+          <p className="text-sm text-[#8b6f47] mt-2 font-bold">créditos disponíveis</p>
         </div>
       </div>
 
@@ -84,28 +83,28 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
           { label: "Iniciais", value: credits?.initial, icon: Calendar, color: "text-blue-500", expiry: credits?.initialExpiry },
           { label: "Avulsos", value: credits?.bonus, icon: Gift, color: "text-purple-500" }
         ].map((item, idx) => (
-          <div key={idx} className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-[#d4af37]/40">
+          <div key={idx} className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-[#d4af37]/40 shadow-sm">
             <div className="flex items-center gap-2">
               <item.icon className={`w-5 h-5 ${item.color}`} />
               <div className="flex flex-col">
                 <span className="text-sm font-bold text-[#1e3a5f]">{item.label}</span>
                 {item.expiry && (
-                  <span className="text-[10px] text-[#8b6f47]">
+                  <span className="text-[10px] text-[#8b6f47] font-medium">
                     Expira: {new Date(item.expiry).toLocaleDateString('pt-BR')}
                   </span>
                 )}
               </div>
             </div>
-            <span className="text-lg font-bold text-[#1e3a5f]">{item.value || 0}</span>
+            <span className="text-lg font-black text-[#1e3a5f]">{item.value || 0}</span>
           </div>
         ))}
       </div>
 
       {/* Info Box */}
-      <div className="bg-[#1e3a5f]/5 rounded-lg p-3 mb-6 border border-[#1e3a5f]/10">
+      <div className="bg-[#1e3a5f]/5 rounded-lg p-3 mb-6 border border-[#1e3a5f]/10 shadow-sm">
         <div className="flex items-start gap-2">
           <Info className="w-4 h-4 text-[#1e3a5f] mt-0.5 shrink-0" />
-          <p className="text-[11px] leading-tight text-[#8b6f47]">
+          <p className="text-[11px] leading-tight text-[#8b6f47] font-medium">
             <strong>Ordem de uso:</strong> Diários → Iniciais → Avulsos. Créditos diários renovam todo dia, iniciais expiram em 30 dias, avulsos são permanentes.
           </p>
         </div>
@@ -115,23 +114,23 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
       <div className="space-y-3">
         <Button
           onClick={() => handleOpenModal('plans')}
-          className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-12 shadow-lg font-bold flex items-center justify-center gap-2 transition-transform active:scale-95"
+          className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-12 shadow-lg font-black flex items-center justify-center gap-2 transition-all active:scale-95"
         >
           <TrendingUp className="w-5 h-5" />
-          Fazer Upgrade Agora
+          FAZER UPGRADE AGORA
         </Button>
         
         <Button
           onClick={() => handleOpenModal('credits')}
           variant="outline"
-          className="w-full border-2 border-[#d4af37] text-[#1e3a5f] hover:bg-[#d4af37]/10 h-12 font-bold flex items-center justify-center gap-2 transition-transform active:scale-95"
+          className="w-full border-2 border-[#d4af37] text-[#1e3a5f] hover:bg-[#d4af37]/10 h-12 font-black flex items-center justify-center gap-2 transition-all active:scale-95"
         >
           <ShoppingCart className="w-5 h-5" />
-          Comprar Créditos Avulsos
+          COMPRAR AVULSOS
         </Button>
       </div>
 
-      {/* Só renderiza o modal interno se não estiver vindo uma função externa */}
+      {/* Só renderiza o modal interno se não houver controle externo (Ex: no Dashboard) */}
       {!onNeedCredits && (
         <NoCreditsModal 
           open={modalConfig.open} 

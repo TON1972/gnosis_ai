@@ -232,12 +232,13 @@ export default function StudyChatPage() {
                 {/* Conteúdo Renderizado com Markdown */}
                 <article className="prose prose-sm md:prose-base max-w-none text-inherit leading-relaxed font-serif text-justify italic-quotes">
                   <ReactMarkdown
-                    components={{
-                      h3: ({...props}) => <h3 className="text-xl border-b-2 border-current/10 pb-2 mt-6 mb-4 uppercase tracking-tight" {...props} />,
-                      p: ({...props}) => <p className="mb-4" {...props} />,
-                      strong: ({...props}) => <strong className={msg.role === 'user' ? "text-[#d4af37]" : "text-[#a0522d] font-bold"} {...props} />,
-                    }}
-                  >
+                      components={{
+                        h3: ({node, ...props}) => <h3 className="text-2xl border-b border-[#d4af37]/30 pb-2 mt-8 mb-4 uppercase font-bold text-left" {...props} />,
+                        // ✅ MOBILE: text-left | DESKTOP: md:text-justify
+                        p: ({node, ...props}) => <p className="mb-4 text-left md:text-justify" {...props} />,
+                        strong: ({node, ...props}) => <strong className="text-[#a0522d] font-bold" {...props} />,
+                      }}
+                    >
                     {msg.content}
                   </ReactMarkdown>
                 </article>
