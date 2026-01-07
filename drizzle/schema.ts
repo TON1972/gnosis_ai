@@ -26,6 +26,7 @@ export const senderTypeEnum = pgEnum("senderType", ["admin", "client"]);
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).unique(),
+  supabaseId: varchar("supabaseId", { length: 255 }),
   name: text("name"),
   email: varchar("email", { length: 320 }).unique(),
   password: varchar("password", { length: 255 }),

@@ -67,30 +67,37 @@ export async function createContext(
   }
 
   // Lógica de Autenticação (Comum a ambos)
-  if (cookieHeader) {
+  // Prioriza cookie já parseado pelo Express se disponível
+  const cookies = (req as any).cookies || {};
+  let token = cookies[COOKIE_NAME];
+
+  // Se não achou em req.cookies (Ex: Vercel ou falha no parser), tenta headers
+  if (!token && cookieHeader) {
     try {
-      const cookies = Object.fromEntries(
-        cookieHeader.split("; ").map((c: string) => c.split("="))
+      const parsed = Object.fromEntries(
+        cookieHeader.split("; ").map((c: string) => {
+          const [key, ...v] = c.split("=");
+          return [key, v.join("=")];
+        })
       );
-      const token = cookies[COOKIE_NAME];
-
-      if (token) {
-        // Fallback seguro para secret
-        const secret = ENV.jwtSecret || process.env.JWT_SECRET || "sua_chave_secreta_aqui";
-
-        try {
-          const decoded = jwt.verify(token, secret) as any;
-          user = {
-            id: decoded.userId,
-            email: decoded.email,
-            role: decoded.role,
-          };
-        } catch (jwtError) {
-          // Token inválido ou expirado - ignorar silenciosamente
-        }
-      }
+      token = parsed[COOKIE_NAME];
     } catch (err) {
-      console.error("[tRPC Context] Erro ao processar cookies:", err);
+      console.error("[tRPC Context] Erro ao parsear cookie header:", err);
+    }
+  }
+
+  if (token) {
+    try {
+      // Fallback seguro para secret
+      const secret = ENV.jwtSecret || process.env.JWT_SECRET || "sua_chave_secreta_aqui";
+      const decoded = jwt.verify(token, secret) as any;
+      user = {
+        id: decoded.userId,
+        email: decoded.email,
+        role: decoded.role,
+      };
+    } catch (jwtError) {
+      // Token inválido ou expirado - ignorar silenciosamente
     }
   }
 

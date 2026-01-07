@@ -1,15 +1,16 @@
 import { Request, Response, Router } from "express";
 import jwt from "jsonwebtoken";
 import { getDb } from "./db";
-import { users } from "../shared/schema";
+import { users, plans, subscriptions, credits } from "../shared/schema";
 import { eq } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "../shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { supabaseAdmin } from "./_core/supabaseAdmin";
 
 const router = Router();
 
-const CALLBACK_URL_BASE = process.env.NODE_ENV === "development"
+const CALLBACK_URL_BASE = (process.env.NODE_ENV === "development" || !process.env.NODE_ENV)
   ? "http://localhost:3000"
   : (process.env.NEXTAUTH_URL || "https://gnosis-ai-platform.vercel.app");
 
@@ -73,12 +74,13 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
     });
 
     const userData = await userRes.json();
-    const { email, name } = userData;
-    const openId = `google:${email}`;
+    const { email, name, id: googleId } = userData; // Use Google ID
+    const openId = `google:${googleId}`;
 
     const db = await getDb();
     if (!db) throw new Error("Database connection failed");
 
+    // Verifica se usuário já existe
     const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     let authUser: AuthUser;
@@ -87,23 +89,93 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
       const dbUser = existing[0];
       authUser = { id: dbUser.id, email: dbUser.email!, name: dbUser.name, role: dbUser.role, loginMethod: dbUser.loginMethod || "google" };
     } else {
-      // ✅ Sintaxe PostgreSQL Returning
+      // 🚀 NOVO USUÁRIO: Recupera plano do cookie e cria estrutura completa
+
+      // 1. Recuperar plano pendente do cookie
+      const pendingPlanId = Number(req.cookies?.pending_plan_id || 1);
+
+      const [selectedPlan] = await db.select().from(plans).where(eq(plans.id, pendingPlanId)).limit(1);
+
+      // Fallback para plano 1 se não encontrar (segurança)
+      const safePlan = selectedPlan || (await db.select().from(plans).where(eq(plans.id, 1)).limit(1))[0];
+
+      if (!safePlan) throw new Error("Sistema sem planos configurados.");
+
+      // 2. Criar Usuário Local
+
+      // A. Sincronizar com Supabase Auth (Criar usuário lá se não existir)
+      let supabaseId = "";
+      try {
+        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          email_confirm: true,
+          user_metadata: { full_name: name }
+        });
+
+        if (authError) {
+          // Se já existe, tentamos buscar o ID por email
+          // Nota: createUser falha se email já existe.
+          const { data: listUsers } = await supabaseAdmin.auth.admin.listUsers();
+          const found = listUsers.users.find(u => u.email === email);
+          if (found) {
+            supabaseId = found.id;
+          } else {
+            console.error("Erro ao criar usuário no Supabase:", authError);
+            // Prossegue sem ID do supabase ou falha dependendo da regra de negócio
+            // Vamos deixar vazio por enquanto ou gerar um dummy se for crítico
+          }
+        } else {
+          supabaseId = authUser.user.id;
+        }
+      } catch (err) {
+        console.error("Erro ao conectar Supabase Admin:", err);
+      }
+
+      // B. Inserir no Banco Local
       const [inserted] = await db.insert(users).values({
         email,
         openId,
+        supabaseId: supabaseId || null, // Salva o ID do Supabase se recuperado
         name: name || null,
         role: "user",
         loginMethod: "google",
       }).returning();
 
-      authUser = { id: inserted.id, email, name: name || null, role: "user", loginMethod: "google" };
+      const newUserId = inserted.id;
+
+      // 3. Criar Assinatura
+      await db.insert(subscriptions).values({
+        userId: newUserId,
+        planId: safePlan.id,
+        status: "active",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      });
+
+      // 4. Criar Créditos Iniciais
+      const initial = Number(safePlan.creditsInitial ?? 0);
+      const daily = Number(safePlan.creditsDaily ?? 0);
+
+      await db.insert(credits).values({
+        userId: newUserId,
+        amount: (initial + daily).toString(),
+        creditsInitial: initial.toString(),
+        creditsDaily: daily.toString(),
+        type: safePlan.name === 'alianca' ? 'alianca' : 'initial',
+        createdAt: new Date(),
+      } as any); // Type assertion if needed based on schema
+
+      authUser = { id: newUserId, email, name: name || null, role: "user", loginMethod: "google" };
+
+      // Limpa o cookie de plano
+      res.clearCookie('pending_plan_id');
     }
 
     setSessionCookie(res, req, generateJWT(authUser));
     res.redirect("/dashboard");
-  } catch (error) {
+  } catch (error: any) {
     console.error("[OAuth Error]:", error);
-    res.redirect("/auth?error=google_callback_failed");
+    res.redirect(`/auth?error=${encodeURIComponent(error.message || "Unknown error")}`);
   }
 });
 

@@ -5,13 +5,13 @@ dotenv.config();
 
 import cors from "cors";
 import express from "express";
-import cookieParser from "cookie-parser"; 
+import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import jwt from "jsonwebtoken";
 
 import { appRouter } from "../routers";
-import { oauthRouter } from "../oauth"; 
+import { oauthRouter } from "../oauth";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleMercadoPagoWebhook } from "./webhookHandler";
@@ -20,7 +20,7 @@ import { getSessionCookieOptions } from "./cookies";
 
 // Integração com Banco de Dados e Schema
 import { getDb } from "../db";
-import { users, credits, plans, subscriptions } from "../../shared/schema"; 
+import { users, credits, plans, subscriptions } from "../../shared/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
@@ -49,7 +49,7 @@ app.post("/api/register", async (req, res) => {
   try {
     const { name, email, password, planId } = req.body;
     const db = await getDb();
-    
+
     if (!db) return res.status(500).json({ success: false, message: "Banco indisponível." });
 
     // 1. Criar no Supabase (Admin API)
@@ -112,7 +112,7 @@ app.post("/api/register", async (req, res) => {
     const cookieOptions = getSessionCookieOptions(req);
     res.cookie(COOKIE_NAME, token, {
       ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000, 
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     console.log(`✅ Registro e Login Automático concluídos: ${email}`);
@@ -131,7 +131,7 @@ app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const db = await getDb();
-    
+
     if (!db) return res.status(500).json({ success: false, message: "Erro de banco" });
 
     // Autenticação via Supabase
@@ -157,7 +157,7 @@ app.post("/api/login", async (req, res) => {
     const cookieOptions = getSessionCookieOptions(req);
     res.cookie(COOKIE_NAME, token, {
       ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000, 
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.status(200).json({ success: true });
@@ -169,92 +169,7 @@ app.post("/api/login", async (req, res) => {
 /**
  * 🚀 CALLBACK GOOGLE OAUTH (Corrigido para JWT + Supabase)
  */
-app.get("/api/oauth/google/callback", async (req, res) => {
-  try {
-    const { code } = req.query;
-    if (!code) throw new Error("Código de autorização não fornecido");
 
-    const db = await getDb(); // ✅ Resolve erro 'db' não encontrado
-    if (!db) throw new Error("Banco indisponível");
-
-    // 1. Trocar código pela sessão do Supabase (O Supabase cuida do Google)
-    const { data: authData, error: authError } = await supabaseAdmin.auth.exchangeCodeForSession(String(code));
-    
-    if (authError || !authData.user) {
-      console.error("Erro Supabase OAuth:", authError);
-      return res.redirect("/auth?error=google_auth_failed");
-    }
-
-    const { user: sUser } = authData;
-
-    // 2. Verificar se o usuário já existe no nosso banco local
-    let [localUser] = await db.select().from(users).where(eq(users.email, sUser.email!)).limit(1);
-
-    if (!localUser) {
-      // 🚀 NOVO USUÁRIO GOOGLE: Criar fluxo completo identico ao handleRegister
-      
-      // Recuperar plano pendente do cookie enviado pelo frontend
-      const pendingPlanId = Number(req.cookies.pending_plan_id || 1);
-      const [selectedPlan] = await db.select().from(plans).where(eq(plans.id, pendingPlanId)).limit(1);
-      
-      if (!selectedPlan) throw new Error("Plano pendente inválido");
-
-      // A. Criar Usuário Local
-      const [newUser] = await db.insert(users).values({
-        name: sUser.user_metadata.full_name || sUser.email?.split('@')[0],
-        email: sUser.email!,
-        supabaseId: sUser.id,
-        openId: `google:${sUser.id}`,
-        loginMethod: 'google',
-        role: 'user',
-      } as any).returning();
-
-      // B. Criar Assinatura
-      await db.insert(subscriptions).values({
-        userId: newUser.id,
-        planId: selectedPlan.id,
-        status: "active",
-        startDate: new Date(),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      });
-
-      // C. Inserir Créditos Iniciais
-      const initial = Number(selectedPlan.creditsInitial ?? 0);
-      const daily = Number(selectedPlan.creditsDaily ?? 0);
-
-      await db.insert(credits).values({
-        userId: newUser.id,
-        amount: (initial + daily).toString(),
-        creditsInitial: initial.toString(),
-        creditsDaily: daily.toString(),
-        type: 'initial',
-        createdAt: new Date(),
-      } as any);
-
-      localUser = newUser;
-    }
-
-    // ✅ 3. AUTENTICAÇÃO VIA JWT (Substitui req.session)
-    const token = jwt.sign(
-      { userId: localUser.id, email: localUser.email, role: localUser.role },
-      process.env.JWT_SECRET || "chave_padrao_gnosis",
-      { expiresIn: "7d" }
-    );
-
-    const cookieOptions = getSessionCookieOptions(req);
-    res.cookie(COOKIE_NAME, token, {
-      ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000, 
-    });
-
-    // 4. Redirecionar para o Dashboard
-    res.redirect("/dashboard");
-
-  } catch (error: any) {
-    console.error("Erro no Google Callback:", error);
-    res.redirect(`/auth?error=${encodeURIComponent(error.message)}`);
-  }
-});
 
 app.post("/api/webhooks/mercadopago", handleMercadoPagoWebhook);
 
