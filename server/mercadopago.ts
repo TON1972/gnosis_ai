@@ -57,9 +57,8 @@ export async function createSubscriptionCheckout(params: {
           // billing_day e billing_day_proportional removidos para evitar erro de TS
           // O padrão é cobrar no momento da criação
         },
-        // payer_email removido para evitar conflito de "Different Countries"
-        // O usuário preencherá o email no checkout do Mercado Pago
         // payer_email: userEmail, 
+        payer_email: userEmail,
         back_url: `${BASE_URL}/dashboard?payment=success`,
         external_reference: `sub-${userId}-${planId}-${Date.now()}`, // Identificador para Webhook
       }
