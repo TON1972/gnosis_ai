@@ -57,7 +57,9 @@ export async function createSubscriptionCheckout(params: {
           // billing_day e billing_day_proportional removidos para evitar erro de TS
           // O padrão é cobrar no momento da criação
         },
-        payer_email: userEmail,
+        // payer_email removido para evitar conflito de "Different Countries"
+        // O usuário preencherá o email no checkout do Mercado Pago
+        // payer_email: userEmail, 
         back_url: `${BASE_URL}/dashboard?payment=success`,
         external_reference: `sub-${userId}-${planId}-${Date.now()}`, // Identificador para Webhook
       }
@@ -97,9 +99,9 @@ export async function createCreditsCheckout(params: {
           currency_id: 'BRL',
         },
       ],
-      payer: {
-        email: userEmail,
-      },
+      // payer: {
+      //   email: userEmail,
+      // },
       back_urls: {
         success: `${BASE_URL}/dashboard?payment=success`,
         failure: `${BASE_URL}/dashboard?payment=failure`,
@@ -160,9 +162,9 @@ export async function createManualPaymentCheckout(params: {
           currency_id: 'BRL',
         },
       ],
-      payer: {
-        email: userEmail,
-      },
+      // payer: {
+      //   email: userEmail,
+      // },
       back_urls: {
         success: `${BASE_URL}/dashboard?payment=success`,
         failure: `${BASE_URL}/dashboard?payment=failure`,
