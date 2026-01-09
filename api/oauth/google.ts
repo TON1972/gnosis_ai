@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 
 const CALLBACK_URL_BASE = (process.env.NODE_ENV === "development" || !process.env.NODE_ENV)
     ? "http://localhost:3000"
-    : (process.env.NEXTAUTH_URL || "https://gnosis-ai-platform.vercel.app");
+    : (process.env.NEXTAUTH_URL || "https://gnosis-ai.vercel.app");
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 

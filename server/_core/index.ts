@@ -62,9 +62,10 @@ app.post("/api/register", async (req, res) => {
 
     if (authError) return res.status(400).json({ success: false, message: authError.message });
 
-    // 2. Localização do Plano
-    const [selectedPlan] = await db.select().from(plans).where(eq(plans.id, Number(planId))).limit(1);
-    if (!selectedPlan) throw new Error("Plano selecionado não existe.");
+    // 2. Localização do Plano FREE (Sempre iniciar como Free)
+    // O frontend cuidará do upgrade se o usuário selecionou um pago
+    const [freePlan] = await db.select().from(plans).where(eq(plans.name, 'free')).limit(1);
+    if (!freePlan) throw new Error("Plano gratuito padrão não encontrado.");
 
     // 3. Persistência no Banco Local com openId para evitar erro de constraint
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -83,21 +84,21 @@ app.post("/api/register", async (req, res) => {
     // 4. Ativação de Assinatura e Créditos
     await db.insert(subscriptions).values({
       userId: newUser.id,
-      planId: selectedPlan.id,
+      planId: freePlan.id,
       status: "active",
       startDate: new Date(),
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     });
 
-    const initial = Number(selectedPlan.creditsInitial ?? 0);
-    const daily = Number(selectedPlan.creditsDaily ?? 0);
+    const initial = Number(freePlan.creditsInitial ?? 0);
+    const daily = Number(freePlan.creditsDaily ?? 0);
 
     await db.insert(credits).values({
       userId: newUser.id,
       amount: (initial + daily).toString(),
       creditsInitial: initial.toString(),
       creditsDaily: daily.toString(),
-      type: selectedPlan.name === 'alianca' ? 'alianca' : 'initial',
+      type: 'initial',
       createdAt: new Date(),
     } as any);
 

@@ -8,12 +8,12 @@ import { trpc } from "@/lib/trpc";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { Link, useLocation } from "wouter";
 import React, { useState, useEffect } from "react";
-import { 
-  BookOpen, 
-  Languages, 
-  FileText, 
-  Presentation, 
-  BookMarked, 
+import {
+  BookOpen,
+  Languages,
+  FileText,
+  Presentation,
+  BookMarked,
   Scale,
   GraduationCap,
   Globe,
@@ -27,70 +27,35 @@ import {
   Crown,
   Gift,
   ShoppingCart,
+  Loader2,
   Calendar
 } from "lucide-react";
 
-// Mapeamento de IDs do banco para as chaves do frontend
-const PLAN_ID_MAP = {
-  free: "1",
-  alianca: "2",
-  lumen: "3",
-  premium: "4"
+// Mapeamento de ícones baseados no nome da tool no banco de dados (seed-plans.ts)
+const ICON_MAP: Record<string, any> = {
+  // DB Names found in seed-plans.ts
+  "hermeneutica": BookOpen,
+  "traducoes": Languages,
+  "resumos": FileText,
+  "esbocos": Presentation,
+  "exegese": Sparkles,
+  "escatologia": FileCheck,
+  "apologetica_avancada": Scale,
+  "teologia_sistematica": GraduationCap,
+  "analise_teologica": Scale,
+  "patristica": BookMarked,
+  "linha_tempo_teologica": Calendar,
+  "contextualizacao_brasileira": Globe,
+  "religioes_comparadas": Globe,
+  "estudos_doutrinarios": BookOpen,
+  "referencias_abnt_apa": FileCheck,
+  "redacao_academica": PenTool,
+  "linguagem_ministerial": Mic,
+  "dados_demograficos": BarChart,
+  "transcricao": Mic,
+  // Fallbacks for mismatches
+  "default": Sparkles
 };
-
-const mainTools = [
-  {
-    icon: <BookOpen className="w-8 h-8" />,
-    name: "Hermenêutica",
-    description: "Análise profunda de contexto histórico, cultural e literário de passagens bíblicas"
-  },
-  {
-    icon: <Languages className="w-8 h-8" />,
-    name: "Traduções",
-    description: "Análise de palavras originais em Hebraico, Aramaico e Grego com nuances linguísticas"
-  },
-  {
-    icon: <FileText className="w-8 h-8" />,
-    name: "Resumos",
-    description: "Sínteses personalizadas de passagens, capítulos ou livros inteiros da Bíblia"
-  },
-  {
-    icon: <Presentation className="w-8 h-8" />,
-    name: "Esboço de Pregações",
-    description: "Estruturas completas para sermões e mensagens com pontos-chave e aplicações práticas"
-  },
-  {
-    icon: <Sparkles className="w-8 h-8" />,
-    name: "Exegese Avançada",
-    description: "Interpretação crítica e detalhada verso por verso com análise exegética completa"
-  },
-  {
-    icon: <FileCheck className="w-8 h-8" />,
-    name: "Escatologia Bíblica",
-    description: "Análise escatológica profunda das profecias e eventos futuros"
-  },
-  {
-    icon: <Scale className="w-8 h-8" />,
-    name: "Apologética Avançada",
-    description: "Defesa racional da fé cristã com argumentação teológica e filosófica"
-  },
-  {
-    icon: <GraduationCap className="w-8 h-8" />,
-    name: "Teologia Sistemática",
-    description: "Estudo organizado e estruturado de temas teológicos sistemáticos"
-  },
-  {
-    icon: <Scale className="w-8 h-8" />,
-    name: "Análise Teológica Comparada",
-    description: "Comparação detalhada entre diferentes correntes teológicas e tradições cristãs"
-  },
-  {
-    icon: <BookMarked className="w-8 h-8" />,
-    name: "Patrística",
-    description: "Estudo dos Pais da Igreja e teologia patrística",
-    mobileOnly: true
-  }
-];
 
 const theologians = [
   "Agostinho de Hipona",
@@ -105,82 +70,18 @@ const theologians = [
   "Timothy Keller"
 ];
 
-const allTools = [
-  { name: "Hermenêutica", free: true, alianca: true, lumen: true, premium: true },
-  { name: "Traduções", free: true, alianca: true, lumen: true, premium: true },
-  { name: "Resumos", free: true, alianca: true, lumen: true, premium: true },
-  { name: "Esboços de Pregação", free: true, alianca: true, lumen: true, premium: true },
-  { name: "Estudos Doutrinários", free: true, alianca: true, lumen: true, premium: true },
-  { name: "Análise Teológica Comparada", free: true, alianca: true, lumen: true, premium: true },
-  { name: "Teologia Sistemática", free: false, alianca: true, lumen: true, premium: true },
-  { name: "Contextualização Brasileira", free: false, alianca: true, lumen: true, premium: true },
-  { name: "Exegese Avançada", free: false, alianca: false, lumen: true, premium: true },
-  { name: "Religiões Comparadas", free: false, alianca: true, lumen: true, premium: true },
-  { name: "Referências ABNT/APA", free: false, alianca: false, lumen: true, premium: true },
-  { name: "Linguagem Ministerial", free: false, alianca: true, lumen: true, premium: true },
-  { name: "Redação Acadêmica", free: false, alianca: false, lumen: true, premium: true },
-  { name: "Dados Demográficos", free: false, alianca: false, lumen: true, premium: true },
-  { name: "Transcrição de Mídia", free: false, alianca: false, lumen: true, premium: true },
-  { name: "Patrística", free: false, alianca: false, lumen: true, premium: true },
-  { name: "Linha do Tempo Teológica", free: false, alianca: false, lumen: true, premium: true },
-  { name: "Apologética Avançada", free: false, alianca: false, lumen: true, premium: true },
-  { name: "Escatologia Bíblica", free: false, alianca: false, lumen: true, premium: true }
-];
-
-const plans = [
-  {
-    name: "FREE",
-    price: "Gratuito",
-    priceValue: 0,
-    creditsInitial: "500 créditos iniciais",
-    creditsDaily: "50 créditos/dia",
-    tools: "6 de 19 ferramentas disponíveis",
-    planKey: "free" as const,
-    highlight: false
-  },
-  {
-    name: "Aliança",
-    price: "R$ 19,98",
-    priceValue: 19.98,
-    period: "/mês",
-    creditsInitial: "1.500 créditos iniciais*",
-    creditsDaily: "100 créditos/dia",
-    tools: "10 de 19 ferramentas disponíveis",
-    planKey: "alianca" as const,
-    highlight: false
-  },
-  {
-    name: "Lumen",
-    price: "R$ 36,98",
-    priceValue: 36.98,
-    period: "/mês",
-    creditsInitial: "3.000 créditos iniciais*",
-    creditsDaily: "200 créditos/dia",
-    tools: "Todas as 19 ferramentas",
-    planKey: "lumen" as const,
-    highlight: true
-  },
-  {
-    name: "GNOSIS Premium",
-    price: "R$ 68,98",
-    priceValue: 68.98,
-    period: "/mês",
-    creditsInitial: "6.000 créditos iniciais*",
-    creditsDaily: "300 créditos/dia",
-    tools: "Todas as 19 ferramentas",
-    planKey: "premium" as const,
-    highlight: false,
-    premium: true
-  }
-];
-
 export default function Home() {
   const { user, isAuthenticated, logout } = useAuth();
   const { data: activePlan } = trpc.credits.activePlan.useQuery(undefined, { enabled: isAuthenticated });
+
+  // Buscar planos e tools do banco
+  const { data: plansData, isLoading: isLoadingPlans } = trpc.plans.list.useQuery();
+  const { data: toolsData, isLoading: isLoadingTools } = trpc.tools.list.useQuery();
+
   const [, setLocation] = useLocation();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
-  
+
   useEffect(() => {
     window.scrollTo(0, 0);
     setTimeout(() => {
@@ -189,37 +90,44 @@ export default function Home() {
       document.body.scrollTop = 0;
     }, 0);
   }, []);
-  
-  const getYearlyPrice = (monthly: number) => {
-    const yearly = monthly * 12;
-    const discount = yearly * 0.165;
-    return (yearly - discount).toFixed(2);
-  };
-  
-  const getDisplayPrice = (plan: typeof plans[number]) => {
-    if (plan.priceValue === 0) return { main: plan.price, multiplier: null };
+
+  const getDisplayPrice = (plan: any) => {
+    if (plan.priceMonthly === 0) return { main: "Gratuito", multiplier: null };
+
+    // O banco retorna valores em centavos (integer)
+    const priceMonthly = plan.priceMonthly / 100;
+    const priceYearly = plan.priceYearly / 100;
+
     if (billingPeriod === 'yearly') {
-      const yearlyTotal = parseFloat(getYearlyPrice(plan.priceValue));
-      const monthlyWithDiscount = (yearlyTotal / 12).toFixed(2).replace('.', ',');
-      return { main: `R$ ${monthlyWithDiscount}`, multiplier: 'x 12' };
+      // Exibe o valor mensal equivalente no plano anual
+      const monthlyEquivalent = (priceYearly / 12).toFixed(2).replace('.', ',');
+      return { main: `R$ ${monthlyEquivalent}`, multiplier: 'x 12' };
     }
-    return { main: plan.price, multiplier: null };
+
+    return { main: `R$ ${priceMonthly.toFixed(2).replace('.', ',')}`, multiplier: null };
   };
-  
-  const getDisplayPeriod = (plan: typeof plans[number]) => {
-    if (plan.priceValue === 0) return '';
+
+  const getDisplayPeriod = (plan: any) => {
+    if (plan.priceMonthly === 0) return '';
     return billingPeriod === 'yearly' ? '/ano' : '/mês';
   };
 
-  const handlePlanClick = (planKey: keyof typeof PLAN_ID_MAP) => {
+  const handlePlanClick = (planId: number | string) => {
     if (isAuthenticated) {
       setLocation("/dashboard");
     } else {
       // ✅ Redirecionamento com parâmetros para abrir o cadastro e selecionar o plano
-      const planId = PLAN_ID_MAP[planKey];
-      window.location.href = `/auth?tab=register&plan=${planId}`;
+      window.location.href = `/auth?tab=register&plan=${planId}&billing=${billingPeriod}`;
     }
   };
+
+  const getIconForTool = (toolName: string) => {
+    // Tenta encontrar pelo nome exato, senão usa default
+    const IconComponent = ICON_MAP[toolName] || ICON_MAP["default"];
+    return <IconComponent className="w-8 h-8" />;
+  };
+
+  const isLoading = isLoadingPlans || isLoadingTools;
 
   return (
     <div className="public-page min-h-screen bg-gradient-radial from-[#d4af37] via-[#DAA520] to-[#FFFACD]">
@@ -231,8 +139,8 @@ export default function Home() {
               <h1 className="hidden md:block text-3xl font-bold text-[#d4af37]">{APP_TITLE}</h1>
               <h1 className="block md:hidden text-3xl font-bold text-[#d4af37]">GNOSIS AI</h1>
             </div>
-            
-            <MobileMenu 
+
+            <MobileMenu
               isAuthenticated={isAuthenticated}
               onLogout={logout}
               loginUrl="/auth"
@@ -248,14 +156,14 @@ export default function Home() {
             Estudos Bíblicos Profundos com IA
           </h2>
           <p className="text-lg md:text-xl lg:text-2xl text-[#8b6f47] mb-8 leading-relaxed">
-            Explore as Escrituras com ferramentas avançadas de inteligência artificial, 
+            Explore as Escrituras com ferramentas avançadas de inteligência artificial,
             desenvolvidas especialmente para pastores, teólogos e estudantes de seminário.
           </p>
-          
+
           <div className="mb-12">
             <TutorialCarousel />
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/faq">
               <Button
@@ -285,28 +193,35 @@ export default function Home() {
         <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#1e3a5f] text-center mb-8 md:mb-12">
           Ferramentas Principais
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto">
-          {mainTools.map((tool, index) => {
-            const isMobileOnly = (tool as any).mobileOnly;
-            return (
-              <div
-                key={index}
-                className={`bg-white/90 rounded-2xl p-8 shadow-xl border-4 border-[#d4af37] hover:scale-105 transition-transform ${
-                  isMobileOnly ? 'block md:hidden' : ''
-                }`}
-              >
-                <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
-                  <div className="p-3 bg-[#1e3a5f] rounded-lg text-[#d4af37]">
-                    {tool.icon}
+
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-12 h-12 animate-spin text-[#1e3a5f]" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto">
+            {toolsData?.map((tool: any) => {
+              // Exibir apenas ferramentas com descrição
+              if (!tool.description) return null;
+
+              return (
+                <div
+                  key={tool.id}
+                  className="bg-white/90 rounded-2xl p-8 shadow-xl border-4 border-[#d4af37] hover:scale-105 transition-transform"
+                >
+                  <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
+                    <div className="p-3 bg-[#1e3a5f] rounded-lg text-[#d4af37]">
+                      {getIconForTool(tool.name)}
+                    </div>
+                    <h4 className="text-sm md:text-xl font-bold text-[#1e3a5f] text-center md:text-left">{tool.displayName}</h4>
                   </div>
-                  <h4 className="text-sm md:text-xl font-bold text-[#1e3a5f] text-center md:text-left">{tool.name}</h4>
+                  <p className="text-[#8b6f47]">{tool.description}</p>
                 </div>
-                <p className="text-[#8b6f47]">{tool.description}</p>
-              </div>
-            );
-          })}
-        </div>
-        
+              );
+            })}
+          </div>
+        )}
+
         <div className="text-center mt-12">
           <Link href="/faq">
             <span className="inline-flex items-center gap-2 px-8 py-4 bg-[#d4af37] text-[#1e3a5f] rounded-xl font-bold text-lg hover:bg-[#B8860B] transition-colors shadow-lg cursor-pointer">
@@ -344,25 +259,23 @@ export default function Home() {
         <h3 className="hidden md:block text-2xl md:text-3xl lg:text-4xl font-bold text-[#1e3a5f] text-center mb-4">
           Escolha Seu Plano
         </h3>
-        
+
         <div className="hidden md:flex justify-center items-center gap-4 mb-6">
           <button
             onClick={() => setBillingPeriod('monthly')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              billingPeriod === 'monthly'
-                ? 'bg-[#1e3a5f] text-[#d4af37] shadow-lg scale-105'
-                : 'bg-white/80 text-[#8b6f47] hover:bg-white'
-            }`}
+            className={`px-6 py-3 rounded-lg font-semibold transition-all ${billingPeriod === 'monthly'
+              ? 'bg-[#1e3a5f] text-[#d4af37] shadow-lg scale-105'
+              : 'bg-white/80 text-[#8b6f47] hover:bg-white'
+              }`}
           >
             Mensal
           </button>
           <button
             onClick={() => setBillingPeriod('yearly')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all relative ${
-              billingPeriod === 'yearly'
-                ? 'bg-[#1e3a5f] text-[#d4af37] shadow-lg scale-105'
-                : 'bg-white/80 text-[#8b6f47] hover:bg-white'
-            }`}
+            className={`px-6 py-3 rounded-lg font-semibold transition-all relative ${billingPeriod === 'yearly'
+              ? 'bg-[#1e3a5f] text-[#d4af37] shadow-lg scale-105'
+              : 'bg-white/80 text-[#8b6f47] hover:bg-white'
+              }`}
           >
             Anual
             <span className="absolute -top-2 -right-2 bg-[#d4af37] text-[#1e3a5f] text-xs px-2 py-1 rounded-full font-bold">
@@ -370,11 +283,11 @@ export default function Home() {
             </span>
           </button>
         </div>
-        
+
         <p className="hidden md:block text-base md:text-lg lg:text-xl text-[#8b6f47] text-center mb-8 md:mb-12">
           * Créditos iniciais dos planos pagos são renovados a cada 30 dias
         </p>
-        
+
         {(!isAuthenticated || !activePlan || activePlan.plan.name === 'free') && (
           <div className="mb-8 text-center">
             <style>{`
@@ -392,7 +305,7 @@ export default function Home() {
             <p className="blink-animation hidden md:inline-block text-2xl font-bold text-red-600 bg-yellow-100 border-4 border-red-500 rounded-lg py-4 px-6 shadow-lg">
               🎉 ESSES SÃO VALORES PROMOCIONAIS DE FINAL DE ANO, APROVEITE A OPORTUNIDADE! 🎉
             </p>
-            
+
             <div className="mt-6">
               <Button
                 onClick={() => {
@@ -406,123 +319,124 @@ export default function Home() {
             </div>
           </div>
         )}
-        
-        <div id="pricing-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 max-w-7xl mx-auto">
-          {plans.map((plan, index) => (
-            <div
-              key={index}
-              className={`rounded-2xl p-8 shadow-2xl border-4 ${
-                plan.highlight
-                  ? "bg-gradient-to-br from-[#d4af37] to-[#B8860B] border-[#1e3a5f] scale-105"
-                  : plan.premium
-                  ? "bg-gradient-to-br from-[#1e3a5f] to-[#2a4a7f] border-[#d4af37]"
-                  : "bg-white/90 border-[#d4af37]"
-              } hover:scale-105 transition-transform relative`}
-            >
-              {plan.highlight && (
-                <div className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 bg-[#1e3a5f] text-[#d4af37] px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold whitespace-nowrap">
-                  MAIS POPULAR
-                </div>
-              )}
-              {plan.premium && (
-                <div className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 bg-[#d4af37] text-[#1e3a5f] px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold flex items-center gap-1 whitespace-nowrap">
-                  <Crown className="w-3 h-3 md:w-4 md:h-4" />
-                  PREMIUM
-                </div>
-              )}
-              <h4 className={`text-2xl font-bold mb-4 ${
-                plan.highlight || plan.premium ? "text-white" : "text-[#1e3a5f]"
-              }`}>
-                {plan.name}
-              </h4>
-              <div className="mb-6">
-                <span className={`text-4xl font-bold ${
-                  plan.highlight || plan.premium ? "text-white" : "text-[#1e3a5f]"
-                }`}>
-                  {getDisplayPrice(plan).main}
-                </span>
-                {getDisplayPrice(plan).multiplier && (
-                  <span className={`text-lg ml-1 ${
-                    plan.highlight || plan.premium ? "text-white/60" : "text-[#8b6f47]/60"
-                  }`}>
-                    {getDisplayPrice(plan).multiplier}
-                  </span>
-                )}
-                {plan.priceValue > 0 && (
-                  <span className={`text-lg ${
-                    plan.highlight || plan.premium ? "text-white/80" : "text-[#8b6f47]"
-                  }`}>
-                    {getDisplayPeriod(plan)}
-                  </span>
-                )}
-              </div>
-              <div className="space-y-3 mb-6">
-                <div className={`p-3 rounded-lg ${
-                  plan.highlight || plan.premium ? "bg-white/20" : "bg-[#FFFACD]"
-                }`}>
-                  <p className={`font-semibold ${
-                    plan.highlight || plan.premium ? "text-white" : "text-[#1e3a5f]"
-                  }`}>
-                    {plan.creditsInitial}
-                  </p>
-                </div>
-                <div className={`p-3 rounded-lg ${
-                  plan.highlight || plan.premium ? "bg-white/20" : "bg-[#FFFACD]"
-                }`}>
-                  <p className={`font-semibold ${
-                    plan.highlight || plan.premium ? "text-white" : "text-[#1e3a5f]"
-                  }`}>
-                    {plan.creditsDaily}
-                  </p>
-                </div>
-                <div className={`p-3 rounded-lg ${
-                  plan.highlight || plan.premium ? "bg-white/20" : "bg-[#FFFACD]"
-                }`}>
-                  <p className={`font-semibold ${
-                    plan.highlight || plan.premium ? "text-white" : "text-[#1e3a5f]"
-                  }`}>
-                    {plan.tools}
-                  </p>
-                </div>
-              </div>
-              <ul className="space-y-2 mb-6 max-h-64 overflow-y-auto">
-                {allTools.map((tool, i) => {
-                  const isAvailable = tool[plan.planKey];
-                  return (
-                    <li key={i} className="flex items-start gap-2">
-                      {isAvailable ? (
-                        <CheckCircle2 className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                          plan.highlight || plan.premium ? "text-green-400" : "text-green-600"
-                        }`} />
-                      ) : (
-                        <span className={`w-4 h-4 flex-shrink-0 mt-0.5 text-red-500 font-bold`}>×</span>
-                      )}
-                      <span className={`text-xs ${
-                        plan.highlight || plan.premium 
-                          ? isAvailable ? "text-white" : "text-white/50"
-                          : isAvailable ? "text-[#1e3a5f]" : "text-gray-400"
+
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-12 h-12 animate-spin text-[#1e3a5f]" />
+          </div>
+        ) : (
+          <div id="pricing-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 max-w-7xl mx-auto">
+            {plansData?.map((plan: any) => {
+              const isHighlight = plan.name === 'lumen';
+              const isPremium = plan.name === 'premium';
+              const isFree = plan.name === 'free';
+
+              const priceDisplay = getDisplayPrice(plan);
+
+              return (
+                <div
+                  key={plan.id}
+                  className={`rounded-2xl p-8 shadow-2xl border-4 ${isHighlight
+                    ? "bg-gradient-to-br from-[#d4af37] to-[#B8860B] border-[#1e3a5f] scale-105"
+                    : isPremium
+                      ? "bg-gradient-to-br from-[#1e3a5f] to-[#2a4a7f] border-[#d4af37]"
+                      : "bg-white/90 border-[#d4af37]"
+                    } hover:scale-105 transition-transform relative`}
+                >
+                  {isHighlight && (
+                    <div className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 bg-[#1e3a5f] text-[#d4af37] px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold whitespace-nowrap">
+                      MAIS POPULAR
+                    </div>
+                  )}
+                  {isPremium && (
+                    <div className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 bg-[#d4af37] text-[#1e3a5f] px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold flex items-center gap-1 whitespace-nowrap">
+                      <Crown className="w-3 h-3 md:w-4 md:h-4" />
+                      PREMIUM
+                    </div>
+                  )}
+                  <h4 className={`text-2xl font-bold mb-4 ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
+                    }`}>
+                    {plan.displayName}
+                  </h4>
+                  <div className="mb-6">
+                    <span className={`text-4xl font-bold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
                       }`}>
-                        {tool.name}
+                      {priceDisplay.main}
+                    </span>
+                    {priceDisplay.multiplier && (
+                      <span className={`text-lg ml-1 ${isHighlight || isPremium ? "text-white/60" : "text-[#8b6f47]/60"
+                        }`}>
+                        {priceDisplay.multiplier}
                       </span>
-                    </li>
-                  );
-                })}
-              </ul>
-              <Button
-                onClick={() => handlePlanClick(plan.planKey)}
-                className={`w-full ${
-                  plan.highlight
-                    ? "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
-                    : plan.premium
-                    ? "bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B]"
-                    : "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
-                }`}
-              >
-                {plan.priceValue === 0 ? "Começar Grátis" : "Assinar Agora"}
-              </Button>
-            </div>
-          ))}
-        </div>
+                    )}
+                    {!isFree && (
+                      <span className={`text-lg ${isHighlight || isPremium ? "text-white/80" : "text-[#8b6f47]"
+                        }`}>
+                        {getDisplayPeriod(plan)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-3 mb-6">
+                    <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
+                      }`}>
+                      <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
+                        }`}>
+                        {plan.creditsInitial?.toLocaleString()} créditos iniciais{isFree ? "" : "*"}
+                      </p>
+                    </div>
+                    <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
+                      }`}>
+                      <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
+                        }`}>
+                        {plan.creditsDaily?.toLocaleString()} créditos/dia
+                      </p>
+                    </div>
+                    <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
+                      }`}>
+                      <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
+                        }`}>
+                        {plan.toolsCount} ferramentas
+                      </p>
+                    </div>
+                  </div>
+                  <ul className="space-y-2 mb-6 max-h-64 overflow-y-auto custom-scrollbar">
+                    {toolsData?.map((tool: any, i: number) => {
+                      // Verifica se a ferramenta está inclusa no plano
+                      const isAvailable = plan.toolIds?.includes(String(tool.id));
+                      return (
+                        <li key={i} className="flex items-start gap-2">
+                          {isAvailable ? (
+                            <CheckCircle2 className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isHighlight || isPremium ? "text-green-400" : "text-green-600"
+                              }`} />
+                          ) : (
+                            <span className={`w-4 h-4 flex-shrink-0 mt-0.5 text-red-500 font-bold`}>×</span>
+                          )}
+                          <span className={`text-xs ${isHighlight || isPremium
+                            ? isAvailable ? "text-white" : "text-white/50"
+                            : isAvailable ? "text-[#1e3a5f]" : "text-gray-400"
+                            }`}>
+                            {tool.displayName}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <Button
+                    onClick={() => handlePlanClick(plan.id)}
+                    className={`w-full ${isHighlight
+                      ? "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
+                      : isPremium
+                        ? "bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B]"
+                        : "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
+                      }`}
+                  >
+                    {isFree ? "Começar Grátis" : "Assinar Agora"}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="hidden md:block container mx-auto px-4 py-8">
@@ -553,7 +467,7 @@ export default function Home() {
                 💸 OPÇÃO DE COMPRA DE CRÉDITOS AVULSO POR PIX LIBERADO, MAIS RÁPIDO E PRÁTICO!
               </p>
             </div>
-            
+
             <div className="md:hidden mt-6 flex justify-center">
               <Button
                 onClick={() => setShowBuyCreditsModal(true)}
@@ -570,7 +484,7 @@ export default function Home() {
             <div className="bg-white/90 rounded-xl p-6 shadow-lg border-3 border-[#d4af37] relative">
               <div className="text-center mb-4">
                 <Sparkles className="w-8 h-8 mx-auto mb-2 text-[#d4af37]" />
-                <p className="text-3xl font-bold text-[#1e3a5f]">500</p>
+                <p className="text-3xl font-bold text-[#1e3a5f]">1.000</p>
                 <p className="text-sm text-[#8b6f47]">créditos</p>
               </div>
               <div className="text-center mb-4">
@@ -590,7 +504,8 @@ export default function Home() {
               </div>
               <div className="text-center mb-4">
                 <Sparkles className="w-8 h-8 mx-auto mb-2 text-[#d4af37]" />
-                <p className="text-3xl font-bold text-[#1e3a5f]">1.500</p>
+                <p className="text-3xl font-bold text-[#1e3a5f]">3.000</p>
+                <p className="text-sm text-[#8b6f47]">créditos</p>
               </div>
               <div className="text-center mb-4">
                 <p className="text-2xl font-bold text-[#1e3a5f]">R$ 24,90</p>
@@ -606,7 +521,8 @@ export default function Home() {
             <div className="bg-white/90 rounded-xl p-6 shadow-lg border-3 border-[#d4af37] relative">
               <div className="text-center mb-4">
                 <Sparkles className="w-8 h-8 mx-auto mb-2 text-[#d4af37]" />
-                <p className="text-3xl font-bold text-[#1e3a5f]">2.500</p>
+                <p className="text-3xl font-bold text-[#1e3a5f]">6.000</p>
+                <p className="text-sm text-[#8b6f47]">créditos</p>
               </div>
               <div className="text-center mb-4">
                 <p className="text-2xl font-bold text-[#1e3a5f]">R$ 39,90</p>
@@ -625,7 +541,8 @@ export default function Home() {
               </div>
               <div className="text-center mb-4">
                 <Sparkles className="w-8 h-8 mx-auto mb-2 text-white" />
-                <p className="text-3xl font-bold text-white">5.000</p>
+                <p className="text-3xl font-bold text-white">10.000</p>
+                <p className="text-sm text-[#8b6f47]">créditos</p>
               </div>
               <div className="text-center mb-4">
                 <p className="text-2xl font-bold text-white">R$ 69,90</p>
@@ -644,7 +561,7 @@ export default function Home() {
               <strong>Créditos avulsos nunca expiram</strong> e podem ser usados em qualquer plano!
             </p>
           </div>
-          
+
           <div className="md:hidden mt-8 flex justify-center">
             <Link href="/faq">
               <Button
@@ -665,8 +582,8 @@ export default function Home() {
             Contextualização Brasileira Exclusiva
           </h3>
           <p className="text-base md:text-lg lg:text-xl text-[#8b6f47] leading-relaxed">
-            Nossa ferramenta de Contextualização Brasileira oferece referências que os melhores 
-            softwares estrangeiros não possuem. Desenvolvida especialmente para a realidade 
+            Nossa ferramenta de Contextualização Brasileira oferece referências que os melhores
+            softwares estrangeiros não possuem. Desenvolvida especialmente para a realidade
             brasileira, com corpus exclusivo sobre cultura, sociedade e religiosidade do Brasil.
           </p>
         </div>
@@ -678,7 +595,7 @@ export default function Home() {
             <div>
               <h4 className="text-xl font-bold mb-4">Sobre</h4>
               <p className="text-[#B8860B]">
-                GNOSIS AI é uma plataforma de estudos bíblicos profundos, 
+                GNOSIS AI é uma plataforma de estudos bíblicos profundos,
                 desenvolvida para pastores, teólogos e estudantes de seminário.
               </p>
             </div>
@@ -718,7 +635,7 @@ export default function Home() {
       </footer>
 
       <VersePopup />
-      
+
       <BuyCreditsModal
         open={showBuyCreditsModal}
         onClose={() => setShowBuyCreditsModal(false)}

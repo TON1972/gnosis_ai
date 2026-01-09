@@ -5,12 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { BookOpen, Loader2, CheckCircle2 } from "lucide-react";
 import { APP_TITLE } from "@/const";
@@ -22,24 +22,33 @@ export default function Auth() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
 
+  // Login States
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
+  // Register States
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState<string>("1"); 
+  const [selectedPlan, setSelectedPlan] = useState<string>("1");
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly");
 
+  // Queries & Mutations
   const { data: plans } = trpc.plans.list.useQuery();
+  const createCheckout = trpc.payments.createCheckoutSession.useMutation();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const planParam = params.get("plan");
     const tabParam = params.get("tab");
-    
+    const billingParam = params.get("billing");
+
     if (planParam) setSelectedPlan(planParam);
     if (tabParam === "register") setActiveTab("register");
+    if (billingParam === "monthly" || billingParam === "yearly") {
+      setBillingPeriod(billingParam);
+    }
   }, []);
 
   // ✅ NOVO: Lógica de Login Social preservando o plano
@@ -80,6 +89,7 @@ export default function Auth() {
 
     setLoading(true);
     try {
+      // 1. Criar a conta (Backend agora força o plano FREE inicialmente)
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -87,22 +97,69 @@ export default function Auth() {
           name: registerName,
           email: registerEmail,
           password: registerPassword,
-          planId: Number(selectedPlan),
+          planId: Number(selectedPlan), // Backend ignora para subscrição, mas ok enviar
         }),
       });
+
       const data = await response.json();
+
       if (data.success) {
-        toast.success("Conta criada!");
-        window.location.href = "/dashboard";
+        // 2. Verificar se o plano selecionado é PAGO
+        const plan = plans?.find(p => String(p.id) === String(selectedPlan));
+
+        if (plan && plan.name !== 'free') {
+          toast.success("Conta criada! Redirecionando para pagamento...");
+
+          // Calcular preço com base no periodo
+          // O banco retorna preço em centavos (integer)
+          const priceCents = billingPeriod === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+          const price = priceCents / 100; // Converter para reais (float)
+
+          try {
+            // 3. Criar Sessão de Checkout
+            const checkout = await createCheckout.mutateAsync({
+              type: 'plan',
+              id: String(plan.id),
+              price: price,
+              title: `Assinatura Plano ${plan.displayName} (${billingPeriod === 'yearly' ? 'Anual' : 'Mensal'}) - Gnosis AI`,
+              billingPeriod: billingPeriod
+            });
+
+            if (checkout.init_point) {
+              window.location.href = checkout.init_point;
+              return; // Encerra aqui, o browser vai redirecionar
+            } else {
+              toast.error("Erro ao gerar link de pagamento. Tente fazer o upgrade pelo painel.");
+              window.location.href = "/dashboard";
+            }
+          } catch (payError) {
+            console.error("Erro pagamento:", payError);
+            toast.error("Erro ao iniciar pagamento. Sua conta foi criada, faça o upgrade no painel.");
+            window.location.href = "/dashboard";
+          }
+        } else {
+          // Plano Free
+          toast.success("Conta criada com sucesso!");
+          window.location.href = "/dashboard";
+        }
       } else {
         toast.error(data.message || "Erro ao criar conta");
       }
     } catch (error) {
       toast.error("Erro no servidor.");
+      console.error(error);
     } finally {
-      setLoading(false);
+      if (!createCheckout.isPending) {
+        setLoading(false);
+      }
     }
   };
+
+  const getSelectedPlanDetails = () => {
+    return plans?.find(p => String(p.id) === String(selectedPlan));
+  };
+
+  const selectedPlanDetails = getSelectedPlanDetails();
 
   return (
     <div className="min-h-screen bg-[#1e3a5f] flex items-center justify-center p-4">
@@ -129,9 +186,9 @@ export default function Auth() {
             </TabsList>
 
             <div className="mb-6">
-              <Button 
-                variant="outline" 
-                onClick={handleGoogleLogin} 
+              <Button
+                variant="outline"
+                onClick={handleGoogleLogin}
                 className="w-full border-[#d4af37]/50 bg-transparent hover:bg-[#d4af37]/10 text-[#1e3a5f] font-bold h-12 transition-all active:scale-95"
               >
                 <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
@@ -171,7 +228,7 @@ export default function Auth() {
                   <Label className="text-[#1e3a5f] font-bold">Nome Completo</Label>
                   <Input value={registerName} onChange={(e) => setRegisterName(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-[#1e3a5f] font-bold">Email</Label>
@@ -205,15 +262,25 @@ export default function Auth() {
                   </div>
                 </div>
 
-                <div className="bg-[#1e3a5f]/5 p-3 rounded-lg border border-[#d4af37]/20 flex items-start gap-2 mt-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#d4af37] mt-0.5" />
-                  <p className="text-[10px] text-[#1e3a5f]/80 italic">
-                    Ao criar conta, você recebe os créditos de <strong> {plans?.find(p => p.id.toString() === selectedPlan)?.displayName}</strong>.
-                  </p>
+                <div className="bg-[#1e3a5f]/5 p-3 rounded-lg border border-[#d4af37]/20 flex flex-col gap-2 mt-2">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#d4af37] mt-0.5" />
+                    <p className="text-[10px] text-[#1e3a5f]/80 italic">
+                      Você selecionou: <strong>{selectedPlanDetails?.displayName}</strong>
+                      {selectedPlanDetails?.name !== 'free' && (
+                        <span> ({billingPeriod === 'yearly' ? 'Anual' : 'Mensal'})</span>
+                      )}
+                    </p>
+                  </div>
+                  {selectedPlanDetails?.name !== 'free' && (
+                    <div className="text-[10px] text-red-500 font-bold ml-6">
+                      * Após criar a conta, você será redirecionado para o pagamento.
+                    </div>
+                  )}
                 </div>
 
                 <Button type="submit" disabled={loading} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold mt-2 shadow-lg transition-all active:scale-95">
-                  {loading ? <Loader2 className="animate-spin" /> : "Criar Conta e Começar"}
+                  {loading && !createCheckout.isPending ? <Loader2 className="animate-spin" /> : createCheckout.isPending ? <Loader2 className="animate-spin ml-2" /> : "Criar Conta e Começar"}
                 </Button>
               </form>
             </TabsContent>
