@@ -57,10 +57,10 @@ export async function createSubscriptionCheckout(params: {
           // billing_day e billing_day_proportional removidos para evitar erro de TS
           // O padrão é cobrar no momento da criação
         },
-        // payer_email: userEmail, 
         payer_email: userEmail,
         back_url: `${BASE_URL}/dashboard?payment=success`,
-        external_reference: `sub-${userId}-${planId}-${Date.now()}`, // Identificador para Webhook
+        external_reference: `sub-${userId}-${planId}-${Date.now()}`,
+        status: 'pending', // Status inicial
       }
     });
 
