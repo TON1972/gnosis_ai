@@ -15,6 +15,7 @@ import { oauthRouter } from "../oauth";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleMercadoPagoWebhook } from "./webhookHandler";
+import { handleStripeWebhook } from "../stripeWebhook";
 import { COOKIE_NAME } from "../../shared/const";
 import { getSessionCookieOptions } from "./cookies";
 
@@ -28,6 +29,12 @@ import bcrypt from "bcryptjs";
 import { supabaseAdmin } from "./supabaseAdmin";
 
 const app = express();
+
+/**
+ * ⚠️ STRIPE WEBHOOK NEEDS RAW BODY
+ * Must be defined BEFORE global express.json()
+ */
+app.post("/api/webhooks/stripe", express.raw({ type: 'application/json' }), handleStripeWebhook);
 
 app.use(cookieParser());
 app.use(cors({ origin: true, credentials: true }));

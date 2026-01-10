@@ -6,7 +6,8 @@ import {
   timestamp,
   integer,
   boolean,
-  pgEnum
+  pgEnum,
+  primaryKey
 } from "drizzle-orm/pg-core";
 
 /**
@@ -27,6 +28,8 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).unique(),
   supabaseId: varchar("supabaseId", { length: 255 }),
+  clerkId: varchar("clerkId", { length: 255 }), // Legacy Clerk ID
+  stripeCustomerId: varchar("stripeCustomerId", { length: 255 }), // Stripe Customer ID
   name: text("name"),
   email: varchar("email", { length: 320 }).unique(),
   password: varchar("password", { length: 255 }),
@@ -47,6 +50,7 @@ export const plans = pgTable("plans", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 50 }).notNull().unique(),
   displayName: varchar("displayName", { length: 100 }).notNull(),
+  price: integer("price"), // Legacy / Single Price
   priceMonthly: integer("priceMonthly").notNull(),
   priceYearly: integer("priceYearly").notNull(),
   creditsInitial: integer("creditsInitial").notNull(),
@@ -76,7 +80,10 @@ export const subscriptions = pgTable("subscriptions", {
   lastPaymentDate: timestamp("lastPaymentDate"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-  mercadoPagoSubscriptionId: varchar("mercadoPagoSubscriptionId", { length: 100 }), // ✅ Novo campo para assinatura recorrente
+  cancelledAt: timestamp("cancelledAt"), // Legacy
+  mercadoPagoSubscriptionId: varchar("mercadoPagoSubscriptionId", { length: 100 }), // Legacy / Credits
+  stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 255 }), // Stripe Subscription ID
+  stripeStatus: varchar("stripeStatus", { length: 50 }), // active, trialing, past_due, etc.
 });
 
 /**
@@ -84,9 +91,10 @@ export const subscriptions = pgTable("subscriptions", {
  */
 export const credits = pgTable("credits", {
   id: serial("id").primaryKey(),
-  userId: integer("userId").notNull().unique(),
+  userId: integer("userId").notNull(),
   amount: integer("amount").notNull().default(0),
   type: varchar("type", { length: 50 }).notNull(),
+  isExpired: boolean("isExpired").default(false), // Legacy
   expiresAt: timestamp("expiresAt"),
   creditsInitial: integer("creditsInitial").default(0),
   creditsDaily: integer("creditsDaily").default(0),
@@ -107,7 +115,8 @@ export const savedStudies = pgTable("saved_studies", {
   output: text("output").notNull(),
   // ✅ Novos campos para o novo modelo de cobrança
   wordCount: integer("word_count").default(0),
-  creditCost: integer("credit_cost").default(50),
+  creditCost: integer("creditCost").default(50),
+  creditCostSnake: integer("credit_cost").default(50), // PRESERVE DATA
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -152,7 +161,8 @@ export const tools = pgTable("tools", {
   displayName: varchar("displayName", { length: 150 }).notNull(),
   description: text("description"),
   inputPlaceholder: text("inputPlaceholder"), // ✅ Nova Coluna
-  promptTemplate: text("prompt_template"),
+  promptTemplate: text("promptTemplate"), // camelCase in DB
+  promptTemplateSnake: text("prompt_template"), // PRESERVE DATA
   creditCost: integer("creditCost").default(50),
   category: text("category"),
   categoryId: integer("categoryId").references(() => toolCategories.id), // ✅ A nova coluna
@@ -176,12 +186,21 @@ export const toolCategories = pgTable("tool_categories", {
 /**
  * Plan-Tool relationship
  */
-export const planTools = pgTable("plan_tools", {
+export const planTools = pgTable("planTools", {
   id: serial("id").primaryKey(),
   planId: integer("planId").notNull(),
   toolId: integer("toolId").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+// PRESERVE DATA
+export const planToolsSnake = pgTable("plan_tools", {
+  planId: integer("planId").notNull(),
+  toolId: integer("toolId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.planId, t.toolId] }),
+}));
 
 /**
  * Chatbot contact requests
@@ -226,6 +245,7 @@ export const payments = pgTable("payments", {
   status: varchar("status", { length: 20 }).notNull(),
   paymentMethod: varchar("paymentMethod", { length: 50 }),
   mercadoPagoId: varchar("mercadoPagoId", { length: 100 }),
+  stripePaymentId: varchar("stripePaymentId", { length: 255 }), // Stripe Payment Intent ID
   externalId: varchar("externalId", { length: 100 }),
   type: varchar("type", { length: 50 }), // 'credit', 'plan_monthly', 'plan_yearly', 'plan_manual'
   creditsAmount: integer("creditsAmount").default(0), // Quantidade de créditos comprados (se aplicável)

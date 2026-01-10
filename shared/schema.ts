@@ -6,6 +6,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   supabaseId: varchar("supabaseId", { length: 255 }), // Adicionado
+  stripeCustomerId: varchar("stripeCustomerId", { length: 255 }),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
@@ -65,6 +66,9 @@ export const subscriptions = pgTable("subscriptions", {
   lastPaymentDate: timestamp("lastPaymentDate"), // Adicionado (Erro 500)
   createdAt: timestamp("createdAt").defaultNow(),
   updatedAt: timestamp("updatedAt").defaultNow(), // Adicionado (Erro 500)
+  mercadoPagoSubscriptionId: varchar("mercadoPagoSubscriptionId", { length: 100 }),
+  stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 255 }),
+  stripeStatus: varchar("stripeStatus", { length: 50 }),
 });
 
 // --- TABELA DE CRÉDITOS (Ajustada para unificar com user_credits) ---

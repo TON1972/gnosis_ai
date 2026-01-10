@@ -133,10 +133,10 @@ export default function Auth() {
               toast.error("Erro ao gerar link de pagamento. Tente fazer o upgrade pelo painel.");
               window.location.href = "/dashboard";
             }
-          } catch (payError) {
-            console.error("Erro pagamento:", payError);
-            toast.error("Erro ao iniciar pagamento. Sua conta foi criada, faça o upgrade no painel.");
-            window.location.href = "/dashboard";
+          } catch (payError: any) {
+            console.error("Erro pagamento DETALHADO:", payError);
+            toast.error(`Erro ao iniciar pagamento: ${payError.message || "Erro desconhecido"}`);
+            // window.location.href = "/dashboard"; // PAUSADO PARA DEBUG
           }
         } else {
           // Plano Free

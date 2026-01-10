@@ -25,6 +25,7 @@ import { getUserCredits, useCredits, getUserActivePlan } from "./credits";
 import { checkSubscriptionStatus, markSubscriptionPaid } from "./subscriptionStatus";
 import { getUserStats, getFinancialCalendar, getDelinquentUsers } from "./admin";
 import { createSubscriptionCheckout, createCreditsCheckout, createManualPaymentCheckout } from "./mercadopago";
+import { createStripeCheckout } from "./stripe";
 import { invokeLLM } from "./_core/llm";
 import { notifyOwner } from "./_core/notification";
 import { chatbotContacts, ticketMessages } from "../drizzle/schema";
@@ -1099,17 +1100,38 @@ export const appRouter = router({
               userEmail: user.email
             });
           } else {
-            // Delegate to shared helper (Plan)
-            // Note: createSubscriptionCheckout expects valid plan details passed in
-            return await createSubscriptionCheckout({
+            // NEW STRIPE INTEGRATION FOR PLANS
+            let customerId = user.stripeCustomerId;
+
+            if (!customerId) {
+              // Create Stripe Customer
+              const { createStripeCustomer } = await import("./stripe");
+              const newCustomer = await createStripeCustomer(user.email, user.name || "Novo Cliente");
+              customerId = newCustomer.id;
+
+              // Update user in DB
+              const { users } = await import("../drizzle/schema"); // Dynamic import to avoid cycles/conflicts if any
+              await db.update(users)
+                .set({ stripeCustomerId: customerId })
+                .where(eq(users.id, user.id));
+            }
+
+            // Delegate to Stripe helper
+            const stripeSession = await createStripeCheckout({
               planId: Number(input.id),
               planName: input.title.replace('Plano ', '').replace(' - Gnosis AI', ''),
-              price: input.price,
-              duration: input.billingPeriod === 'yearly' ? 12 : 1,
+              price: input.price, // Valor em reais
               billingPeriod: input.billingPeriod || 'monthly',
               userId: ctx.user.id,
-              userEmail: user.email
+              userEmail: user.email,
+              customerId: customerId
             });
+
+            // O frontend espera `init_point`, mas o Stripe retorna `url`
+            return {
+              id: stripeSession.id,
+              init_point: stripeSession.url, // Mapeamos url do Stripe para init_point
+            };
           }
         } catch (error: any) {
           console.error("❌ ERRO NO MP:", error.message);
