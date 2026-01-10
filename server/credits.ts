@@ -1,7 +1,7 @@
 import { eq, and, sql } from "drizzle-orm";
 import { getDb } from "./db";
 // Certifique-se de que o caminho do schema está correto conforme seu projeto (shared ou drizzle)
-import { credits, creditTransactions, subscriptions, plans, users } from "../drizzle/schema";
+import { credits, creditTransactions, subscriptions, users, plans } from "../drizzle/schema";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -36,7 +36,7 @@ export async function getUserCredits(userId: number) {
       creditsBonus: "0",
       type: isAlianca ? "alianca" : "initial",
       expiresAt: new Date(Date.now() + THIRTY_DAYS_MS),
-    }as any);
+    } as any);
     result = await db.select().from(credits).where(eq(credits.userId, userId)).limit(1);
   }
 
@@ -45,28 +45,34 @@ export async function getUserCredits(userId: number) {
 
   // 4. Lógica de Reset Diário
   let daily = Number(data.creditsDaily) || 0;
+  let initial = Number(data.creditsInitial) || 0;
+  let bonus = Number(data.creditsBonus) || 0;
+
   const lastReset = data.lastDailyReset ? new Date(data.lastDailyReset) : new Date(0);
-  
+
   // Se passou 1 dia desde o último reset
   if (Math.floor((now.getTime() - lastReset.getTime()) / (1000 * 60 * 60 * 24)) >= 1) {
     const userActivePlan = await getUserActivePlan(userId);
     daily = userActivePlan?.plan.creditsDaily ?? 50;
-    
+
+    // Recalcula o total
+    const totalAmount = initial + daily + bonus;
+
     await db.update(credits)
-      .set({ 
-        creditsDaily: daily.toString(), 
+      .set({
+        creditsDaily: daily.toString(),
         lastDailyReset: now,
         // Ao resetar o diário, atualizamos o 'amount' total (soma de todos)
-        amount: sql`${credits.creditsInitial} + ${daily.toString()} + ${credits.creditsBonus}`
-      }as any)
+        amount: totalAmount.toString()
+      } as any)
       .where(eq(credits.userId, userId));
   }
 
   return {
-    initial: Number(data.creditsInitial) || 0,
+    initial: initial,
     daily: daily,
-    bonus: Number(data.creditsBonus) || 0,
-    total: Number(data.amount) || 0, // O amount deve refletir o saldo real
+    bonus: bonus,
+    total: initial + daily + bonus,
     initialExpiry: data.expiresAt,
   };
 }
@@ -98,35 +104,80 @@ export async function useCredits(userId: number, amount: number, toolName: strin
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // 1. Validação de Saldo Insuficiente
-  const currentBalance = await db.select({ 
-    amount: credits.amount 
-  }).from(credits).where(eq(credits.userId, userId)).limit(1);
+  // 1. Busca saldos atuais
+  const currentCredit = await db.select().from(credits).where(eq(credits.userId, userId)).limit(1);
 
-  if (currentBalance.length === 0 || Number(currentBalance[0].amount) < amount) {
+  if (currentCredit.length === 0) {
+    throw new Error("Créditos não encontrados.");
+  }
+
+  const data = currentCredit[0];
+  let daily = Number(data.creditsDaily) || 0;
+  let monthly = Number(data.creditsInitial) || 0; // Usando campo initial como mensal/acumulado
+  let bonus = Number(data.creditsBonus) || 0;
+  const total = daily + monthly + bonus;
+
+  // 2. Validação de Saldo
+  if (total < amount) {
     throw new Error("Créditos insuficientes para realizar esta análise.");
   }
 
-  const spendAmount = Math.abs(amount) * -1;
+  // 3. Lógica de Consumo em Cascata (Daily -> Monthly -> Bonus)
+  let remainingCost = amount;
+  let spentDaily = 0;
+  let spentMonthly = 0;
+  let spentBonus = 0;
 
-  // 2. ATUALIZAÇÃO DO SALDO (Subtração real no banco)
+  // Consome Diário
+  if (daily > 0) {
+    const debit = Math.min(daily, remainingCost);
+    daily -= debit;
+    remainingCost -= debit;
+    spentDaily = debit;
+  }
+
+  // Consome Mensal (Initial)
+  if (remainingCost > 0 && monthly > 0) {
+    const debit = Math.min(monthly, remainingCost);
+    monthly -= debit;
+    remainingCost -= debit;
+    spentMonthly = debit;
+  }
+
+  // Consome Bonus
+  if (remainingCost > 0 && bonus > 0) {
+    const debit = Math.min(bonus, remainingCost);
+    bonus -= debit;
+    remainingCost -= debit;
+    spentBonus = debit;
+  }
+
+  // Recalcula total final
+  const newTotal = daily + monthly + bonus;
+
+  // 4. Atualiza Banco
   await db
     .update(credits)
     .set({
-      // Deduzimos do amount principal
-      amount: sql`CAST(${credits.amount} AS INTEGER) + ${spendAmount}`
-    })
+      amount: newTotal.toString(),
+      creditsDaily: daily.toString(),
+      creditsInitial: monthly.toString(),
+      creditsBonus: bonus.toString()
+    } as any)
     .where(eq(credits.userId, userId));
 
-  // 3. REGISTRO NO HISTÓRICO
+  // 5. REGISTRO NO HISTÓRICO
   await db.insert(creditTransactions).values({
     userId,
     toolId: toolId || null,
-    amount: spendAmount.toString(),
+    amount: (-amount).toString(),
     type: 'usage',
-    description: `Uso: ${toolName}`,
+    description: `Uso: ${toolName} (D:${spentDaily}, M:${spentMonthly}, B:${spentBonus})`,
+    balanceBefore: total,
+    balanceAfter: newTotal,
+    toolUsed: toolName,
     createdAt: new Date(),
-  }as any);
+  } as any);
 
   return { success: true };
 }

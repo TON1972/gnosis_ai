@@ -84,6 +84,29 @@ export default function PerfilPage() {
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-[#d4af37] mb-8 text-center">Meu Perfil</h1>
 
+          {/* Botões de Ação */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            {/* Botão Planos e Preços / Compra de Créditos */}
+            <Button
+              onClick={() => setShowModal(true)}
+              className="bg-[#d4af37] hover:bg-[#b8941f] text-[#1e3a5f] font-bold py-6 text-lg flex items-center justify-center gap-3"
+            >
+              <Package className="w-6 h-6" />
+              Planos e Créditos
+            </Button>
+
+            {/* Botão Voltar ao Dashboard */}
+            <Link href="/dashboard">
+              <Button
+                className="w-full bg-[#2a4a7f] hover:bg-[#1e3a5f] text-[#d4af37] font-bold py-6 text-lg border-2 border-[#d4af37] flex items-center justify-center gap-3"
+              >
+                <CreditCard className="w-6 h-6" />
+                Voltar ao Dashboard
+              </Button>
+            </Link>
+          </div>
+
+
           {/* Dados do Usuário */}
           <Card className="bg-[#2a4a7f] border-[#d4af37]/20 p-6 mb-6">
             <div className="flex items-center gap-4 mb-6">
@@ -265,27 +288,7 @@ export default function PerfilPage() {
           {/* Histórico de Pagamentos */}
           <PaymentHistory />
 
-          {/* Botões de Ação */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Botão Planos e Preços / Compra de Créditos */}
-            <Button
-              onClick={() => setShowModal(true)}
-              className="bg-[#d4af37] hover:bg-[#b8941f] text-[#1e3a5f] font-bold py-6 text-lg flex items-center justify-center gap-3"
-            >
-              <Package className="w-6 h-6" />
-              Planos e Créditos
-            </Button>
 
-            {/* Botão Voltar ao Dashboard */}
-            <Link href="/dashboard">
-              <Button
-                className="w-full bg-[#2a4a7f] hover:bg-[#1e3a5f] text-[#d4af37] font-bold py-6 text-lg border-2 border-[#d4af37] flex items-center justify-center gap-3"
-              >
-                <CreditCard className="w-6 h-6" />
-                Voltar ao Dashboard
-              </Button>
-            </Link>
-          </div>
         </div>
       </main>
 

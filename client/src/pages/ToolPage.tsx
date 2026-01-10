@@ -26,18 +26,21 @@ export default function ToolPage() {
   const [copied, setCopied] = useState(false);
   const [generatedStudyId, setGeneratedStudyId] = useState<number | null>(null);
 
-  const [wordCount, setWordCount] = useState(0); 
+  const [wordCount, setWordCount] = useState(0);
   const [computedCost, setComputedCost] = useState(50);
 
   const { data: allTools, isLoading: loadingTools } = trpc.tools.list.useQuery();
   const dbTool = allTools?.find(t => t.id === Number(toolIdFromParams) || t.name === toolIdFromParams);
-  
+
   const { data: dbUser } = trpc.auth.me.useQuery(undefined, { enabled: !!authUser });
   const user = dbUser || authUser;
   const { data: credits, refetch: refetchCredits } = trpc.credits.balance.useQuery();
+  const { data: activePlan } = trpc.credits.activePlan.useQuery();
 
   const generateMutation = trpc.tools.generate.useMutation();
   const saveStudyMutation = trpc.studies.save.useMutation();
+
+  const [modalTab, setModalTab] = useState<'plans' | 'credits'>('plans');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -45,13 +48,25 @@ export default function ToolPage() {
 
   const handleGenerate = async () => {
     if (!dbTool || !input.trim()) return;
-    setGeneratedStudyId(null); 
+
+    // ✅ Validação Antecipada de Créditos
+    const currentCredits = credits?.total || 0;
+    const estimatedCost = dbTool.creditCost || 50;
+
+    if (currentCredits < estimatedCost) {
+      const isFree = activePlan?.plan?.name === 'free';
+      setModalTab(isFree ? 'plans' : 'credits');
+      setShowNoCreditsModal(true);
+      return;
+    }
+
+    setGeneratedStudyId(null);
 
     try {
       const response = await generateMutation.mutateAsync({
-        toolId: dbTool.id.toString(), 
+        toolId: dbTool.id.toString(),
         input: input,
-        history: [] 
+        history: []
       });
 
       setResult(response.content);
@@ -60,22 +75,24 @@ export default function ToolPage() {
 
       // ✅ Chamada da Mutation (Tipada como any para evitar erros de TS no acesso ao ID)
       const saveResponse = await saveStudyMutation.mutateAsync({
-        toolId: Number(dbTool.id), 
+        toolId: Number(dbTool.id),
         toolName: dbTool.displayName,
         input: input,
         output: response.content,
-        creditCost: response.creditCost, 
-        wordCount: response.wordCount    
+        creditCost: response.creditCost,
+        wordCount: response.wordCount
       }) as any;
 
       if (saveResponse && saveResponse.id) {
         setGeneratedStudyId(saveResponse.id);
       }
 
-      refetchCredits(); 
+      refetchCredits();
       toast.success("Análise concluída com sucesso!");
     } catch (error: any) {
       if (error.message?.includes("insuficientes")) {
+        const isFree = activePlan?.plan?.name === 'free';
+        setModalTab(isFree ? 'plans' : 'credits');
         setShowNoCreditsModal(true);
       } else {
         toast.error("Erro ao processar análise.");
@@ -180,10 +197,10 @@ export default function ToolPage() {
                     <article className="prose prose-slate prose-lg max-w-none font-serif leading-relaxed text-[#1e3a5f]">
                       <ReactMarkdown
                         components={{
-                          h3: ({node, ...props}) => <h3 className="text-2xl border-b border-[#d4af37]/30 pb-2 mt-8 mb-4 uppercase font-bold text-left" {...props} />,
+                          h3: ({ node, ...props }) => <h3 className="text-2xl border-b border-[#d4af37]/30 pb-2 mt-8 mb-4 uppercase font-bold text-left" {...props} />,
                           // ✅ MOBILE: text-left | DESKTOP: md:text-justify
-                          p: ({node, ...props}) => <p className="mb-4 text-left md:text-justify" {...props} />,
-                          strong: ({node, ...props}) => <strong className="text-[#a0522d] font-bold" {...props} />,
+                          p: ({ node, ...props }) => <p className="mb-4 text-left md:text-justify" {...props} />,
+                          strong: ({ node, ...props }) => <strong className="text-[#a0522d] font-bold" {...props} />,
                         }}
                       >
                         {result}
@@ -199,13 +216,13 @@ export default function ToolPage() {
 
                 {/* ✅ Botão de Continuidade com Design Premium */}
                 {generatedStudyId && (
-                  <div className="flex justify-center pb-12 pt-4 animate-in zoom-in duration-1000">
+                  <div className="flex justify-center pb-6 pt-4 animate-in zoom-in duration-1000">
                     <Link href={`/study/${generatedStudyId}`}>
                       <button className="premium-btn group relative flex items-center justify-center gap-4 px-12 py-6 text-2xl font-black uppercase tracking-tighter text-[#1e3a5f] transition-all hover:scale-105 active:scale-95">
                         {/* Efeito de Brilho Interno */}
                         <div className="absolute inset-0 rounded-2xl bg-linear-to-r from-[#d4af37] via-[#f7e695] to-[#d4af37] shadow-[0_10px_40px_-10px_rgba(212,175,55,0.5)]"></div>
                         <div className="btn-shine absolute inset-0 rounded-2xl"></div>
-                        
+
                         {/* Conteúdo */}
                         <div className="relative z-10 flex items-center gap-3">
                           <ExternalLink className="w-7 h-7 group-hover:rotate-12 transition-transform duration-300" />
@@ -218,12 +235,23 @@ export default function ToolPage() {
                     </Link>
                   </div>
                 )}
+                <div className="flex justify-center pb-12 animate-in fade-in duration-500 delay-150">
+                  <Link href="/dashboard">
+                    <Button variant="outline" size="lg" className="border-[#d4af37] text-[#1e3a5f] font-bold hover:bg-[#d4af37] hover:text-[#1e3a5f] shadow-lg">
+                      <ArrowLeft className="w-5 h-5 mr-2" /> Voltar ao Dashboard
+                    </Button>
+                  </Link>
+                </div>
               </div>
             )}
           </main>
         </div>
       </div>
-      <NoCreditsModal open={showNoCreditsModal} onClose={() => setShowNoCreditsModal(false)} />
+      <NoCreditsModal
+        open={showNoCreditsModal}
+        onClose={() => setShowNoCreditsModal(false)}
+        initialTab={modalTab}
+      />
 
       {/* ✅ CSS para os efeitos de luxo do botão */}
       <style>{`

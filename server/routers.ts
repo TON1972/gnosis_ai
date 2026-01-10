@@ -195,8 +195,25 @@ export const appRouter = router({
       if (!db) return [];
 
       return await db
-        .select()
+        .select({
+          id: tools.id,
+          name: tools.name,
+          displayName: tools.displayName,
+          description: tools.description,
+          inputPlaceholder: tools.inputPlaceholder,
+          promptTemplate: tools.promptTemplate,
+          creditCost: tools.creditCost,
+          // ✅ Retornamos o nome da categoria vindo da tabela relacionada
+          category: toolCategories.name,
+          // Mantemos o categoryId se precisar
+          categoryId: tools.categoryId,
+          icon: tools.icon,
+          isActive: tools.isActive,
+          order: tools.order,
+          createdAt: tools.createdAt,
+        })
         .from(tools)
+        .leftJoin(toolCategories, eq(tools.categoryId, toolCategories.id))
         .where(eq(tools.isActive, true))
         .orderBy(tools.id);
     }),

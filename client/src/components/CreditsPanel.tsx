@@ -16,7 +16,7 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
     open: false,
     tab: 'plans'
   });
-  
+
   const { data: credits, isLoading: isLoadingCredits } = trpc.credits.balance.useQuery();
   const { data: activePlan, isLoading: isLoadingPlan } = trpc.credits.activePlan.useQuery();
 
@@ -110,16 +110,50 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
         </div>
       </div>
 
+      {/* ✅ UPSELL CARD ANIMADO */}
+      {isLowCredits && (
+        <div className="mb-6 relative overflow-hidden rounded-xl border-2 border-[#d4af37] bg-[#1e3a5f] p-4 shadow-xl animate-in zoom-in duration-500">
+          {/* Efeitos de Fundo */}
+          <div className="absolute inset-0 bg-linear-to-r from-[#1e3a5f] via-[#2a4a7f] to-[#1e3a5f]"></div>
+          <div className="btn-shine absolute inset-0 opacity-20"></div>
+
+          <div className="relative z-10 text-center">
+            <div className="mx-auto bg-[#d4af37] w-10 h-10 rounded-full flex items-center justify-center mb-2 shadow-lg animate-pulse">
+              <Zap className="w-6 h-6 text-[#1e3a5f] fill-[#1e3a5f]" />
+            </div>
+
+            <h4 className="text-[#d4af37] font-black text-lg uppercase leading-tight mb-1">
+              {activePlan?.plan?.name === 'free' ? "Desbloqueie o Poder!" : "Não pare agora!"}
+            </h4>
+            <p className="text-white/80 text-xs font-medium mb-3">
+              {activePlan?.plan?.name === 'free'
+                ? "Seus créditos acabaram? Evolua para o Pro e tenha acesso ilimitado!"
+                : "Seus créditos estão baixos. Garanta mais avulsos que nunca expiram!"}
+            </p>
+
+            <Button
+              onClick={() => handleOpenModal(activePlan?.plan?.name === 'free' ? 'plans' : 'credits')}
+              className="w-full bg-[#d4af37] text-[#1e3a5f] font-black hover:bg-[#ffe066] hover:scale-105 transition-all shadow-lg text-sm h-10"
+            >
+              {activePlan?.plan?.name === 'free' ? "VIRAR PREMIUM" : "RECARREGAR"}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="space-y-3">
-        <Button
-          onClick={() => handleOpenModal('plans')}
-          className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-12 shadow-lg font-black flex items-center justify-center gap-2 transition-all active:scale-95"
-        >
-          <TrendingUp className="w-5 h-5" />
-          FAZER UPGRADE AGORA
-        </Button>
-        
+        {/* Só mostra o botão normal de upgrade se NÃO for o card de upsell do free, para evitar duplicidade visual */}
+        {(activePlan?.plan?.name !== 'free' || !isLowCredits) && (
+          <Button
+            onClick={() => handleOpenModal('plans')}
+            className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-12 shadow-lg font-black flex items-center justify-center gap-2 transition-all active:scale-95"
+          >
+            <TrendingUp className="w-5 h-5" />
+            FAZER UPGRADE AGORA
+          </Button>
+        )}
+
         <Button
           onClick={() => handleOpenModal('credits')}
           variant="outline"
@@ -132,8 +166,8 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
 
       {/* Só renderiza o modal interno se não houver controle externo (Ex: no Dashboard) */}
       {!onNeedCredits && (
-        <NoCreditsModal 
-          open={modalConfig.open} 
+        <NoCreditsModal
+          open={modalConfig.open}
           onClose={() => setModalConfig({ ...modalConfig, open: false })}
           initialTab={modalConfig.tab}
         />

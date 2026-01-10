@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb } from "./db";
-import { subscriptions, users } from "../drizzle/schema";
+import { subscriptions, users, plans, credits, creditTransactions } from "../drizzle/schema";
 
 /**
  * Subscription status management
@@ -69,11 +69,11 @@ export async function checkSubscriptionStatus(userId: number): Promise<Subscript
   // Check if payment is overdue
   if (subscription.nextBillingDate && now > subscription.nextBillingDate) {
     // Payment is overdue
-    
+
     if (!subscription.gracePeriodEndsAt) {
       // Start grace period (72 hours from now)
       const gracePeriodEndsAt = new Date(now.getTime() + 72 * 60 * 60 * 1000);
-      
+
       await db.update(subscriptions)
         .set({
           status: "grace_period",
@@ -108,7 +108,7 @@ export async function checkSubscriptionStatus(userId: number): Promise<Subscript
 
     // Still in grace period
     const hoursLeft = Math.ceil((subscription.gracePeriodEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60));
-    
+
     return {
       status: "grace_period",
       isBlocked: false,
@@ -164,6 +164,32 @@ export async function markSubscriptionPaid(userId: number): Promise<void> {
       gracePeriodEndsAt: null,
     })
     .where(eq(subscriptions.id, subscription.id));
+
+  // --- LOGICA DE RECARGA DE PLANO (Reset/Acumulo Mensal) ---
+  // Busca o plano para saber quantos créditos adicionar
+  const planResult = await db.select().from(plans).where(eq(plans.id, subscription.planId)).limit(1);
+
+  if (planResult.length > 0) {
+    const plan = planResult[0];
+    const creditsToAdd = plan.creditsInitial; // Crédito mensal do plano
+
+    // Adiciona ao saldo 'creditsInitial' (mensal) e ao 'amount' total
+    await db.update(credits)
+      .set({
+        amount: sql`CAST(${credits.amount} AS INTEGER) + ${creditsToAdd}`,
+        creditsInitial: sql`CAST(${credits.creditsInitial} AS INTEGER) + ${creditsToAdd}`,
+      } as any)
+      .where(eq(credits.userId, userId));
+
+    // Opcional: Registrar transação de entrada
+    await db.insert(creditTransactions).values({
+      userId,
+      amount: creditsToAdd.toString(),
+      type: 'bonus', // ou 'plan_renewal' se tiver esse enum
+      description: `Renovação do Plano: +${creditsToAdd} créditos mensais`,
+      createdAt: now,
+    } as any);
+  }
 
   console.log('[Subscription] Payment confirmed:', {
     userId,

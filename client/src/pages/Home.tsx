@@ -299,11 +299,8 @@ export default function Home() {
                 animation: blink 1.5s ease-in-out infinite;
               }
             `}</style>
-            <p className="blink-animation md:hidden text-xl font-bold text-red-600 bg-yellow-100 border-4 border-red-500 rounded-lg py-4 px-6 inline-block shadow-lg">
-              🎉 CLIQUE ABAIXO E APROVEITE OS VALORES PROMOCIONAIS DE FINAL DE ANO, OU PARA USAR FREE SE PREFERIR! 🎉
-            </p>
             <p className="blink-animation hidden md:inline-block text-2xl font-bold text-red-600 bg-yellow-100 border-4 border-red-500 rounded-lg py-4 px-6 shadow-lg">
-              🎉 ESSES SÃO VALORES PROMOCIONAIS DE FINAL DE ANO, APROVEITE A OPORTUNIDADE! 🎉
+              🎉 ESSES SÃO VALORES PROMOCIONAIS DE LANÇAMENTO, APROVEITE A OPORTUNIDADE! 🎉
             </p>
 
             <div className="mt-6">
@@ -325,117 +322,144 @@ export default function Home() {
             <Loader2 className="w-12 h-12 animate-spin text-[#1e3a5f]" />
           </div>
         ) : (
-          <div id="pricing-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 max-w-7xl mx-auto">
-            {plansData?.map((plan: any) => {
-              const isHighlight = plan.name === 'lumen';
-              const isPremium = plan.name === 'premium';
-              const isFree = plan.name === 'free';
-
-              const priceDisplay = getDisplayPrice(plan);
-
-              return (
-                <div
-                  key={plan.id}
-                  className={`rounded-2xl p-8 shadow-2xl border-4 ${isHighlight
-                    ? "bg-gradient-to-br from-[#d4af37] to-[#B8860B] border-[#1e3a5f] scale-105"
-                    : isPremium
-                      ? "bg-gradient-to-br from-[#1e3a5f] to-[#2a4a7f] border-[#d4af37]"
-                      : "bg-white/90 border-[#d4af37]"
-                    } hover:scale-105 transition-transform relative`}
+          <>
+            {/* Mobile: Botão para página de planos */}
+            <div className="md:hidden flex flex-col items-center justify-center space-y-6">
+              <p className="text-lg text-[#8b6f47] text-center px-4">
+                Confira todos os detalhes dos nossos planos e escolha o ideal para o seu ministério.
+              </p>
+              <Link href="/planos">
+                <Button
+                  size="lg"
+                  className="bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] text-xl px-12 py-6 rounded-xl shadow-2xl w-full max-w-xs"
                 >
-                  {isHighlight && (
-                    <div className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 bg-[#1e3a5f] text-[#d4af37] px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold whitespace-nowrap">
-                      MAIS POPULAR
-                    </div>
-                  )}
-                  {isPremium && (
-                    <div className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 bg-[#d4af37] text-[#1e3a5f] px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold flex items-center gap-1 whitespace-nowrap">
-                      <Crown className="w-3 h-3 md:w-4 md:h-4" />
-                      PREMIUM
-                    </div>
-                  )}
-                  <h4 className={`text-2xl font-bold mb-4 ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
-                    }`}>
-                    {plan.displayName}
-                  </h4>
-                  <div className="mb-6">
-                    <span className={`text-4xl font-bold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
-                      }`}>
-                      {priceDisplay.main}
-                    </span>
-                    {priceDisplay.multiplier && (
-                      <span className={`text-lg ml-1 ${isHighlight || isPremium ? "text-white/60" : "text-[#8b6f47]/60"
-                        }`}>
-                        {priceDisplay.multiplier}
-                      </span>
-                    )}
-                    {!isFree && (
-                      <span className={`text-lg ${isHighlight || isPremium ? "text-white/80" : "text-[#8b6f47]"
-                        }`}>
-                        {getDisplayPeriod(plan)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-3 mb-6">
-                    <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
-                      }`}>
-                      <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
-                        }`}>
-                        {plan.creditsInitial?.toLocaleString()} créditos iniciais{isFree ? "" : "*"}
-                      </p>
-                    </div>
-                    <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
-                      }`}>
-                      <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
-                        }`}>
-                        {plan.creditsDaily?.toLocaleString()} créditos/dia
-                      </p>
-                    </div>
-                    <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
-                      }`}>
-                      <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
-                        }`}>
-                        {plan.toolsCount} ferramentas
-                      </p>
-                    </div>
-                  </div>
-                  <ul className="space-y-2 mb-6 max-h-64 overflow-y-auto custom-scrollbar">
-                    {toolsData?.map((tool: any, i: number) => {
-                      // Verifica se a ferramenta está inclusa no plano
-                      const isAvailable = plan.toolIds?.includes(String(tool.id));
-                      return (
-                        <li key={i} className="flex items-start gap-2">
-                          {isAvailable ? (
-                            <CheckCircle2 className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isHighlight || isPremium ? "text-green-400" : "text-green-600"
-                              }`} />
-                          ) : (
-                            <span className={`w-4 h-4 flex-shrink-0 mt-0.5 text-red-500 font-bold`}>×</span>
-                          )}
-                          <span className={`text-xs ${isHighlight || isPremium
-                            ? isAvailable ? "text-white" : "text-white/50"
-                            : isAvailable ? "text-[#1e3a5f]" : "text-gray-400"
-                            }`}>
-                            {tool.displayName}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <Button
-                    onClick={() => handlePlanClick(plan.id)}
-                    className={`w-full ${isHighlight
-                      ? "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
+                  Ver Planos e Preços
+                </Button>
+              </Link>
+            </div>
+
+            {/* Desktop: Grid de Planos Completo */}
+            <div id="pricing-grid" className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 max-w-7xl mx-auto">
+              {plansData?.map((plan: any) => {
+                const isHighlight = plan.name === 'lumen';
+                const isPremium = plan.name === 'premium';
+                const isFree = plan.name === 'free';
+
+                const priceDisplay = getDisplayPrice(plan);
+
+                return (
+                  <div
+                    key={plan.id}
+                    className={`rounded-2xl p-8 shadow-2xl border-4 ${isHighlight
+                      ? "bg-gradient-to-br from-[#d4af37] to-[#B8860B] border-[#1e3a5f] scale-105"
                       : isPremium
-                        ? "bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B]"
-                        : "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
-                      }`}
+                        ? "bg-gradient-to-br from-[#1e3a5f] to-[#2a4a7f] border-[#d4af37]"
+                        : "bg-white/90 border-[#d4af37]"
+                      } hover:scale-105 transition-transform relative`}
                   >
-                    {isFree ? "Começar Grátis" : "Assinar Agora"}
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
+                    {isHighlight && (
+                      <div className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 bg-[#1e3a5f] text-[#d4af37] px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold whitespace-nowrap">
+                        MAIS POPULAR
+                      </div>
+                    )}
+                    {isPremium && (
+                      <div className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 bg-[#d4af37] text-[#1e3a5f] px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold flex items-center gap-1 whitespace-nowrap">
+                        <Crown className="w-3 h-3 md:w-4 md:h-4" />
+                        PREMIUM
+                      </div>
+                    )}
+                    <h4 className={`text-2xl font-bold mb-4 ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
+                      }`}>
+                      {plan.displayName}
+                    </h4>
+                    <div className="mb-6">
+                      <span className={`text-4xl font-bold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
+                        }`}>
+                        {priceDisplay.main}
+                      </span>
+                      {priceDisplay.multiplier && (
+                        <span className={`text-lg ml-1 ${isHighlight || isPremium ? "text-white/60" : "text-[#8b6f47]/60"
+                          }`}>
+                          {priceDisplay.multiplier}
+                        </span>
+                      )}
+                      {!isFree && (
+                        <span className={`text-lg ${isHighlight || isPremium ? "text-white/80" : "text-[#8b6f47]"
+                          }`}>
+                          {getDisplayPeriod(plan)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-3 mb-6">
+                      <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
+                        }`}>
+                        <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
+                          }`}>
+                          {plan.creditsInitial?.toLocaleString()} créditos iniciais{isFree ? "" : "*"}
+                        </p>
+                      </div>
+                      <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
+                        }`}>
+                        <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
+                          }`}>
+                          {plan.creditsDaily?.toLocaleString()} créditos/dia
+                        </p>
+                      </div>
+                      <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
+                        }`}>
+                        <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
+                          }`}>
+                          {(() => {
+                            const validToolsCount = toolsData?.filter((t: any) =>
+                              plan.toolIds?.includes(String(t.id))
+                            ).length || 0;
+                            const totalToolsCount = toolsData?.length || 19;
+
+                            return validToolsCount === totalToolsCount
+                              ? `(Todas as ${totalToolsCount} ferramentas)`
+                              : `(${validToolsCount} de ${totalToolsCount} ferramentas disponíveis)`;
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+                    <ul className="space-y-2 mb-6 max-h-64 overflow-y-auto custom-scrollbar">
+                      {toolsData?.map((tool: any, i: number) => {
+                        // Verifica se a ferramenta está inclusa no plano
+                        const isAvailable = plan.toolIds?.includes(String(tool.id));
+                        return (
+                          <li key={i} className="flex items-start gap-2">
+                            {isAvailable ? (
+                              <CheckCircle2 className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isHighlight || isPremium ? "text-green-400" : "text-green-600"
+                                }`} />
+                            ) : (
+                              <span className={`w-4 h-4 flex-shrink-0 mt-0.5 text-red-500 font-bold`}>×</span>
+                            )}
+                            <span className={`text-xs ${isHighlight || isPremium
+                              ? isAvailable ? "text-white" : "text-white/50"
+                              : isAvailable ? "text-[#1e3a5f]" : "text-gray-400"
+                              }`}>
+                              {tool.displayName}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <Button
+                      onClick={() => handlePlanClick(plan.id)}
+                      className={`w-full ${isHighlight
+                        ? "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
+                        : isPremium
+                          ? "bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B]"
+                          : "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
+                        }`}
+                    >
+                      {isFree ? "Começar Grátis" : "Assinar Agora"}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </section>
 
