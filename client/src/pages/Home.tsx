@@ -200,10 +200,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto">
-            {toolsData?.map((tool: any) => {
-              // Exibir apenas ferramentas com descrição
-              if (!tool.description) return null;
-
+            {toolsData?.filter((tool: any) => tool.description).slice(0, 6).map((tool: any) => {
               return (
                 <div
                   key={tool.id}

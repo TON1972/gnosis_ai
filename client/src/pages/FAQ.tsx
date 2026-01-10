@@ -147,11 +147,11 @@ const faqData: FAQCategory[] = [
       },
       {
         question: "Qual a diferença entre os planos?",
-        answer: "FREE: 500 créditos iniciais (não-renováveis) + 50/dia, 6 ferramentas básicas. Aliança: 1.500 iniciais + 100/dia, 10 ferramentas. Lumen: 3.000 iniciais + 200/dia, todas as 19 ferramentas. Premium: 6.000 iniciais + 300/dia, todas as 19 ferramentas."
+        answer: "FREE: 1000 créditos iniciais (não-renováveis) + 50/dia, 6 ferramentas básicas. Aliança: 3.000 iniciais + 100/dia, 10 ferramentas. Lumen: 6.000 iniciais + 200/dia, todas as 19 ferramentas. Premium: 12.000 iniciais + 400/dia, todas as 19 ferramentas."
       },
       {
         question: "Quais ferramentas NÃO estão disponíveis no plano Aliança?",
-        answer: "O plano Aliança não inclui 9 ferramentas avançadas: Exegese, Patrística, Linha do Tempo Teológica, Apologética Avançada, Gerador de Referências ABNT/APA, Redação Acadêmica, Dados Demográficos, Transcrição de Mídia e Escatologia Bíblica. Ele oferece 10 das 19 ferramentas disponíveis."
+        answer: "O plano Aliança não inclui 9 ferramentas avançadas: Exegese, Patrística, Linha do Tempo Teológica, Apologética Avançada, Gerador de Referências ABNT/APA, Redação Acadêmica, Dados Demográficos. Ele oferece 10 das 19 ferramentas disponíveis."
       },
       {
         question: "Posso testar antes de assinar?",
@@ -174,10 +174,6 @@ const faqData: FAQCategory[] = [
       {
         question: "Posso usar a GNOSIS AI em dispositivos móveis?",
         answer: "Sim! A plataforma é totalmente responsiva e funciona perfeitamente em smartphones, tablets e computadores. Você pode acessar suas ferramentas de estudo de qualquer dispositivo com navegador web."
-      },
-      {
-        question: "Como funciona a ferramenta de Transcrição de Mídia?",
-        answer: "A ferramenta de Transcrição converte áudios e vídeos (sermões, palestras, estudos) em texto escrito. É útil para criar arquivos de mensagens, facilitar estudos e tornar conteúdos mais acessíveis."
       },
       {
         question: "Meus dados e estudos ficam salvos na plataforma?",
@@ -257,8 +253,8 @@ export default function FAQ() {
             </Link>
             {/* Menu Hambúrguer (Desktop e Mobile) */}
             <div>
-              <MobileMenu 
-                isAuthenticated={!!useAuth().user} 
+              <MobileMenu
+                isAuthenticated={!!useAuth().user}
                 onLogout={() => window.location.href = '/'}
                 loginUrl="/auth"
                 user={useAuth().user}
@@ -317,7 +313,7 @@ export default function FAQ() {
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/planos">
-              <span 
+              <span
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 className="inline-block px-8 py-4 bg-[#1e3a5f] text-[#d4af37] rounded-lg font-bold text-lg hover:bg-[#2a4a7f] transition-colors shadow-lg cursor-pointer"
               >
