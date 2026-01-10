@@ -72,6 +72,10 @@ app.post("/api/register", async (req, res) => {
     // 2. Localização do Plano FREE (Sempre iniciar como Free)
     // O frontend cuidará do upgrade se o usuário selecionou um pago
     const [freePlan] = await db.select().from(plans).where(eq(plans.name, 'free')).limit(1);
+
+    console.log(">>> DEBUG REGISTER: Params planId:", planId);
+    console.log(">>> DEBUG REGISTER: Found freePlan:", freePlan);
+
     if (!freePlan) throw new Error("Plano gratuito padrão não encontrado.");
 
     // 3. Persistência no Banco Local com openId para evitar erro de constraint

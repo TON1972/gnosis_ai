@@ -12,6 +12,7 @@ import {
   // ticketMessages,
   tools,      // ✅ Adicionado
   planTools,   // ✅ Adicionado
+  planToolsSnake, // ✅ Adicionado para corrigir vinculação de planos
   toolCategories,
   studyMessages,
   plans,
@@ -151,9 +152,9 @@ export const appRouter = router({
         // 2. Busca apenas as colunas existentes na tabela de junção
         // Removido o "id" que causava o erro
         const allRelations = await db.select({
-          planId: planTools.planId,
-          toolId: planTools.toolId
-        }).from(planTools);
+          planId: planToolsSnake.planId,
+          toolId: planToolsSnake.toolId
+        }).from(planToolsSnake);
 
         // 3. Mescla os dados convertendo IDs para String para comparação segura
         return plansData.map(plan => ({
@@ -182,8 +183,8 @@ export const appRouter = router({
             icon: tools.icon
           })
           .from(tools)
-          .innerJoin(planTools, eq(planTools.toolId, tools.id))
-          .where(eq(planTools.planId, input.planId));
+          .innerJoin(planToolsSnake, eq(planToolsSnake.toolId, tools.id))
+          .where(eq(planToolsSnake.planId, input.planId));
       }),
   }),
 
@@ -926,7 +927,7 @@ export const appRouter = router({
         inputPlaceholder: tools.inputPlaceholder,
         creditCost: tools.creditCost,
         isActive: tools.isActive,
-        categoryName: toolCategories.name, // Nome da categoria via Join
+        categoryName: toolCategories.name,
         categoryId: tools.categoryId,
         promptTemplate: tools.promptTemplate
       })
@@ -1029,9 +1030,9 @@ export const appRouter = router({
         if (!db) throw new Error("Database not available");
 
         return await db
-          .select({ planId: planTools.planId })
-          .from(planTools)
-          .where(eq(planTools.toolId, input.toolId));
+          .select({ planId: planToolsSnake.planId })
+          .from(planToolsSnake)
+          .where(eq(planToolsSnake.toolId, input.toolId));
       }),
 
     // ✅ 6. Atualizar os vínculos (Múltiplos planos para uma ferramenta)

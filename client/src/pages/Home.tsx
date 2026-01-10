@@ -33,26 +33,26 @@ import {
 
 // Mapeamento de ícones baseados no nome da tool no banco de dados (seed-plans.ts)
 const ICON_MAP: Record<string, any> = {
-  // DB Names found in seed-plans.ts
-  "hermeneutica": BookOpen,
-  "traducoes": Languages,
-  "resumos": FileText,
-  "esbocos": Presentation,
-  "exegese": Sparkles,
-  "escatologia": FileCheck,
-  "apologetica_avancada": Scale,
-  "teologia_sistematica": GraduationCap,
-  "analise_teologica": Scale,
-  "patristica": BookMarked,
-  "linha_tempo_teologica": Calendar,
-  "contextualizacao_brasileira": Globe,
-  "religioes_comparadas": Globe,
-  "estudos_doutrinarios": BookOpen,
-  "referencias_abnt_apa": FileCheck,
-  "redacao_academica": PenTool,
+  // DB Names (Updated to match check_tool_names.ts output)
+  "hermenêutica_avançada": BookOpen,
+  "traduções": Languages,
+  "resumos_bíblicos": FileText,
+  "esboços_de_pregação": Presentation,
+  "exegese_avançada": Sparkles,
+  "escatologia_bíblica_avançada": FileCheck,
+  "apologética_avançada": Scale,
+  "teologia_sistemática": GraduationCap,
+  "análise_teológica_comparada": Scale,
+  "patrística": BookMarked,
+  "história_da_igreja_detalhada": BookMarked,
+  "linha_do_tempo_teológica": Calendar,
+  "contextualização_brasileira": Globe,
+  "religiões_comparadas": Globe,
+  "estudos_doutrinários": BookOpen,
+  "referências_abnt/apa": FileCheck,
+  "redação_acadêmica": PenTool,
   "linguagem_ministerial": Mic,
-  "dados_demograficos": BarChart,
-  "transcricao": Mic,
+  "dados_demográficos": BarChart,
   // Fallbacks for mismatches
   "default": Sparkles
 };
@@ -202,27 +202,30 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto">
             {(() => {
               const DISPLAY_ORDER = [
-                "hermeneutica",
-                "traducoes",
-                "resumos",
-                "exegese",
-                "escatologia",
-                "esbocos",
-                "apologetica_avancada",
-                "teologia_sistematica",
-                "patristica",
-                "linha_tempo_teologica"
+                "hermenêutica_avançada",
+                "traduções",
+                "resumos_bíblicos",
+                "exegese_avançada",
+                "escatologia_bíblica_avançada",
+                "esboços_de_pregação",
+                "apologética_avançada",
+                "teologia_sistemática",
+                "patrística", // ou história_da_igreja_detalhada se for o caso
+                "linha_do_tempo_teológica"
               ];
 
               const displayNameOverrides: Record<string, string> = {
-                "patristica": "História da Igreja Detalhada",
-                "exegese": "Exegese Avançada",
-                "escatologia": "Escatologia Bíblica",
-                "traducoes": "Traduções",
-                "resumos": "Resumos Bíblicos",
-                "teologia_sistematica": "Teologia Sistemática",
-                "apologetica_avancada": "Apologética Avançada",
-                "linha_tempo_teologica": "Linha do Tempo Teológica"
+                "hermenêutica_avançada": "Hermenêutica Avançada",
+                "traduções": "Traduções",
+                "resumos_bíblicos": "Resumos Bíblicos",
+                "exegese_avançada": "Exegese Avançada",
+                "escatologia_bíblica_avançada": "Escatologia Bíblica",
+                "esboços_de_pregação": "Esboços de Pregação",
+                "apologética_avançada": "Apologética Avançada",
+                "teologia_sistemática": "Teologia Sistemática",
+                "patrística": "História da Igreja (Patrística)",
+                "história_da_igreja_detalhada": "História da Igreja Detalhada",
+                "linha_do_tempo_teológica": "Linha do Tempo Teológica"
               };
 
               const displayedTools = toolsData

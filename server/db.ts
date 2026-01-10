@@ -149,9 +149,9 @@ export async function getToolsForPlan(planId: number) {
   if (!db) return [];
   const result = await db
     .select({ tool: schema.tools })
-    .from(schema.planTools)
-    .innerJoin(schema.tools, eq(schema.planTools.toolId, schema.tools.id))
-    .where(eq(schema.planTools.planId, planId));
+    .from(schema.planToolsSnake) // ✅ Fix: Usar a tabela correta (plan_tools)
+    .innerJoin(schema.tools, eq(schema.planToolsSnake.toolId, schema.tools.id))
+    .where(eq(schema.planToolsSnake.planId, planId));
   return result.map(r => r.tool);
 }
 

@@ -160,9 +160,8 @@ export const tools = pgTable("tools", {
   name: varchar("name", { length: 100 }).notNull().unique(),
   displayName: varchar("displayName", { length: 150 }).notNull(),
   description: text("description"),
-  inputPlaceholder: text("inputPlaceholder"), // ✅ Nova Coluna
-  promptTemplate: text("promptTemplate"), // camelCase in DB
-  promptTemplateSnake: text("prompt_template"), // PRESERVE DATA
+  inputPlaceholder: text("inputPlaceholder"),
+  promptTemplate: text("prompt_template"), // ✅ Mapeado para a coluna real (snake_case)
   creditCost: integer("creditCost").default(50),
   category: text("category"),
   categoryId: integer("categoryId").references(() => toolCategories.id), // ✅ A nova coluna
