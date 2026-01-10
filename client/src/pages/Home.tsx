@@ -200,22 +200,58 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto">
-            {toolsData?.filter((tool: any) => tool.description).slice(0, 6).map((tool: any) => {
-              return (
-                <div
-                  key={tool.id}
-                  className="bg-white/90 rounded-2xl p-8 shadow-xl border-4 border-[#d4af37] hover:scale-105 transition-transform"
-                >
-                  <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
-                    <div className="p-3 bg-[#1e3a5f] rounded-lg text-[#d4af37]">
-                      {getIconForTool(tool.name)}
+            {(() => {
+              const DISPLAY_ORDER = [
+                "hermeneutica",
+                "traducoes",
+                "resumos",
+                "exegese",
+                "escatologia",
+                "esbocos",
+                "apologetica_avancada",
+                "teologia_sistematica",
+                "patristica",
+                "linha_tempo_teologica"
+              ];
+
+              const displayNameOverrides: Record<string, string> = {
+                "patristica": "História da Igreja Detalhada",
+                "exegese": "Exegese Avançada",
+                "escatologia": "Escatologia Bíblica",
+                "traducoes": "Traduções",
+                "resumos": "Resumos Bíblicos",
+                "teologia_sistematica": "Teologia Sistemática",
+                "apologetica_avancada": "Apologética Avançada",
+                "linha_tempo_teologica": "Linha do Tempo Teológica"
+              };
+
+              const displayedTools = toolsData
+                ?.filter((tool: any) => DISPLAY_ORDER.includes(tool.name))
+                .sort((a: any, b: any) => {
+                  return DISPLAY_ORDER.indexOf(a.name) - DISPLAY_ORDER.indexOf(b.name);
+                });
+
+              return displayedTools?.map((tool: any) => {
+                const isMobileOnly = tool.name === "linha_tempo_teologica";
+                const visibilityClass = isMobileOnly ? "block md:hidden" : "block";
+                const finalName = displayNameOverrides[tool.name] || tool.displayName || tool.name;
+
+                return (
+                  <div
+                    key={tool.id}
+                    className={`bg-white/90 rounded-2xl p-8 shadow-xl border-4 border-[#d4af37] hover:scale-105 transition-transform ${visibilityClass}`}
+                  >
+                    <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
+                      <div className="p-3 bg-[#1e3a5f] rounded-lg text-[#d4af37]">
+                        {getIconForTool(tool.name)}
+                      </div>
+                      <h4 className="text-sm md:text-xl font-bold text-[#1e3a5f] text-center md:text-left">{finalName}</h4>
                     </div>
-                    <h4 className="text-sm md:text-xl font-bold text-[#1e3a5f] text-center md:text-left">{tool.displayName}</h4>
+                    <p className="text-[#8b6f47]">{tool.description}</p>
                   </div>
-                  <p className="text-[#8b6f47]">{tool.description}</p>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         )}
 
@@ -228,7 +264,7 @@ export default function Home() {
             </span>
           </Link>
         </div>
-      </section>
+      </section >
 
       <section className="container mx-auto px-4 py-8 md:py-16">
         <div className="bg-white/90 rounded-2xl p-6 md:p-12 shadow-2xl border-4 border-[#d4af37] max-w-5xl mx-auto">
@@ -661,6 +697,6 @@ export default function Home() {
         open={showBuyCreditsModal}
         onClose={() => setShowBuyCreditsModal(false)}
       />
-    </div>
+    </div >
   );
 }

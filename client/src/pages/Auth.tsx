@@ -55,6 +55,7 @@ export default function Auth() {
   const handleGoogleLogin = () => {
     // Salvamos o plano escolhido para recuperar no backend após o login
     document.cookie = `pending_plan_id=${selectedPlan}; path=/; max-age=3600`;
+    document.cookie = `pending_billing_period=${billingPeriod}; path=/; max-age=3600`;
     window.location.href = "/api/oauth/google";
   };
 
@@ -154,6 +155,56 @@ export default function Auth() {
       }
     }
   };
+
+  useEffect(() => {
+    const handlePostLoginCheckout = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const isGoogleCheckout = params.get("google_checkout") === "true";
+
+      if (isGoogleCheckout && plans) {
+        const planId = params.get("plan");
+        const billing = params.get("billing") as 'monthly' | 'yearly';
+
+        const plan = plans.find(p => String(p.id) === String(planId));
+
+        if (plan && plan.name !== 'free') {
+          toast.loading("Processando assinatura via Google...");
+
+          try {
+            const priceCents = billing === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+            const price = priceCents / 100;
+
+            const checkout = await createCheckout.mutateAsync({
+              type: 'plan',
+              id: String(plan.id),
+              price: price,
+              title: `Assinatura Plano ${plan.displayName} (${billing === 'yearly' ? 'Anual' : 'Mensal'}) - Gnosis AI`,
+              billingPeriod: billing || 'yearly'
+            });
+
+            if (checkout.init_point) {
+              window.location.href = checkout.init_point;
+            } else {
+              toast.error("Erro ao gerar pagamento.");
+              window.location.href = "/dashboard";
+            }
+          } catch (error) {
+            console.error(error);
+            toast.error("Erro ao processar pagamento.");
+            window.location.href = "/dashboard";
+          }
+        } else {
+          window.location.href = "/dashboard";
+        }
+      }
+    };
+
+    // Executa se os planos já estiverem carregados
+    if (plans) {
+      handlePostLoginCheckout();
+    }
+  }, [plans, createCheckout]);
+
 
   const getSelectedPlanDetails = () => {
     return plans?.find(p => String(p.id) === String(selectedPlan));

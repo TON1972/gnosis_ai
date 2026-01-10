@@ -5,6 +5,7 @@ import { relations } from "drizzle-orm";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
+  supabaseId: varchar("supabaseId", { length: 255 }), // Adicionado
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
@@ -21,7 +22,7 @@ export const plans = pgTable("plans", {
   name: varchar("name", { length: 50 }).notNull(),
   displayName: varchar("displayName", { length: 100 }).notNull(),
   description: text("description"),
-  price: integer("price").notNull().default(0), 
+  price: integer("price").notNull().default(0),
   priceMonthly: integer("priceMonthly").notNull().default(0),
   priceYearly: integer("priceYearly").notNull().default(0),
   creditsInitial: integer("creditsInitial").default(500),
@@ -55,7 +56,7 @@ export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("userId").references(() => users.id).notNull(),
   planId: integer("planId").references(() => plans.id).notNull(),
-  status: varchar("status", { length: 20 }).default("active"), 
+  status: varchar("status", { length: 20 }).default("active"),
   billingPeriod: varchar("billingPeriod", { length: 20 }).default("monthly"), // Adicionado (Erro 500)
   startDate: timestamp("startDate").defaultNow(), // Adicionado (Erro 500)
   endDate: timestamp("endDate"), // Adicionado (Erro 500)
@@ -74,18 +75,18 @@ export const credits = pgTable("credits", {
   type: varchar("type", { length: 50 }).notNull(),
   expiresAt: timestamp("expiresAt"), // ✅ Resolvido erro TS(2339)
   isExpired: boolean("isExpired").default(false), // ✅ Resolvido erro TS(2339)
-  
+
   // Colunas de lógica diária migradas para cá
   creditsInitial: integer("creditsInitial").default(0),
   creditsDaily: integer("creditsDaily").default(0),
   creditsBonus: integer("creditsBonus").default(0),
   lastDailyReset: timestamp("lastDailyReset").defaultNow(),
-  
+
   createdAt: timestamp("createdAt").defaultNow(),
 });
 
 // --- TABELA DE CONTROLE DE CRÉDITOS (user_credits) ---
-export const userCredits = pgTable("user_credits", { 
+export const userCredits = pgTable("user_credits", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),
   creditsInitial: integer("creditsInitial").default(500),
@@ -100,7 +101,7 @@ export const creditTransactions = pgTable("credit_transactions", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),
   amount: integer("amount").notNull(),
-  type: varchar("type", { length: 50 }).notNull(), 
+  type: varchar("type", { length: 50 }).notNull(),
   description: text("description"),
   toolUsed: varchar("toolUsed", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -111,8 +112,8 @@ export const savedStudies = pgTable("saved_studies", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),
   toolName: varchar("toolName", { length: 100 }).notNull(),
-  input: text("input").notNull(), 
-  output: text("output").notNull(), 
+  input: text("input").notNull(),
+  output: text("output").notNull(),
   creditCost: integer("creditCost").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
