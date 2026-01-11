@@ -71,12 +71,14 @@ app.post("/api/register", async (req, res) => {
 
     // 2. Localização do Plano FREE (Sempre iniciar como Free)
     // O frontend cuidará do upgrade se o usuário selecionou um pago
+    // 2. Localização do Plano FREE (Hard-coded fallback ID: 1)
     const [freePlan] = await db.select().from(plans).where(eq(plans.name, 'free')).limit(1);
 
-    console.log(">>> DEBUG REGISTER: Params planId:", planId);
-    console.log(">>> DEBUG REGISTER: Found freePlan:", freePlan);
+    // HARD FAIL-SAFE: Se não achar, usa ID 1.
+    const freePlanId = freePlan ? freePlan.id : 1;
+    console.log(`>>> DEBUG REGISTER: Params planId: ${planId} (IGNORED) -> Enforcing Plan ID: ${freePlanId}`);
 
-    if (!freePlan) throw new Error("Plano gratuito padrão não encontrado.");
+    if (!freePlan && freePlanId !== 1) throw new Error("Plano gratuito não encontrado e fallback falhou.");
 
     // 3. Persistência no Banco Local com openId para evitar erro de constraint
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -93,9 +95,11 @@ app.post("/api/register", async (req, res) => {
     } as any).returning({ id: users.id, email: users.email, role: users.role });
 
     // 4. Ativação de Assinatura e Créditos
+    console.log(`>>> DEBUG REGISTER: Inserting Subscription for User ${newUser.id} with Plan ${freePlanId}`);
+
     await db.insert(subscriptions).values({
       userId: newUser.id,
-      planId: freePlan.id,
+      planId: freePlanId, // ✅ GARANTIDO SER O FREE (ou 1)
       status: "active",
       startDate: new Date(),
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)

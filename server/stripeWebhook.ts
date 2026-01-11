@@ -86,17 +86,27 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                         .where(eq(credits.userId, userId));
 
                     // 5. Registrar pagamento no histórico
-                    await db.insert(payments).values({
-                        userId: userId,
-                        amount: session.amount_total, // centavos
-                        currency: session.currency || 'brl',
-                        status: 'approved',
-                        paymentMethod: 'stripe_subscription',
-                        stripePaymentId: session.payment_intent as string || session.id, // Em assinaturas, session.id é mais útil se payment_intent for nulo
-                        externalId: subscriptionId,
-                        type: `plan_${billingPeriod}`,
-                        creditsAmount: 0 // Não é compra de créditos avulsos
-                    });
+                    // Buscar ID da assinatura local
+                    const [localSub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
+
+                    try {
+                        await db.insert(payments).values({
+                            userId: userId,
+                            subscriptionId: localSub?.id, // ✅ ID Local
+                            amount: session.amount_total,
+                            currency: session.currency || 'brl',
+                            status: 'approved',
+                            paymentMethod: 'stripe_subscription',
+                            stripePaymentId: session.payment_intent as string || session.id,
+                            externalId: subscriptionId, // O ID da Stripe Sub vai no externalId
+                            type: `plan_${billingPeriod}`,
+                            creditsAmount: 0,
+                            createdAt: new Date()
+                        });
+                        console.log(`✅ Pagamento registrado para User ${userId} (Stripe: ${session.id})`);
+                    } catch (paymentErr) {
+                        console.error("❌ Erro ao gravar pagamento (Stripe):", paymentErr);
+                    }
                 }
                 break;
             }
@@ -128,16 +138,23 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                         .where(eq(subscriptions.id, sub.id));
 
                     // Registrar pagamento
-                    await db.insert(payments).values({
-                        userId: sub.userId,
-                        amount: invoice.amount_paid,
-                        currency: invoice.currency,
-                        status: 'approved',
-                        paymentMethod: 'stripe_recurring',
-                        stripePaymentId: invoice.payment_intent as string,
-                        externalId: invoice.id,
-                        type: `plan_${sub.billingPeriod}`,
-                    });
+                    try {
+                        await db.insert(payments).values({
+                            userId: sub.userId,
+                            subscriptionId: sub.id, // ✅ Já temos a assinatura local aqui
+                            amount: invoice.amount_paid,
+                            currency: invoice.currency,
+                            status: 'approved',
+                            paymentMethod: 'stripe_recurring',
+                            stripePaymentId: invoice.payment_intent as string || invoice.id,
+                            externalId: invoice.id,
+                            type: `plan_${sub.billingPeriod}`,
+                            createdAt: new Date()
+                        });
+                        console.log(`✅ Renovação registrada para User ${sub.userId} (Invoice: ${invoice.id})`);
+                    } catch (invErr) {
+                        console.error("❌ Erro ao gravar renovação (Stripe):", invErr);
+                    }
 
                     // REFILS DE CRÉDITOS? 
                     // Se for renovação mensal, devemos refilar os créditos mensais?

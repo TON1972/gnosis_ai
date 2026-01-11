@@ -84,3 +84,20 @@ export async function createStripeCheckout(params: {
         throw new Error("Erro ao iniciar pagamento com Stripe");
     }
 }
+
+/**
+ * Cria uma sessão do Portal do Cliente Stripe (para gerenciar assinaturas/cartões)
+ */
+export async function createPortalSession(customerId: string) {
+    try {
+        const session = await stripe.billingPortal.sessions.create({
+            customer: customerId,
+            return_url: `${BASE_URL}/perfil`,
+        });
+
+        return session.url;
+    } catch (error) {
+        console.error("Erro ao criar sessão do portal Stripe:", error);
+        throw new Error("Erro ao acessar portal de cobrança");
+    }
+}

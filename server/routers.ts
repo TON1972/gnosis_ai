@@ -26,7 +26,7 @@ import { getUserCredits, useCredits, getUserActivePlan } from "./credits";
 import { checkSubscriptionStatus, markSubscriptionPaid } from "./subscriptionStatus";
 import { getUserStats, getFinancialCalendar, getDelinquentUsers } from "./admin";
 import { createSubscriptionCheckout, createCreditsCheckout, createManualPaymentCheckout } from "./mercadopago";
-import { createStripeCheckout } from "./stripe";
+import { createStripeCheckout, createPortalSession } from "./stripe";
 import { invokeLLM } from "./_core/llm";
 import { notifyOwner } from "./_core/notification";
 import { chatbotContacts, ticketMessages } from "../drizzle/schema";
@@ -1164,6 +1164,24 @@ export const appRouter = router({
 
         // Retorna o init_point para o frontend redirecionar
         return result;
+      }),
+
+    /**
+     * ✅ Cria sessão do Portal de Cobrança (Stripe)
+     */
+    createPortalSession: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database error");
+
+        const [user] = await db.select().from(users).where(eq(users.id, ctx.user.id));
+
+        if (!user || !user.stripeCustomerId) {
+          throw new Error("Você ainda não possui uma assinatura vinculada.");
+        }
+
+        const url = await createPortalSession(user.stripeCustomerId);
+        return { url };
       }),
 
     /**

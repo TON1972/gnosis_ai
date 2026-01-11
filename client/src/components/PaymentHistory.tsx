@@ -90,9 +90,11 @@ export default function PaymentHistory() {
                                                 {(tx.creditsAmount || 0) > 0 && (
                                                     <div className="text-xs text-green-400">+{tx.creditsAmount} créditos</div>
                                                 )}
-                                                {tx.mercadoPagoId && (
+                                                {tx.mercadoPagoId ? (
                                                     <div className="text-xs text-gray-400" title={`MP ID: ${tx.mercadoPagoId}`}>Ref: {tx.externalId?.split('-')[0] || 'N/A'}</div>
-                                                )}
+                                                ) : tx.stripePaymentId ? (
+                                                    <div className="text-xs text-gray-400" title={`Stripe ID: ${tx.stripePaymentId}`}>Ref: {tx.stripePaymentId.slice(-8)}</div>
+                                                ) : null}
                                             </div>
                                         </div>
                                     </td>

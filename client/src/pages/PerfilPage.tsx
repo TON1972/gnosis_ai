@@ -8,8 +8,9 @@ import { APP_LOGO, APP_TITLE } from "@/const";
 import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import NoCreditsModal from "@/components/NoCreditsModal";
 import PaymentHistory from "@/components/PaymentHistory";
-import { User, CreditCard, Package, Zap, Calendar, Gift, Info, TrendingUp } from "lucide-react";
+import { User, CreditCard, Package, Zap, Calendar, Gift, Info, TrendingUp, Settings } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { toast } from "sonner";
 
 export default function PerfilPage() {
   const { user, logout, loading } = useAuth();
@@ -18,6 +19,16 @@ export default function PerfilPage() {
   const { data: credits } = trpc.credits.balance.useQuery();
   const { data: activePlan } = trpc.credits.activePlan.useQuery();
   const { data: usageHistory, isLoading: isLoadingHistory } = trpc.credits.usageHistory.useQuery();
+
+  // Mutation para criar sessão do portal
+  const createPortalSession = trpc.payments.createPortalSession.useMutation({
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (error) => {
+      toast.error("Erro ao acessar portal: " + error.message);
+    }
+  });
 
   // Scroll ao topo ao carregar
   React.useEffect(() => {
@@ -104,6 +115,22 @@ export default function PerfilPage() {
                 Voltar ao Dashboard
               </Button>
             </Link>
+            {/* Botão Gerenciar Assinatura (Só aparece se nao for Free) */}
+            {activePlan?.plan?.name !== 'free' && (
+              <Button
+                onClick={() => createPortalSession.mutate()}
+                disabled={createPortalSession.isPending}
+                className="col-span-1 md:col-span-2 bg-[#1e3a5f] hover:bg-[#2a4a7f] text-[#d4af37] font-bold py-6 text-lg border-2 border-[#d4af37] flex items-center justify-center gap-3"
+              >
+                {createPortalSession.isPending ? "Carregando..." : (
+                  <>
+                    <Settings className="w-6 h-6" />
+                    Gerenciar Assinatura (Stripe)
+                  </>
+                )}
+              </Button>
+            )}
+
           </div>
 
 
