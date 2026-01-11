@@ -27,9 +27,15 @@ export async function POST(req: Request) {
 
         if (authError) return new Response(JSON.stringify({ success: false, message: authError.message }), { status: 400 });
 
-        // 2. Localização do Plano
-        const [selectedPlan] = await db.select().from(plans).where(eq(plans.id, Number(planId))).limit(1);
-        if (!selectedPlan) throw new Error("Plano selecionado não existe.");
+        // 2. Localização do Plano FREE (Sempre iniciar como Free)
+        // Hard-coded fallback ID: 1
+        const [freePlan] = await db.select().from(plans).where(eq(plans.name, 'free')).limit(1);
+
+        // HARD FAIL-SAFE: Se não achar, usa ID 1.
+        const freePlanId = freePlan ? freePlan.id : 1;
+        console.log(`>>> DEBUG API REGISTER: Params planId: ${planId} (IGNORED) -> Enforcing Plan ID: ${freePlanId}`);
+
+        if (!freePlan && freePlanId !== 1) throw new Error("Plano gratuito não encontrado e fallback falhou.");
 
         // 3. Persistência no Banco Local com openId para evitar erro de constraint
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -48,21 +54,21 @@ export async function POST(req: Request) {
         // 4. Ativação de Assinatura e Créditos
         await db.insert(subscriptions).values({
             userId: newUser.id,
-            planId: selectedPlan.id,
+            planId: freePlanId, // ✅ GARANTIDO SER O FREE
             status: "active",
             startDate: new Date(),
             endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
         });
 
-        const initial = Number(selectedPlan.creditsInitial ?? 0);
-        const daily = Number(selectedPlan.creditsDaily ?? 0);
+        const initial = Number(freePlan?.creditsInitial ?? 0);
+        const daily = Number(freePlan?.creditsDaily ?? 0);
 
         await db.insert(credits).values({
             userId: newUser.id,
             amount: (initial + daily).toString(),
             creditsInitial: initial.toString(),
             creditsDaily: daily.toString(),
-            type: selectedPlan.name === 'alianca' ? 'alianca' : 'initial',
+            type: 'initial', // Sempre initial para Free
             createdAt: new Date(),
         } as any);
 
