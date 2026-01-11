@@ -39,8 +39,9 @@ export async function createStripeCheckout(params: {
     userId: number;
     userEmail: string;
     customerId: string; // ✅ Agora obrigatório
+    trialDays?: number;
 }) {
-    const { planId, planName, price, billingPeriod, userId, userEmail, customerId } = params;
+    const { planId, planName, price, billingPeriod, userId, userEmail, customerId, trialDays } = params;
 
     try {
         const unitAmount = Math.round(price * 100);
@@ -71,6 +72,9 @@ export async function createStripeCheckout(params: {
                 billingPeriod: billingPeriod,
                 type: 'subscription'
             },
+            subscription_data: trialDays ? {
+                trial_period_days: trialDays
+            } : undefined,
             success_url: `${BASE_URL}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${BASE_URL}/dashboard?payment=cancelled`,
             allow_promotion_codes: true,
