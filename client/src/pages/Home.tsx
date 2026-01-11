@@ -210,7 +210,7 @@ export default function Home() {
                 "esboços_de_pregação",
                 "apologética_avançada",
                 "teologia_sistemática",
-                "patrística", // ou história_da_igreja_detalhada se for o caso
+                "história_da_igreja_detalhada", // ou história_da_igreja_detalhada se for o caso
                 "linha_do_tempo_teológica"
               ];
 
@@ -223,7 +223,7 @@ export default function Home() {
                 "esboços_de_pregação": "Esboços de Pregação",
                 "apologética_avançada": "Apologética Avançada",
                 "teologia_sistemática": "Teologia Sistemática",
-                "patrística": "História da Igreja (Patrística)",
+                "patrística": "História da Igreja Detalhada",
                 "história_da_igreja_detalhada": "História da Igreja Detalhada",
                 "linha_do_tempo_teológica": "Linha do Tempo Teológica"
               };
