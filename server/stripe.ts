@@ -73,6 +73,7 @@ export async function createStripeCheckout(params: {
             },
             success_url: `${BASE_URL}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${BASE_URL}/dashboard?payment=cancelled`,
+            allow_promotion_codes: true,
         });
 
         return {
