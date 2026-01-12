@@ -199,7 +199,7 @@ export default function Home() {
             <Loader2 className="w-12 h-12 animate-spin text-[#1e3a5f]" />
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto">
             {(() => {
               const DISPLAY_ORDER = [
                 "hermenêutica_avançada",
@@ -235,7 +235,7 @@ export default function Home() {
                 });
 
               return displayedTools?.map((tool: any) => {
-                const isMobileOnly = tool.name === "linha_tempo_teologica";
+                const isMobileOnly = tool.name === "linha_do_tempo_teológica";
                 const visibilityClass = isMobileOnly ? "block md:hidden" : "block";
                 const finalName = displayNameOverrides[tool.name] || tool.displayName || tool.name;
 
