@@ -1119,7 +1119,7 @@ export const appRouter = router({
 
             // Delegate to Stripe helper
             const planName = input.title.replace('Plano ', '').replace(' - Gnosis AI', '');
-            const isLumenAnnual = planName.toLowerCase().includes('lumen') && input.billingPeriod === 'yearly';
+            const isAnnualTrialEligible = (planName.toLowerCase().includes('lumen') || planName.toLowerCase().includes('premium')) && input.billingPeriod === 'yearly';
 
             const stripeSession = await createStripeCheckout({
               planId: Number(input.id),
@@ -1129,7 +1129,7 @@ export const appRouter = router({
               userId: ctx.user.id,
               userEmail: user.email,
               customerId: customerId,
-              trialDays: isLumenAnnual ? 30 : undefined
+              trialDays: isAnnualTrialEligible ? 30 : undefined
             });
 
             // O frontend espera `init_point`, mas o Stripe retorna `url`
