@@ -1,307 +1,188 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Button } from "./ui/button";
-import { Coins, Crown, Sparkles, Gift } from "lucide-react";
+import { Coins, Crown, Sparkles, Gift, CheckCircle2, Zap, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 interface BuyCreditsModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-const PLAN_UPGRADES = [
-  {
-    name: "Aliança",
-    price: "R$ 19,98",
-    priceValue: 19.98,
-    period: "/mês",
-    creditsInitial: "1.500 créditos iniciais",
-    creditsDaily: "100 créditos/dia",
-    tools: "10 de 19 ferramentas disponíveis",
-    planKey: "alianca" as const,
-    highlight: false
-  },
-  {
-    name: "Lumen",
-    price: "R$ 36,98",
-    priceValue: 36.98,
-    period: "/mês",
-    creditsInitial: "3.000 créditos iniciais",
-    creditsDaily: "200 créditos/dia",
-    tools: "Todas as 19 ferramentas",
-    planKey: "lumen" as const,
-    highlight: true
-  },
-  {
-    name: "GNOSIS Premium",
-    price: "R$ 68,98",
-    priceValue: 68.98,
-    period: "/mês",
-    creditsInitial: "6.000 créditos iniciais",
-    creditsDaily: "300 créditos/dia",
-    tools: "Todas as 19 ferramentas",
-    planKey: "premium" as const,
-    highlight: false,
-    premium: true
-  }
-];
-
 const BONUS_CREDITS = [
-  { amount: 500, price: "R$ 9,90", pricePerCredit: "R$ 0,0198" },
-  { amount: 1500, price: "R$ 24,90", pricePerCredit: "R$ 0,0166", popular: true },
-  { amount: 2500, price: "R$ 39,90", pricePerCredit: "R$ 0,0160" },
-  { amount: 5000, price: "R$ 69,90", pricePerCredit: "R$ 0,0140", bestValue: true },
+  { amount: 1000, price: 9.90, label: "R$ 9,90" },
+  { amount: 3000, price: 24.90, label: "R$ 24,90" },
+  { amount: 6000, price: 39.90, label: "R$ 39,90" },
+  { amount: 10000, price: 69.90, label: "R$ 69,90" },
 ];
 
 export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
-  const { data: activePlan } = trpc.credits.activePlan.useQuery();
-  const { data: allPlans } = trpc.plans.list.useQuery();
-  const isFreeUser = !activePlan || activePlan.plan.name === "free";
+  const { data: allPlans, isLoading: isLoadingPlans } = trpc.plans.list.useQuery();
+  const { data: allTools, isLoading: isLoadingTools } = trpc.tools.list.useQuery();
+  const { data: activePlanData } = trpc.credits.activePlan.useQuery();
+
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
-  
-  const createSubscriptionCheckout = trpc.payments.createSubscriptionCheckout.useMutation();
-  const createCreditsCheckout = trpc.payments.createCreditsCheckout.useMutation();
-  
-  const getPlanId = (planName: string) => {
-    const fullName = planName === "GNOSIS Premium" ? `Plano ${planName}` : `Plano ${planName}`;
-    const plan = allPlans?.find(p => p.displayName === fullName);
-    return plan?.id || 0;
-  };
-  
-  const getYearlyPrice = (monthly: number) => {
-    const yearly = monthly * 12;
-    const discount = yearly * 0.165;
-    return (yearly - discount).toFixed(2);
-  };
-  
-  const getDisplayPrice = (priceValue: number) => {
-    if (billingPeriod === 'yearly') {
-      const yearlyTotal = parseFloat(getYearlyPrice(priceValue));
-      const monthlyWithDiscount = (yearlyTotal / 12).toFixed(2).replace('.', ',');
-      return { main: `R$ ${monthlyWithDiscount}`, multiplier: 'x 12' };
-    }
-    return { main: `R$ ${priceValue.toFixed(2).replace('.', ',')}`, multiplier: null };
-  };
-  
-  const getDisplayPeriod = () => {
-    return billingPeriod === 'yearly' ? '/ano' : '/mês';
-  };
-  
-  const handleSubscribe = async (planId: number) => {
-    try {
-      const result = await createSubscriptionCheckout.mutateAsync({ planId, billingPeriod });
-      if (result.init_point) {
-        window.location.href = result.init_point;
+  const [view, setView] = useState<'credits' | 'plans'>('credits');
+
+  const createCheckout = trpc.payments.createCheckoutSession.useMutation({
+    onSuccess: (data) => {
+      if (data.init_point) {
+        window.location.href = data.init_point;
       }
-    } catch (error) {
-      console.error('Erro ao criar checkout:', error);
-      alert('Erro ao processar pagamento. Tente novamente.');
+    },
+    onError: (error) => {
+      toast.error("Erro ao iniciar pagamento: " + error.message);
     }
-  };
-  
-  const handleBuyCredits = async (credits: number, price: number) => {
-    try {
-      const result = await createCreditsCheckout.mutateAsync({ credits, price });
-      if (result.init_point) {
-        window.location.href = result.init_point;
-      }
-    } catch (error) {
-      console.error('Erro ao criar checkout:', error);
-      alert('Erro ao processar pagamento. Tente novamente.');
+  });
+
+  useEffect(() => {
+    if (open) {
+      // Default to credits view as it's the "Buy Credits" modal
+      setView('credits');
     }
+  }, [open]);
+
+  const formatPriceDisplay = (value: any) => {
+    const numericValue = Number(value);
+    if (isNaN(numericValue)) return "0,00";
+    // O banco guarda em cents, então dividimos por 100
+    const baseValue = billingPeriod === 'yearly' ? (numericValue / 12) : numericValue;
+    return (baseValue / 100).toFixed(2).replace('.', ',');
   };
+
+  const isLoading = isLoadingPlans || isLoadingTools;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-[#FFFACD] to-[#F0E68C] border-4 border-[#d4af37]">
-        <DialogHeader>
-          <DialogTitle className="text-3xl font-bold text-[#1e3a5f] text-center">
-            <Coins className="w-10 h-10 inline-block mr-3 text-[#d4af37]" />
+      <DialogContent className="w-[98vw] md:max-w-7xl h-[95vh] md:h-auto md:max-h-[92vh] overflow-y-auto bg-gradient-to-br from-[#FFFACD] to-[#F0E68C] border-4 border-[#d4af37] p-4 md:p-8 custom-scrollbar">
+        <DialogHeader className="p-4 text-center">
+          <DialogTitle className="text-xl md:text-3xl font-black text-[#1e3a5f] flex items-center justify-center gap-2">
+            <Coins className="w-8 h-8 md:w-10 md:h-10 text-[#d4af37]" />
             Comprar Créditos Avulso
           </DialogTitle>
-          <DialogDescription className="text-lg text-[#8b6f47] text-center">
-            Escolha uma das opções abaixo
+          <DialogDescription className="text-base md:text-lg text-[#8b6f47] text-center">
+            Escolha uma das opções abaixo para impulsionar seus estudos
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-8 mt-6">
-          {/* ORDEM INVERTIDA: Créditos Avulso PRIMEIRO */}
-          <div>
-            <h3 className="text-2xl font-bold text-[#1e3a5f] mb-4 flex items-center gap-2">
-              <Gift className="w-6 h-6 text-[#d4af37]" />
-              Pacotes de Créditos Avulso
-            </h3>
-            <p className="text-sm text-[#8b6f47] mb-4">
-              <strong>Créditos avulsos nunca expiram</strong> e podem ser usados em qualquer plano!
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {BONUS_CREDITS.map((credit, index) => (
-                <div
-                  key={index}
-                  className={`rounded-xl p-4 shadow-lg border-3 ${
-                    credit.bestValue
-                      ? "bg-gradient-to-br from-[#d4af37] to-[#B8860B] border-[#1e3a5f] scale-105"
-                      : "bg-white/90 border-[#d4af37]"
-                  } relative`}
-                >
-                  {credit.bestValue && (
-                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-[#1e3a5f] text-[#d4af37] px-2 py-0.5 rounded-full text-xs font-bold">
-                      MELHOR CUSTO
-                    </div>
-                  )}
-                  {credit.popular && (
-                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-[#1e3a5f] text-[#d4af37] px-2 py-0.5 rounded-full text-xs font-bold">
-                      POPULAR
-                    </div>
-                  )}
-                  <div className="text-center mb-3">
-                    <Sparkles className={`w-6 h-6 mx-auto mb-1 ${credit.bestValue ? "text-white" : "text-[#d4af37]"}`} />
-                    <p className={`text-2xl font-bold ${credit.bestValue ? "text-white" : "text-[#1e3a5f]"}`}>
-                      {credit.amount.toLocaleString()}
-                    </p>
-                    <p className={`text-xs ${credit.bestValue ? "text-white/80" : "text-[#8b6f47]"}`}>
-                      créditos
-                    </p>
-                  </div>
-                  <div className="text-center mb-3">
-                    <p className={`text-xl font-bold ${credit.bestValue ? "text-white" : "text-[#1e3a5f]"}`}>
-                      {credit.price}
-                    </p>
-                    <p className={`text-xs ${credit.bestValue ? "text-white/70" : "text-[#8b6f47]"}`}>
-                      {credit.pricePerCredit}/crédito
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => handleBuyCredits(credit.amount, parseFloat(credit.price.replace('R$ ', '').replace(',', '.')))}
-                    className={`w-full ${
-                      credit.bestValue
-                        ? "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
-                        : "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
-                    }`}
-                    size="sm"
-                  >
-                    Comprar
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* SELETOR DE ABAS */}
+        <div className="flex justify-center gap-2 mb-8 px-4">
+          <Button
+            onClick={() => setView('credits')}
+            className={`flex-1 md:w-48 font-bold rounded-xl transition-all h-12 border-2 ${view === 'credits' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f] shadow-lg scale-105' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]/20'}`}
+          >
+            <Gift className="w-4 h-4 mr-2" /> Avulsos
+          </Button>
+          <Button
+            onClick={() => setView('plans')}
+            className={`flex-1 md:w-48 font-bold rounded-xl transition-all h-12 border-2 ${view === 'plans' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f] shadow-lg scale-105' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]/20'}`}
+          >
+            <Crown className="w-4 h-4 mr-2" /> Assinaturas
+          </Button>
+        </div>
 
-          {/* Planos de Assinatura DEPOIS (apenas para usuários FREE) */}
-          {isFreeUser && (
-            <div>
-              <h3 className="text-2xl font-bold text-[#1e3a5f] mb-4 flex items-center gap-2">
-                <Crown className="w-6 h-6 text-[#d4af37]" />
-                Ou Faça Upgrade do Seu Plano
-              </h3>
-              
-              <div className="flex justify-center items-center gap-3 mb-6">
-                <button
-                  onClick={() => setBillingPeriod('monthly')}
-                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                    billingPeriod === 'monthly'
-                      ? 'bg-[#1e3a5f] text-[#d4af37] shadow-lg'
-                      : 'bg-white/80 text-[#8b6f47] hover:bg-white'
-                  }`}
-                >
-                  Mensal
-                </button>
-                <button
-                  onClick={() => setBillingPeriod('yearly')}
-                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all relative ${
-                    billingPeriod === 'yearly'
-                      ? 'bg-[#1e3a5f] text-[#d4af37] shadow-lg'
-                      : 'bg-white/80 text-[#8b6f47] hover:bg-white'
-                  }`}
-                >
-                  Anual
-                  <span className="absolute -top-1 -right-1 bg-[#d4af37] text-[#1e3a5f] text-xs px-1.5 py-0.5 rounded-full font-bold">
-                    -16,5%
-                  </span>
+        <div className="space-y-8 px-2">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-12 h-12 animate-spin text-[#1e3a5f]" />
+              <p className="mt-4 font-bold text-[#1e3a5f]">Carregando ofertas...</p>
+            </div>
+          ) : view === 'plans' ? (
+            /* CONTEÚDO DE PLANOS */
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div className="flex justify-center items-center gap-4 mb-8">
+                <button onClick={() => setBillingPeriod('monthly')} className={`px-6 py-2 rounded-full font-bold text-sm border-2 transition-all ${billingPeriod === 'monthly' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f]' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]'}`}>Mensal</button>
+                <button onClick={() => setBillingPeriod('yearly')} className={`px-6 py-2 rounded-full font-bold text-sm border-2 relative transition-all ${billingPeriod === 'yearly' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f]' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]'}`}>
+                  Anual <span className="absolute -top-3 -right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse shadow-md">-16,5%</span>
                 </button>
               </div>
-              
-              <div className="grid md:grid-cols-3 gap-4">
-                {PLAN_UPGRADES.map((plan, index) => {
-                  const planId = getPlanId(plan.name);
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {allPlans?.map((plan: any) => {
+                  const isActive = String(activePlanData?.plan?.id) === String(plan.id);
+                  const isLumen = plan.name === 'lumen';
+                  const isProcessing = createCheckout.isPending && createCheckout.variables?.id === String(plan.id);
+                  const price = billingPeriod === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+
                   return (
-                    <div
-                      key={index}
-                      className={`rounded-xl p-6 shadow-lg border-3 ${
-                        plan.highlight
-                          ? "bg-gradient-to-br from-[#d4af37] to-[#B8860B] border-[#1e3a5f] scale-105"
-                          : plan.premium
-                          ? "bg-gradient-to-br from-[#1e3a5f] to-[#2a4a7f] border-[#d4af37]"
-                          : "bg-white/90 border-[#d4af37]"
-                      } relative`}
-                    >
-                      {plan.highlight && (
-                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#1e3a5f] text-[#d4af37] px-3 py-1 rounded-full text-xs font-bold">
-                          RECOMENDADO
-                        </div>
-                      )}
-                      <h4 className={`text-xl font-bold mb-3 ${
-                        plan.highlight || plan.premium ? "text-white" : "text-[#1e3a5f]"
-                      }`}>
-                        {plan.name}
-                      </h4>
-                      <div className="mb-4">
-                        <span className={`text-3xl font-bold ${
-                          plan.highlight || plan.premium ? "text-white" : "text-[#1e3a5f]"
-                        }`}>
-                          {getDisplayPrice(plan.priceValue).main}
-                        </span>
-                        {getDisplayPrice(plan.priceValue).multiplier && (
-                          <span className={`text-sm ml-1 ${
-                            plan.highlight || plan.premium ? "text-white/60" : "text-[#8b6f47]/60"
-                          }`}>
-                            {getDisplayPrice(plan.priceValue).multiplier}
-                          </span>
-                        )}
-                        <span className={`text-sm ${
-                          plan.highlight || plan.premium ? "text-white/80" : "text-[#8b6f47]"
-                        }`}>
-                          {getDisplayPeriod()}
-                        </span>
+                    <div key={plan.id} className={`relative flex flex-col rounded-2xl p-5 border-4 shadow-xl transition-all ${isLumen ? 'bg-[#1e3a5f] border-[#d4af37] text-white ring-4 ring-[#d4af37]/20' : 'bg-white border-[#d4af37]/40 text-[#1e3a5f]'}`}>
+                      {isActive && <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full z-20 shadow-md">ATIVO</div>}
+                      <h4 className="text-lg font-black uppercase tracking-tight">{plan.displayName}</h4>
+                      <div className="flex items-baseline gap-1 mt-2 mb-4">
+                        <span className={`text-3xl font-black ${isLumen ? 'text-[#d4af37]' : 'text-[#1e3a5f]'}`}>R$ {formatPriceDisplay(price)}</span>
+                        <span className="text-[10px] font-bold opacity-70">/mês</span>
                       </div>
-                      <ul className={`space-y-2 mb-4 text-sm ${
-                        plan.highlight || plan.premium ? "text-white/90" : "text-[#8b6f47]"
-                      }`}>
-                        <li>✓ {plan.creditsInitial}</li>
-                        <li>✓ {plan.creditsDaily}</li>
-                        <li>✓ {plan.tools}</li>
-                      </ul>
+                      <div className={`space-y-2 mb-4 p-3 rounded-xl ${isLumen ? 'bg-white/10' : 'bg-[#FFFACD]/50'}`}>
+                        <p className="text-[11px] font-bold flex items-center gap-2"><Zap className="w-3 h-3" /> {Number(plan.creditsInitial).toLocaleString()} iniciais</p>
+                        <p className="text-[11px] font-bold flex items-center gap-2"><Sparkles className="w-3 h-3" /> {Number(plan.creditsDaily).toLocaleString()}/dia</p>
+                      </div>
+                      <div className="flex-1 mb-6 space-y-1.5 overflow-y-auto max-h-48 pr-1 custom-scrollbar text-[10px]">
+                        {allTools?.map((tool: any) => {
+                          const hasTool = plan.toolIds?.includes(String(tool.id));
+                          return (
+                            <div key={tool.id} className="flex items-start gap-2">
+                              {hasTool ? <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0 mt-0.5" /> : <span className="text-red-500 font-bold text-[10px] w-3 text-center shrink-0">×</span>}
+                              <span className={`leading-tight font-medium ${hasTool ? 'opacity-100' : 'opacity-40'}`}>{tool.displayName}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                       <Button
-                        onClick={() => handleSubscribe(planId)}
-                        className={`w-full ${
-                          plan.highlight
-                            ? "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
-                            : plan.premium
-                            ? "bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B]"
-                            : "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
-                        }`}
+                        onClick={() => !isActive && createCheckout.mutate({
+                          type: 'plan',
+                          id: String(plan.id),
+                          price: price / 100,
+                          title: `Plano ${plan.displayName} - Gnosis AI`,
+                          billingPeriod
+                        })}
+                        disabled={isActive || createCheckout.isPending || plan.name === 'free'}
+                        className={`w-full font-black py-5 rounded-xl transition-all shadow-md active:scale-95 ${isActive ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-none' : isLumen ? 'bg-[#d4af37] text-[#1e3a5f] hover:bg-white' : 'bg-[#1e3a5f] text-white'}`}
                       >
-                        Assinar Agora
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : isActive ? 'PLANO ATUAL' : plan.name === 'free' ? 'PLANO BASE' : 'ASSINAR AGORA'}
                       </Button>
                     </div>
                   );
                 })}
               </div>
             </div>
+          ) : (
+            /* CONTEÚDO DE CRÉDITOS AVULSOS */
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              {BONUS_CREDITS.map((credit, index) => {
+                const isProcessing = createCheckout.isPending && createCheckout.variables?.id === String(credit.amount);
+                return (
+                  <div key={index} className="p-4 md:p-6 rounded-2xl border-4 text-center transition-all flex flex-col items-center bg-white border-[#d4af37]/20 shadow-md hover:border-[#d4af37] hover:shadow-xl group">
+                    <Sparkles className="w-8 h-8 mb-2 text-[#d4af37] group-hover:scale-125 transition-transform" />
+                    <h5 className="text-2xl font-black text-[#1e3a5f]">{credit.amount.toLocaleString('pt-BR')}</h5>
+                    <p className="text-[10px] uppercase font-bold opacity-60 mb-4 text-[#8b6f47]">Créditos</p>
+                    <div className="mt-auto w-full">
+                      <p className="text-xl font-black mb-4 text-[#1e3a5f]">{credit.label}</p>
+                      <Button
+                        onClick={() => createCheckout.mutate({
+                          type: 'credits',
+                          id: String(credit.amount),
+                          price: credit.price,
+                          title: `Recarga de ${credit.amount} créditos - Gnosis AI`
+                        })}
+                        disabled={createCheckout.isPending}
+                        className="w-full font-bold text-xs bg-[#1e3a5f] text-white active:scale-95 transition-all hover:bg-[#d4af37] hover:text-[#1e3a5f]"
+                      >
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'COMPRAR'}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
-          
-          {/* Botão Sair discreto */}
-          <div className="mt-6 flex justify-center">
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              className="text-gray-500 hover:text-gray-700 text-sm"
-            >
-              SAIR
-            </Button>
-          </div>
+        </div>
+
+        <div className="text-center pt-8">
+          <Button variant="ghost" onClick={onClose} className="text-[#1e3a5f] font-bold hover:bg-[#d4af37]/10 px-8 py-2 rounded-lg transition-all">Fechar</Button>
         </div>
       </DialogContent>
+      <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }`}</style>
     </Dialog>
   );
 }
