@@ -680,7 +680,8 @@ export default function Home() {
             <div>
               <h4 className="text-xl font-bold mb-4">Contato</h4>
               <p className="text-[#B8860B]">
-                Dúvidas ou sugestões? Entre em contato conosco.
+                Dúvidas ou sugestões? Entre em contato conosco.<br></br>
+                <a href="mailto:contato@gnosisai.global">contato@gnosisai.global</a>
               </p>
             </div>
           </div>
