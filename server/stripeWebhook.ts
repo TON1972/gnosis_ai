@@ -58,24 +58,43 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                     const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
                     if (!plan) throw new Error("Plano não encontrado");
 
-                    // 3. Atualizar assinatura para este novo plano
+                    // 3. BUSCAR DADOS REAIS DA SUBSCRIPTION NO STRIPE (Crucial para Trials)
+                    const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+
+                    // Determinar datas e status reais
+                    // Se tiver trial, o 'current_period_end' pode ser o fim do trial ou do primeiro ciclo, 
+                    // mas 'trial_end' é a fonte da verdade para o fim do teste.
+                    const trialEnd = stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null;
+                    const periodEnd = new Date(stripeSub.current_period_end * 1000);
+
+                    // Se estiver em trial, o próximo faturamento é no fim do trial
+                    const nextBillingDate = trialEnd && trialEnd > new Date() ? trialEnd : periodEnd;
+
+                    // Mapeamento de status (trialing -> active para nosso sistema permitir acesso)
+                    // Mas salvamos o status real do Stripe em 'stripeStatus'
+                    const isActiveOrTrial = ['active', 'trialing'].includes(stripeSub.status);
+                    const appStatus = isActiveOrTrial ? 'active' : 'expired';
+
+                    console.log(`🔍 Sub Details: Status=${stripeSub.status}, TrialEnd=${trialEnd?.toISOString()}`);
+
+                    // 4. Atualizar assinatura com dados precisos
                     const intervalStr = billingPeriod === 'yearly' ? '1 year' : '1 month';
 
                     await db.update(subscriptions)
                         .set({
                             planId: planId,
-                            status: 'active',
+                            status: appStatus,
                             billingPeriod: billingPeriod,
                             stripeSubscriptionId: subscriptionId,
-                            stripeStatus: 'active',
-                            startDate: new Date(),
-                            endDate: sql`NOW() + ${sql.raw(`interval '${intervalStr}'`)}`,
+                            stripeStatus: stripeSub.status, // 'active' ou 'trialing'
+                            startDate: new Date(stripeSub.start_date * 1000),
+                            endDate: periodEnd, // Data "técnica" do fim do ciclo atual do Stripe
+                            nextBillingDate: nextBillingDate, // ✅ CRUCIAL PARA O CHECK DE PAGAMENTO
                             updatedAt: new Date()
                         })
                         .where(eq(subscriptions.userId, userId));
 
-                    // 4. Conceder créditos do plano
-                    // Usa cast para integer para garantir soma correta no Postgres
+                    // 5. Conceder créditos do plano
                     await db.update(credits)
                         .set({
                             creditsInitial: plan.creditsInitial,
@@ -85,27 +104,26 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                         })
                         .where(eq(credits.userId, userId));
 
-                    // 5. Registrar pagamento no histórico
-                    // Buscar ID da assinatura local
+                    // 6. Registrar pagamento (mesmo que seja 0 no trial, é bom ter registro da 'ativação')
                     const [localSub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
 
                     try {
                         await db.insert(payments).values({
                             userId: userId,
-                            subscriptionId: localSub?.id, // ✅ ID Local
-                            amount: session.amount_total,
+                            subscriptionId: localSub?.id,
+                            amount: session.amount_total, // Será 0 se for trial sem charge imediata
                             currency: session.currency || 'brl',
                             status: 'approved',
                             paymentMethod: 'stripe_subscription',
                             stripePaymentId: session.payment_intent as string || session.id,
-                            externalId: subscriptionId, // O ID da Stripe Sub vai no externalId
+                            externalId: subscriptionId,
                             type: `plan_${billingPeriod}`,
                             creditsAmount: 0,
                             createdAt: new Date()
                         });
-                        console.log(`✅ Pagamento registrado para User ${userId} (Stripe: ${session.id})`);
+                        console.log(`✅ Assinatura ativada para User ${userId} (Stripe: ${session.id})`);
                     } catch (paymentErr) {
-                        console.error("❌ Erro ao gravar pagamento (Stripe):", paymentErr);
+                        console.error("❌ Erro ao gravar registro de pagamento/ativação:", paymentErr);
                     }
                 }
                 break;
