@@ -60,14 +60,25 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                     if (!plan) throw new Error("Plano não encontrado");
 
                     // 3. BUSCAR DADOS REAIS DA SUBSCRIPTION NO STRIPE (Crucial para Trials)
-                    // Cast to any because the current Stripe definitions are missing current_period_end despite it being valid
                     const stripeSub = await stripe.subscriptions.retrieve(subscriptionId) as any;
 
+                    console.log(`🔍 [Webhook Debug] Stripe Sub Retrieved:`, {
+                        id: stripeSub.id,
+                        status: stripeSub.status,
+                        current_period_end: stripeSub.current_period_end,
+                        trial_end: stripeSub.trial_end
+                    });
+
                     // Determinar datas e status reais
-                    // Se tiver trial, o 'current_period_end' pode ser o fim do trial ou do primeiro ciclo, 
-                    // mas 'trial_end' é a fonte da verdade para o fim do teste.
                     const trialEnd = stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null;
-                    const periodEnd = new Date(stripeSub.current_period_end * 1000);
+
+                    // Fallback se current_period_end vier nulo (improvável mas possível em certos estados)
+                    let periodEnd = new Date();
+                    if (stripeSub.current_period_end) {
+                        periodEnd = new Date(stripeSub.current_period_end * 1000);
+                    } else {
+                        console.warn("⚠️ [Webhook Warning] current_period_end is missing, defaulting to now()");
+                    }
 
                     // Se estiver em trial, o próximo faturamento é no fim do trial
                     const nextBillingDate = trialEnd && trialEnd > new Date() ? trialEnd : periodEnd;

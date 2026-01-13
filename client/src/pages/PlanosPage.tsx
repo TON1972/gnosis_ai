@@ -55,11 +55,41 @@ export default function PlanosPage() {
     return billingPeriod === 'yearly' ? '/ano' : '/mês';
   };
 
-  const handlePlanClick = (planId: number | string) => {
+  const createCheckout = trpc.payments.createCheckoutSession.useMutation();
+
+  const handlePlanClick = async (planId: number | string) => {
     if (isAuthenticated) {
-      setLocation("/dashboard");
+      if (activePlan?.plan?.id === Number(planId)) {
+        // Já possui este plano
+        return;
+      }
+
+      const plan = plansData?.find(p => p.id === Number(planId));
+      if (!plan) return;
+
+      const billing = billingPeriod;
+      const priceCents = billing === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+      const price = priceCents / 100;
+
+      try {
+        const checkout = await createCheckout.mutateAsync({
+          type: 'plan',
+          id: String(plan.id),
+          price: price,
+          title: `Assinatura Plano ${plan.displayName} (${billing === 'yearly' ? 'Anual' : 'Mensal'}) - Gnosis AI`,
+          billingPeriod: billing
+        });
+
+        if (checkout.init_point) {
+          window.location.href = checkout.init_point;
+        } else {
+          console.error("Erro checkout: link vazio");
+        }
+      } catch (error) {
+        console.error("Erro ao iniciar upgrade:", error);
+      }
+
     } else {
-      // Redirecionamento com parâmetros para abrir o cadastro e selecionar o plano
       window.location.href = `/auth?tab=register&plan=${planId}&billing=${billingPeriod}`;
     }
   };
@@ -100,8 +130,8 @@ export default function PlanosPage() {
           <button
             onClick={() => setBillingPeriod('monthly')}
             className={`px-8 py-4 rounded-lg font-semibold transition-all text-lg ${billingPeriod === 'monthly'
-                ? 'bg-[#1e3a5f] text-[#d4af37] shadow-lg scale-105'
-                : 'bg-white/80 text-[#8b6f47] hover:bg-white'
+              ? 'bg-[#1e3a5f] text-[#d4af37] shadow-lg scale-105'
+              : 'bg-white/80 text-[#8b6f47] hover:bg-white'
               }`}
           >
             Mensal
@@ -109,8 +139,8 @@ export default function PlanosPage() {
           <button
             onClick={() => setBillingPeriod('yearly')}
             className={`px-8 py-4 rounded-lg font-semibold transition-all relative text-lg ${billingPeriod === 'yearly'
-                ? 'bg-[#1e3a5f] text-[#d4af37] shadow-lg scale-105'
-                : 'bg-white/80 text-[#8b6f47] hover:bg-white'
+              ? 'bg-[#1e3a5f] text-[#d4af37] shadow-lg scale-105'
+              : 'bg-white/80 text-[#8b6f47] hover:bg-white'
               }`}
           >
             Anual
@@ -162,10 +192,10 @@ export default function PlanosPage() {
                 <div
                   key={plan.id}
                   className={`rounded-2xl p-10 md:p-8 shadow-2xl border-4 ${isHighlight
-                      ? "bg-gradient-to-br from-[#d4af37] to-[#B8860B] border-[#1e3a5f]"
-                      : isPremium
-                        ? "bg-gradient-to-br from-[#1e3a5f] to-[#2a4a7f] border-[#d4af37]"
-                        : "bg-white/90 border-[#d4af37]"
+                    ? "bg-gradient-to-br from-[#d4af37] to-[#B8860B] border-[#1e3a5f]"
+                    : isPremium
+                      ? "bg-gradient-to-br from-[#1e3a5f] to-[#2a4a7f] border-[#d4af37]"
+                      : "bg-white/90 border-[#d4af37]"
                     } hover:scale-105 transition-transform relative`}
                 >
                   {isHighlight && (
@@ -245,8 +275,8 @@ export default function PlanosPage() {
                             <span className={`w-5 h-5 md:w-4 md:h-4 flex-shrink-0 mt-0.5 text-red-500 font-bold text-lg md:text-base`}>×</span>
                           )}
                           <span className={`text-sm md:text-xs ${isHighlight || isPremium
-                              ? isAvailable ? "text-white" : "text-white/50"
-                              : isAvailable ? "text-[#1e3a5f]" : "text-gray-400"
+                            ? isAvailable ? "text-white" : "text-white/50"
+                            : isAvailable ? "text-[#1e3a5f]" : "text-gray-400"
                             }`}>
                             {tool.displayName}
                           </span>
@@ -257,10 +287,10 @@ export default function PlanosPage() {
                   <Button
                     onClick={() => handlePlanClick(plan.id)}
                     className={`w-full text-lg md:text-base py-6 md:py-3 ${isHighlight
-                        ? "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
-                        : isPremium
-                          ? "bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B]"
-                          : "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
+                      ? "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
+                      : isPremium
+                        ? "bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B]"
+                        : "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
                       }`}
                   >
                     {isFree ? "Começar Grátis" : "Assinar Agora"}

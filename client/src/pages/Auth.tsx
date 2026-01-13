@@ -6,14 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
+  //   Select,
+  //   SelectContent,
+  //   SelectItem,
+  //   SelectTrigger,
+  //   SelectValue
 } from "@/components/ui/select";
-import { BookOpen, Loader2, CheckCircle2 } from "lucide-react";
-import { APP_TITLE } from "@/const";
+import { BookOpen, Loader2 } from "lucide-react";
+import { APP_LOGO, APP_TITLE } from "@/const";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
@@ -31,31 +31,23 @@ export default function Auth() {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState<string>("1");
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly");
+  //   const [selectedPlan, setSelectedPlan] = useState<string>("1"); // Removed
+  //   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly"); // Removed
 
   // Queries & Mutations
-  const { data: plans } = trpc.plans.list.useQuery();
-  const createCheckout = trpc.payments.createCheckoutSession.useMutation();
+  // Queries & Mutations
+  // const { data: plans } = trpc.plans.list.useQuery(); // Removed for simplified registration
+  // const createCheckout = trpc.payments.createCheckoutSession.useMutation(); // Removed
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const planParam = params.get("plan");
     const tabParam = params.get("tab");
-    const billingParam = params.get("billing");
 
-    if (planParam) setSelectedPlan(planParam);
     if (tabParam === "register") setActiveTab("register");
-    if (billingParam === "monthly" || billingParam === "yearly") {
-      setBillingPeriod(billingParam);
-    }
   }, []);
 
-  // ✅ NOVO: Lógica de Login Social preservando o plano
+  // ✅ NOVO: Lógica de Login Social (Simplificada)
   const handleGoogleLogin = () => {
-    // Salvamos o plano escolhido para recuperar no backend após o login
-    document.cookie = `pending_plan_id=${selectedPlan}; path=/; max-age=3600`;
-    document.cookie = `pending_billing_period=${billingPeriod}; path=/; max-age=3600`;
     window.location.href = "/api/oauth/google";
   };
 
@@ -98,51 +90,15 @@ export default function Auth() {
           name: registerName,
           email: registerEmail,
           password: registerPassword,
-          planId: Number(selectedPlan), // Backend ignora para subscrição, mas ok enviar
+          // planId ignorado pelo backend agora
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // 2. Verificar se o plano selecionado é PAGO
-        const plan = plans?.find(p => String(p.id) === String(selectedPlan));
-
-        if (plan && plan.name !== 'free') {
-          toast.success("Conta criada! Redirecionando para pagamento...");
-
-          // Calcular preço com base no periodo
-          // O banco retorna preço em centavos (integer)
-          const priceCents = billingPeriod === 'yearly' ? plan.priceYearly : plan.priceMonthly;
-          const price = priceCents / 100; // Converter para reais (float)
-
-          try {
-            // 3. Criar Sessão de Checkout
-            const checkout = await createCheckout.mutateAsync({
-              type: 'plan',
-              id: String(plan.id),
-              price: price,
-              title: `Assinatura Plano ${plan.displayName} (${billingPeriod === 'yearly' ? 'Anual' : 'Mensal'}) - Gnosis AI`,
-              billingPeriod: billingPeriod
-            });
-
-            if (checkout.init_point) {
-              window.location.href = checkout.init_point;
-              return; // Encerra aqui, o browser vai redirecionar
-            } else {
-              toast.error("Erro ao gerar link de pagamento. Tente fazer o upgrade pelo painel.");
-              window.location.href = "/dashboard";
-            }
-          } catch (payError: any) {
-            console.error("Erro pagamento DETALHADO:", payError);
-            toast.error(`Erro ao iniciar pagamento: ${payError.message || "Erro desconhecido"}`);
-            // window.location.href = "/dashboard"; // PAUSADO PARA DEBUG
-          }
-        } else {
-          // Plano Free
-          toast.success("Conta criada com sucesso!");
-          window.location.href = "/dashboard";
-        }
+        toast.success("Conta criada com sucesso!");
+        window.location.href = "/dashboard";
       } else {
         toast.error(data.message || "Erro ao criar conta");
       }
@@ -150,80 +106,30 @@ export default function Auth() {
       toast.error("Erro no servidor.");
       console.error(error);
     } finally {
-      if (!createCheckout.isPending) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const handlePostLoginCheckout = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const isGoogleCheckout = params.get("google_checkout") === "true";
-
-      if (isGoogleCheckout && plans) {
-        const planId = params.get("plan");
-        const billing = params.get("billing") as 'monthly' | 'yearly';
-
-        const plan = plans.find(p => String(p.id) === String(planId));
-
-        if (plan && plan.name !== 'free') {
-          toast.loading("Processando assinatura via Google...");
-
-          try {
-            const priceCents = billing === 'yearly' ? plan.priceYearly : plan.priceMonthly;
-            const price = priceCents / 100;
-
-            const checkout = await createCheckout.mutateAsync({
-              type: 'plan',
-              id: String(plan.id),
-              price: price,
-              title: `Assinatura Plano ${plan.displayName} (${billing === 'yearly' ? 'Anual' : 'Mensal'}) - Gnosis AI`,
-              billingPeriod: billing || 'yearly'
-            });
-
-            if (checkout.init_point) {
-              window.location.href = checkout.init_point;
-            } else {
-              toast.error("Erro ao gerar pagamento.");
-              window.location.href = "/dashboard";
-            }
-          } catch (error) {
-            console.error(error);
-            toast.error("Erro ao processar pagamento.");
-            window.location.href = "/dashboard";
-          }
-        } else {
-          window.location.href = "/dashboard";
-        }
-      }
-    };
-
-    // Executa se os planos já estiverem carregados
-    if (plans) {
-      handlePostLoginCheckout();
-    }
-  }, [plans, createCheckout]);
+  // Removed post-login checkout useEffect
 
 
-  const getSelectedPlanDetails = () => {
-    return plans?.find(p => String(p.id) === String(selectedPlan));
-  };
-
-  const selectedPlanDetails = getSelectedPlanDetails();
+  // Removed unused getSelectedPlanDetails and selectedPlanDetails helpers
 
   return (
     <div className="min-h-screen bg-[#1e3a5f] flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-[#FFFACD] border-[#d4af37]/30 shadow-2xl">
         <CardHeader className="text-center pb-2">
           <div className="flex justify-center mb-4">
-            <div className="bg-[#d4af37] p-3 rounded-full">
-              <BookOpen className="w-10 h-10 text-[#1e3a5f]" />
+            <div className="rounded-full">
+              <img src={APP_LOGO} alt={APP_TITLE} className="h-32 w-32 object-contain" loading="lazy" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold text-[#1e3a5f] uppercase tracking-tighter">
+          {/* <CardTitle className="text-3xl font-bold text-[#1e3a5f] uppercase tracking-tighter">
             {APP_TITLE}
-          </CardTitle>
+          </CardTitle> */}
+          <h2 className="text-1xl md:text-2xl lg:text-3xl font-bold text-[#1e3a5f] mb-6">
+            Estudos Bíblicos Profundos com IA
+          </h2>
           <CardDescription className="text-[#1e3a5f]/70 font-medium">
             Sua jornada de conhecimento bíblico começa aqui
           </CardDescription>
@@ -280,25 +186,10 @@ export default function Auth() {
                   <Input value={registerName} onChange={(e) => setRegisterName(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3"> {/* Updated grid cols to 1 */}
                   <div className="space-y-1">
                     <Label className="text-[#1e3a5f] font-bold">Email</Label>
                     <Input type="email" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[#1e3a5f] font-bold">Plano Desejado</Label>
-                    <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                      <SelectTrigger className="border-[#d4af37]/40 bg-white h-10">
-                        <SelectValue placeholder="Plano" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-[#d4af37]">
-                        {plans?.map((p) => (
-                          <SelectItem key={p.id} value={p.id.toString()} className="font-bold text-[#1e3a5f]">
-                            {p.displayName.toUpperCase()}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
 
@@ -312,26 +203,8 @@ export default function Auth() {
                     <Input type="password" value={registerConfirmPassword} onChange={(e) => setRegisterConfirmPassword(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                   </div>
                 </div>
-
-                <div className="bg-[#1e3a5f]/5 p-3 rounded-lg border border-[#d4af37]/20 flex flex-col gap-2 mt-2">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#d4af37] mt-0.5" />
-                    <p className="text-[10px] text-[#1e3a5f]/80 italic">
-                      Você selecionou: <strong>{selectedPlanDetails?.displayName}</strong>
-                      {selectedPlanDetails?.name !== 'free' && (
-                        <span> ({billingPeriod === 'yearly' ? 'Anual' : 'Mensal'})</span>
-                      )}
-                    </p>
-                  </div>
-                  {selectedPlanDetails?.name !== 'free' && (
-                    <div className="text-[10px] text-red-500 font-bold ml-6">
-                      * Após criar a conta, você será redirecionado para o pagamento.
-                    </div>
-                  )}
-                </div>
-
                 <Button type="submit" disabled={loading} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold mt-2 shadow-lg transition-all active:scale-95">
-                  {loading && !createCheckout.isPending ? <Loader2 className="animate-spin" /> : createCheckout.isPending ? <Loader2 className="animate-spin ml-2" /> : "Criar Conta e Começar"}
+                  {loading ? <Loader2 className="animate-spin" /> : "Criar Conta e Começar"}
                 </Button>
               </form>
             </TabsContent>
