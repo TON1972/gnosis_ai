@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { stripe } from "./stripe";
+
 import { getDb } from "./db";
 import { users, subscriptions, credits, payments, plans } from "../drizzle/schema";
 import { eq, sql } from "drizzle-orm";
@@ -59,7 +60,8 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                     if (!plan) throw new Error("Plano não encontrado");
 
                     // 3. BUSCAR DADOS REAIS DA SUBSCRIPTION NO STRIPE (Crucial para Trials)
-                    const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+                    // Cast to any because the current Stripe definitions are missing current_period_end despite it being valid
+                    const stripeSub = await stripe.subscriptions.retrieve(subscriptionId) as any;
 
                     // Determinar datas e status reais
                     // Se tiver trial, o 'current_period_end' pode ser o fim do trial ou do primeiro ciclo, 
