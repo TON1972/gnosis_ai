@@ -11,6 +11,7 @@ import PaymentHistory from "@/components/PaymentHistory";
 import { User, CreditCard, Package, Zap, Calendar, Gift, Info, TrendingUp, Settings } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
+import Footer from "@/components/Footer";
 
 export default function PerfilPage() {
   const { user, logout, loading } = useAuth();
@@ -318,6 +319,8 @@ export default function PerfilPage() {
 
         </div>
       </main>
+
+      <Footer />
 
       {/* Modal de Planos e Créditos */}
       <NoCreditsModal

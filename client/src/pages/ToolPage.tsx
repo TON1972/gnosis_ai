@@ -12,6 +12,9 @@ import NoCreditsModal from "@/components/NoCreditsModal";
 import { toast } from "sonner";
 import SubscriptionWarningBanner from "@/components/SubscriptionWarningBanner";
 import DashboardMobileMenu from "@/components/DashboardMobileMenu";
+import Footer from "@/components/Footer";
+import { useUpgradeReminder } from "@/hooks/useUpgradeReminder";
+import UpgradeReminderModal from "@/components/UpgradeReminderModal";
 import "../dashboard-mobile.css";
 
 export default function ToolPage() {
@@ -41,6 +44,9 @@ export default function ToolPage() {
   const saveStudyMutation = trpc.studies.save.useMutation();
 
   const [modalTab, setModalTab] = useState<'plans' | 'credits'>('plans');
+
+  // Upgrade Reminder para usuários free
+  const { showModal: showUpgradeReminder, handleClose: handleCloseUpgradeReminder } = useUpgradeReminder();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -247,11 +253,13 @@ export default function ToolPage() {
           </main>
         </div>
       </div>
+      <Footer />
       <NoCreditsModal
         open={showNoCreditsModal}
         onClose={() => setShowNoCreditsModal(false)}
         initialTab={modalTab}
       />
+      <UpgradeReminderModal open={showUpgradeReminder} onClose={handleCloseUpgradeReminder} />
 
       {/* ✅ CSS para os efeitos de luxo do botão */}
       <style>{`

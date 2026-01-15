@@ -11,6 +11,9 @@ import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import { trpc } from "@/lib/trpc";
 import * as LucideIcons from "lucide-react";
 import { User, Lock, BookOpen } from "lucide-react";
+import Footer from "@/components/Footer";
+import { useUpgradeReminder } from "@/hooks/useUpgradeReminder";
+import UpgradeReminderModal from "@/components/UpgradeReminderModal";
 import "../dashboard-mobile.css";
 
 interface ToolFromDb {
@@ -29,6 +32,9 @@ export default function Dashboard() {
   const [showNoCreditsModal, setShowNoCreditsModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
 
+  // Upgrade Reminder para usuários free
+  const { showModal: showUpgradeReminder, handleClose: handleCloseUpgradeReminder } = useUpgradeReminder();
+
   const { data: dbUser } = trpc.auth.me.useQuery(undefined, {
     enabled: !!authUser,
   });
@@ -42,7 +48,7 @@ export default function Dashboard() {
   const currentPlanId = activePlanResponse?.plan?.id || 1;
 
   const { data: planTools } = trpc.plans.getTools.useQuery(
-    { planId: currentPlanId }, 
+    { planId: currentPlanId },
     { enabled: !!currentPlanId }
   );
 
@@ -53,8 +59,8 @@ export default function Dashboard() {
 
   // ✅ Categorias dinâmicas baseadas na coluna 'category' do banco
   const categories = ["Todos", ...Array.from(new Set(allTools.map(t => t.category).filter(Boolean)))];
-  
-  const filteredTools = allTools.filter(tool => 
+
+  const filteredTools = allTools.filter(tool =>
     selectedCategory === "Todos" || tool.category === selectedCategory
   );
 
@@ -179,7 +185,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      <Footer />
       <NoCreditsModal open={showNoCreditsModal} onClose={() => setShowNoCreditsModal(false)} />
+      <UpgradeReminderModal open={showUpgradeReminder} onClose={handleCloseUpgradeReminder} />
     </div>
   );
 }
