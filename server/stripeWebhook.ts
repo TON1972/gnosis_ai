@@ -48,66 +48,115 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                     const subscriptionId = session.subscription as string;
                     const customerId = session.customer as string;
 
-                    console.log(`💰 Stripe Checkout: User ${userId} -> Plan ${planId} (${billingPeriod})`);
+                    console.log(`💰 [Webhook] Checkout Completed:`, {
+                        userId,
+                        planId,
+                        billingPeriod,
+                        subscriptionId,
+                        customerId,
+                        sessionId: session.id
+                    });
 
                     // 1. Atualizar Customer ID do usuário
                     await db.update(users)
                         .set({ stripeCustomerId: customerId })
                         .where(eq(users.id, userId));
+                    console.log(`✅ [Webhook] Customer ID updated for user ${userId}`);
 
                     // 2. Buscar detalhes do plano
                     const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
-                    if (!plan) throw new Error("Plano não encontrado");
+                    if (!plan) {
+                        console.error(`❌ [Webhook] Plan ${planId} not found!`);
+                        throw new Error("Plano não encontrado");
+                    }
+                    console.log(`✅ [Webhook] Plan found:`, { planId, planName: plan.name });
 
                     // 3. BUSCAR DADOS REAIS DA SUBSCRIPTION NO STRIPE (Crucial para Trials)
-                    const stripeSub = await stripe.subscriptions.retrieve(subscriptionId) as any;
+                    // Adicionado expand para garantir que tudos os campos venham (igual ao script de sync)
+                    const stripeSub = await stripe.subscriptions.retrieve(subscriptionId, {
+                        expand: ['latest_invoice', 'default_payment_method']
+                    }) as any;
 
-                    console.log(`🔍 [Webhook Debug] Stripe Sub Retrieved:`, {
+                    console.log(`✅ [Webhook] Stripe Subscription Retrieved:`, {
                         id: stripeSub.id,
                         status: stripeSub.status,
+                        current_period_start: stripeSub.current_period_start,
                         current_period_end: stripeSub.current_period_end,
+                        trial_start: stripeSub.trial_start,
                         trial_end: stripeSub.trial_end
                     });
 
-                    // Determinar datas e status reais
-                    const trialEnd = stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null;
+                    // Determinar datas e status reais com FALLBACKS robustos
+                    const trialEndTimestamp = stripeSub.trial_end;
+                    const periodEndTimestamp = stripeSub.current_period_end;
+                    const startDateTimestamp = stripeSub.start_date;
 
-                    // Fallback se current_period_end vier nulo (improvável mas possível em certos estados)
-                    let periodEnd = new Date();
-                    if (stripeSub.current_period_end) {
-                        periodEnd = new Date(stripeSub.current_period_end * 1000);
-                    } else {
-                        console.warn("⚠️ [Webhook Warning] current_period_end is missing, defaulting to now()");
+                    // ✅ IMPORTANTE: Durante trial, current_period_end pode ser undefined
+                    let effectivePeriodEnd = periodEndTimestamp || trialEndTimestamp;
+
+                    // FALBACK EXTREMO: Se for 'active' e não tiver data, assumir start_date + 30 dias
+                    if (!effectivePeriodEnd && stripeSub.status === 'active' && startDateTimestamp) {
+                        console.warn('⚠️ [Webhook] Usando Fallback de Data: start_date + 30 dias');
+                        effectivePeriodEnd = startDateTimestamp + (30 * 24 * 60 * 60);
                     }
 
-                    // Se estiver em trial, o próximo faturamento é no fim do trial
-                    const nextBillingDate = trialEnd && trialEnd > new Date() ? trialEnd : periodEnd;
+                    const trialEnd = trialEndTimestamp ? new Date(trialEndTimestamp * 1000) : null;
+                    let periodEnd = new Date();
 
-                    // Mapeamento de status (trialing -> active para nosso sistema permitir acesso)
-                    // Mas salvamos o status real do Stripe em 'stripeStatus'
+                    if (effectivePeriodEnd) {
+                        periodEnd = new Date(effectivePeriodEnd * 1000);
+                    } else {
+                        console.warn("⚠️ [Webhook] CRITICAL: current_period_end is missing even after fallbacks, using now()");
+                    }
+
+                    const nextBillingDate = trialEnd && trialEnd > new Date() ? trialEnd : periodEnd;
                     const isActiveOrTrial = ['active', 'trialing'].includes(stripeSub.status);
                     const appStatus = isActiveOrTrial ? 'active' : 'expired';
 
-                    console.log(`🔍 Sub Details: Status=${stripeSub.status}, TrialEnd=${trialEnd?.toISOString()}`);
+                    console.log(`✅ [Webhook] Computed values:`, {
+                        appStatus,
+                        stripeStatus: stripeSub.status,
+                        nextBillingDate: nextBillingDate.toISOString(),
+                        trialEnd: trialEnd?.toISOString(),
+                        periodEnd: periodEnd.toISOString()
+                    });
 
-                    // 4. Atualizar assinatura com dados precisos
-                    const intervalStr = billingPeriod === 'yearly' ? '1 year' : '1 month';
+                    // 4. ✅ UPSERT: Tentar UPDATE primeiro, se não existir, INSERT
+                    const existingSub = await db.select()
+                        .from(subscriptions)
+                        .where(eq(subscriptions.userId, userId))
+                        .limit(1);
 
-                    await db.update(subscriptions)
-                        .set({
-                            planId: planId,
-                            status: appStatus,
-                            billingPeriod: billingPeriod,
-                            stripeSubscriptionId: subscriptionId,
-                            stripeStatus: stripeSub.status, // 'active' ou 'trialing'
-                            startDate: new Date(stripeSub.start_date * 1000),
-                            endDate: periodEnd, // Data "técnica" do fim do ciclo atual do Stripe
-                            nextBillingDate: nextBillingDate, // ✅ CRUCIAL PARA O CHECK DE PAGAMENTO
-                            updatedAt: new Date()
-                        })
-                        .where(eq(subscriptions.userId, userId));
+                    const subscriptionData = {
+                        planId: planId,
+                        status: appStatus as 'active' | 'expired',
+                        billingPeriod: billingPeriod,
+                        stripeSubscriptionId: subscriptionId,
+                        stripeStatus: stripeSub.status,
+                        startDate: new Date(stripeSub.start_date * 1000),
+                        endDate: periodEnd,
+                        nextBillingDate: nextBillingDate,
+                        updatedAt: new Date()
+                    };
+
+                    if (existingSub.length > 0) {
+                        console.log(`✅ [Webhook] Updating existing subscription ${existingSub[0].id}`);
+                        await db.update(subscriptions)
+                            .set(subscriptionData)
+                            .where(eq(subscriptions.id, existingSub[0].id));
+                        console.log(`✅ [Webhook] Subscription updated successfully`);
+                    } else {
+                        console.log(`⚠️ [Webhook] No subscription found, creating new one`);
+                        await db.insert(subscriptions).values({
+                            userId: userId,
+                            ...subscriptionData,
+                            createdAt: new Date()
+                        });
+                        console.log(`✅ [Webhook] New subscription created`);
+                    }
 
                     // 5. Conceder créditos do plano
+                    console.log(`✅ [Webhook] Updating credits for user ${userId}`);
                     await db.update(credits)
                         .set({
                             creditsInitial: plan.creditsInitial,
@@ -116,15 +165,17 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                             lastDailyReset: new Date()
                         })
                         .where(eq(credits.userId, userId));
+                    console.log(`✅ [Webhook] Credits updated successfully`);
 
-                    // 6. Registrar pagamento (mesmo que seja 0 no trial, é bom ter registro da 'ativação')
+                    // 6. Registrar pagamento
                     const [localSub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
+                    console.log(`✅ [Webhook] Recording payment for subscription ${localSub?.id}`);
 
                     try {
                         await db.insert(payments).values({
                             userId: userId,
                             subscriptionId: localSub?.id,
-                            amount: session.amount_total, // Será 0 se for trial sem charge imediata
+                            amount: session.amount_total,
                             currency: session.currency || 'brl',
                             status: 'approved',
                             paymentMethod: 'stripe_subscription',
@@ -134,9 +185,10 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                             creditsAmount: 0,
                             createdAt: new Date()
                         });
-                        console.log(`✅ Assinatura ativada para User ${userId} (Stripe: ${session.id})`);
+                        console.log(`✅ [Webhook] Payment recorded successfully`);
+                        console.log(`🎉 [Webhook] Subscription activation complete for User ${userId}!`);
                     } catch (paymentErr) {
-                        console.error("❌ Erro ao gravar registro de pagamento/ativação:", paymentErr);
+                        console.error("❌ [Webhook] Error recording payment:", paymentErr);
                     }
                 }
                 break;
