@@ -1,0 +1,439 @@
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { trpc } from "@/lib/trpc";
+import {
+    Search,
+    Trash2,
+    Eye,
+    ChevronLeft,
+    ChevronRight,
+    User,
+    Calendar,
+    CreditCard,
+    BookOpen,
+} from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
+
+export function UserManagement() {
+    const [page, setPage] = useState(1);
+    const [search, setSearch] = useState("");
+    const [searchInput, setSearchInput] = useState("");
+    const [planFilter, setPlanFilter] = useState("all");
+    const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+    const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
+
+    const limit = 20;
+
+    // Queries
+    const { data, isLoading, refetch } = trpc.admin.listUsers.useQuery({
+        page,
+        limit,
+        search: search || undefined,
+        planFilter: planFilter !== "all" ? planFilter : undefined,
+    });
+
+    const { data: userDetails } = trpc.admin.getUserDetails.useQuery(
+        { userId: selectedUserId! },
+        { enabled: !!selectedUserId }
+    );
+
+    const deleteMutation = trpc.admin.deleteUser.useMutation({
+        onSuccess: () => {
+            toast.success("Usuário deletado com sucesso!");
+            setDeleteUserId(null);
+            refetch();
+        },
+        onError: (error) => {
+            toast.error(`Erro ao deletar usuário: ${error.message}`);
+        },
+    });
+
+    const handleSearch = () => {
+        setSearch(searchInput);
+        setPage(1);
+    };
+
+    const handleDelete = () => {
+        if (deleteUserId) {
+            deleteMutation.mutate({ userId: deleteUserId });
+        }
+    };
+
+    const formatDate = (date: Date | string) => {
+        try {
+            return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
+        } catch {
+            return "Data inválida";
+        }
+    };
+
+    const getPlanBadgeColor = (planName: string | null) => {
+        if (!planName) return "bg-gray-100 text-gray-700";
+        const name = planName.toLowerCase();
+        if (name === "free") return "bg-gray-100 text-gray-700";
+        if (name === "lumen") return "bg-blue-100 text-blue-700";
+        if (name === "alianca") return "bg-purple-100 text-purple-700";
+        if (name === "premium") return "bg-yellow-100 text-yellow-700";
+        return "bg-gray-100 text-gray-700";
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Header e Busca */}
+            <Card className="p-6 bg-white shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                        <h2 className="text-2xl font-black text-[#1e3a5f] uppercase tracking-tight">
+                            Gerenciar Usuários
+                        </h2>
+                        <p className="text-sm text-gray-400 mt-1">
+                            {data?.total || 0} usuários cadastrados
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Select value={planFilter} onValueChange={setPlanFilter}>
+                            <SelectTrigger
+                                className="w-48 border-gray-300"
+                                style={{ backgroundColor: 'white' }}
+                            >
+                                <SelectValue placeholder="Filtrar por plano" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos os planos</SelectItem>
+                                <SelectItem value="free">FREE</SelectItem>
+                                <SelectItem value="lumen">LUMEN</SelectItem>
+                                <SelectItem value="alianca">ALIANÇA</SelectItem>
+                                <SelectItem value="premium">PREMIUM</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Input
+                            placeholder="Buscar por nome ou email..."
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                            className="w-64"
+                        />
+                        <Button onClick={handleSearch} size="sm">
+                            <Search className="w-4 h-4" />
+                        </Button>
+                    </div>
+                </div>
+            </Card>
+
+            {/* Tabela */}
+            <Card className="p-6 bg-white shadow-sm border border-gray-100">
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <p className="text-gray-400">Carregando usuários...</p>
+                    </div>
+                ) : data?.users.length === 0 ? (
+                    <div className="flex items-center justify-center py-20">
+                        <p className="text-gray-400">Nenhum usuário encontrado</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b border-gray-200">
+                                    <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Nome
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Email
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Plano
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Data de Criação
+                                    </th>
+                                    <th className="text-right py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Ações
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data?.users.map((user) => (
+                                    <tr
+                                        key={user.id}
+                                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <td className="py-4 px-4">
+                                            <p className="font-semibold text-[#1e3a5f]">
+                                                {user.name || "Sem nome"}
+                                            </p>
+                                        </td>
+                                        <td className="py-4 px-4">
+                                            <p className="text-sm text-gray-600">{user.email}</p>
+                                        </td>
+                                        <td className="py-4 px-4">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className={`text-xs font-bold px-3 py-1 rounded-full uppercase ${getPlanBadgeColor(
+                                                        user.planName
+                                                    )}`}
+                                                >
+                                                    {user.planDisplayName || "FREE"}
+                                                </span>
+                                                {user.stripeStatus === "trialing" && (
+                                                    <span className="text-xs font-bold px-2 py-1 rounded-full uppercase bg-orange-100 text-orange-700 border border-orange-300">
+                                                        TRIAL
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-4">
+                                            <p className="text-sm text-gray-600">
+                                                {formatDate(user.createdAt)}
+                                            </p>
+                                        </td>
+                                        <td className="py-4 px-4">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setSelectedUserId(user.id)}
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setDeleteUserId(user.id)}
+                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {/* Paginação */}
+                {data && data.totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
+                        <p className="text-sm text-gray-600">
+                            Página {data.page} de {data.totalPages} ({data.total} usuários)
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage(page - 1)}
+                                disabled={page === 1}
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage(page + 1)}
+                                disabled={page === data.totalPages}
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </Card>
+
+            {/* Modal de Detalhes */}
+            <Dialog open={!!selectedUserId} onOpenChange={() => setSelectedUserId(null)}>
+                <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-black text-[#1e3a5f]">
+                            Detalhes do Usuário
+                        </DialogTitle>
+                        <DialogDescription>
+                            Informações completas do cadastro
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {userDetails && (
+                        <div className="space-y-6 py-4">
+                            {/* Grid Principal */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Nome */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <User className="w-4 h-4 text-gray-500" />
+                                        <p className="text-xs font-bold text-gray-500 uppercase">
+                                            Nome
+                                        </p>
+                                    </div>
+                                    <p className="text-lg font-bold text-[#1e3a5f]">
+                                        {String(userDetails.name || "Sem nome")}
+                                    </p>
+                                </div>
+
+                                {/* Data de Criação */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-gray-500" />
+                                        <p className="text-xs font-bold text-gray-500 uppercase">
+                                            Membro desde
+                                        </p>
+                                    </div>
+                                    <p className="text-base font-semibold text-gray-700">
+                                        {formatDate(userDetails.createdAt as Date)}
+                                    </p>
+                                </div>
+
+                                {/* Email - Full Width */}
+                                <div className="space-y-2 md:col-span-2">
+                                    <p className="text-xs font-bold text-gray-500 uppercase">
+                                        Email
+                                    </p>
+                                    <p className="text-base font-semibold text-gray-700 break-all">
+                                        {String(userDetails.email || "Sem email")}
+                                    </p>
+                                </div>
+
+                                {/* Plano Atual */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <CreditCard className="w-4 h-4 text-gray-500" />
+                                        <p className="text-xs font-bold text-gray-500 uppercase">
+                                            Plano Atual
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span
+                                            className={`inline-block text-sm font-bold px-4 py-2 rounded-full uppercase ${getPlanBadgeColor(
+                                                userDetails.plan_name as string
+                                            )}`}
+                                        >
+                                            {String(userDetails.plan_display_name || "FREE")}
+                                        </span>
+                                        {userDetails.stripe_status === "trialing" && (
+                                            <span className="text-xs font-bold px-2 py-1 rounded-full uppercase bg-orange-100 text-orange-700 border border-orange-300">
+                                                TRIAL
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Status da Assinatura */}
+                                <div className="space-y-2">
+                                    <p className="text-xs font-bold text-gray-500 uppercase">
+                                        Status da Assinatura
+                                    </p>
+                                    <p className="text-base font-semibold text-gray-700 capitalize">
+                                        {String(userDetails.subscription_status || "Sem assinatura")}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Divider */}
+                            <div className="border-t border-gray-200 my-4" />
+
+                            {/* Cards de Estatísticas */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Card className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-blue-500 rounded-xl">
+                                            <BookOpen className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-blue-600 uppercase tracking-wide">
+                                                Estudos Salvos
+                                            </p>
+                                            <p className="text-3xl font-black text-blue-700 mt-1">
+                                                {String(userDetails.studies_count || 0)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </Card>
+
+                                <Card className="p-5 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-purple-500 rounded-xl">
+                                            <CreditCard className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-purple-600 uppercase tracking-wide">
+                                                Créditos Gastos
+                                            </p>
+                                            <p className="text-3xl font-black text-purple-700 mt-1">
+                                                {Math.abs(Number(userDetails.credits_spent || 0))}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </Card>
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter className="mt-6">
+                        <Button variant="outline" onClick={() => setSelectedUserId(null)}>
+                            Fechar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* AlertDialog de Confirmação de Exclusão */}
+            <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
+                <AlertDialogContent className="bg-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. Isso irá permanentemente deletar o
+                            usuário e todos os dados relacionados (estudos, transações, etc).
+                            <br />
+                            <br />
+                            <strong className="text-red-600">
+                                Se o usuário tiver uma assinatura ativa na Stripe, ela será cancelada
+                                automaticamente.
+                            </strong>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Deletar Permanentemente
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+    );
+}

@@ -12,6 +12,13 @@ export interface UserStats {
   paidUsers: number;
 }
 
+export interface PlanDistribution {
+  planName: string;
+  displayName: string;
+  userCount: number;
+  color: string;
+}
+
 export interface FinancialDay {
   date: string;
   subscriptionsExpiring: number;
@@ -35,44 +42,70 @@ export async function getUserStats(): Promise<UserStats> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Total users - simple count
-  const allUsers = await db.select({ id: users.id }).from(users);
-  const totalUsers = allUsers.length;
+  // Query real data from Supabase
+  // Count paid and free users based on active subscriptions AND Stripe payment
+  const userStatsResult = await db.execute(sql`
+    SELECT 
+      (SELECT COUNT(*) FROM users) as total_users,
+      COUNT(DISTINCT CASE 
+        WHEN s.status = 'active' AND p.name != 'free' AND u."stripeCustomerId" IS NOT NULL 
+        THEN u.id 
+      END) as paid_users,
+      (SELECT COUNT(*) FROM users) - COUNT(DISTINCT CASE 
+        WHEN s.status = 'active' AND p.name != 'free' AND u."stripeCustomerId" IS NOT NULL 
+        THEN u.id 
+      END) as free_users
+    FROM users u
+    LEFT JOIN subscriptions s ON u.id = s."userId"
+    LEFT JOIN plans p ON s."planId" = p.id
+  `);
 
-  // Get all active subscriptions with plan info
-  const activeSubscriptions = await db
-    .select({
-      userId: subscriptions.userId,
-      planName: plans.name,
-    })
-    .from(subscriptions)
-    .innerJoin(plans, eq(subscriptions.planId, plans.id))
-    .where(eq(subscriptions.status, "active"));
-
-  // Create a map of userId -> planName for active subscriptions
-  const userPlanMap = new Map<number, string>();
-  for (const sub of activeSubscriptions) {
-    userPlanMap.set(sub.userId, sub.planName);
-  }
-
-  // Count free and paid users
-  let freeUsers = 0;
-  let paidUsers = 0;
-
-  for (const user of allUsers) {
-    const planName = userPlanMap.get(user.id);
-    if (!planName || planName.toLowerCase() === "free") {
-      freeUsers++;
-    } else {
-      paidUsers++;
-    }
-  }
+  const totalUsers = Number(userStatsResult.rows[0]?.total_users || 0);
+  const paidUsers = Number(userStatsResult.rows[0]?.paid_users || 0);
+  const freeUsers = Number(userStatsResult.rows[0]?.free_users || 0);
 
   return {
     totalUsers,
     freeUsers,
     paidUsers,
   };
+}
+
+/**
+ * Get distribution of users by plan
+ */
+export async function getUsersByPlan(): Promise<PlanDistribution[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    SELECT 
+      p.name as plan_name,
+      p."displayName" as display_name,
+      COUNT(DISTINCT u.id) as user_count
+    FROM users u
+    INNER JOIN subscriptions s ON u.id = s."userId"
+    INNER JOIN plans p ON s."planId" = p.id
+    WHERE s.status = 'active'
+      AND u."stripeCustomerId" IS NOT NULL
+    GROUP BY p.name, p."displayName"
+    ORDER BY user_count DESC
+  `);
+
+  // Define cores para cada plano
+  const colorMap: Record<string, string> = {
+    'free': '#94a3b8',
+    'lumen': '#3b82f6',
+    'alianca': '#8b5cf6',
+    'premium': '#d4af37',
+  };
+
+  return result.rows.map((row) => ({
+    planName: row.plan_name as string,
+    displayName: row.display_name as string,
+    userCount: Number(row.user_count || 0),
+    color: colorMap[row.plan_name as string] || '#6b7280',
+  }));
 }
 
 /**
@@ -86,36 +119,38 @@ export async function getFinancialCalendar(): Promise<FinancialDay[]> {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  // Get all subscriptions expiring this month
-  const expiringSubscriptions = await db
-    .select({
-      nextBillingDate: subscriptions.nextBillingDate,
-      priceMonthly: plans.priceMonthly,
-      priceYearly: plans.priceYearly,
-      billingPeriod: subscriptions.billingPeriod,
-    })
-    .from(subscriptions)
-    .innerJoin(plans, eq(subscriptions.planId, plans.id))
-    .where(
-      and(
-        eq(subscriptions.status, "active"),
-        gte(subscriptions.nextBillingDate, startOfMonth),
-        lte(subscriptions.nextBillingDate, endOfMonth),
-        sql`${plans.name} != 'FREE'`
-      )
-    );
+  // Query subscriptions expiring this month using raw SQL
+  const result = await db.execute(sql`
+    SELECT 
+      s."nextBillingDate",
+      p."priceMonthly",
+      p."priceYearly",
+      s."billingPeriod"
+    FROM subscriptions s
+    INNER JOIN plans p ON s."planId" = p.id
+    WHERE s.status = 'active'
+      AND p.name != 'FREE'
+      AND s."nextBillingDate" >= ${startOfMonth}
+      AND s."nextBillingDate" <= ${endOfMonth}
+    ORDER BY s."nextBillingDate"
+  `);
 
   // Group by date
   const calendar: Record<string, { count: number; total: number }> = {};
 
-  for (const sub of expiringSubscriptions) {
-    if (!sub.nextBillingDate) continue;
+  for (const row of result.rows) {
+    const nextBillingDate = row.nextBillingDate as Date;
+    if (!nextBillingDate) continue;
 
-    const dateKey = sub.nextBillingDate.toISOString().split("T")[0];
+    const dateKey = new Date(nextBillingDate).toISOString().split("T")[0];
+    const priceMonthly = Number(row.priceMonthly || 0);
+    const priceYearly = Number(row.priceYearly || 0);
+    const billingPeriod = row.billingPeriod as string;
+
     const value =
-      sub.billingPeriod === "yearly"
-        ? (sub.priceYearly || sub.priceMonthly * 12) / 100
-        : sub.priceMonthly / 100;
+      billingPeriod === "yearly"
+        ? (priceYearly || priceMonthly * 12) / 100
+        : priceMonthly / 100;
 
     if (!calendar[dateKey]) {
       calendar[dateKey] = { count: 0, total: 0 };
@@ -126,16 +161,16 @@ export async function getFinancialCalendar(): Promise<FinancialDay[]> {
   }
 
   // Convert to array
-  const result: FinancialDay[] = [];
+  const financialDays: FinancialDay[] = [];
   for (const [date, data] of Object.entries(calendar)) {
-    result.push({
+    financialDays.push({
       date,
       subscriptionsExpiring: data.count,
       totalValue: data.total,
     });
   }
 
-  return result.sort((a, b) => a.date.localeCompare(b.date));
+  return financialDays.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /**
@@ -150,54 +185,59 @@ export async function getDelinquentUsers(
 
   const now = new Date();
 
-  // Build where conditions
-  const conditions = [
-    sql`${subscriptions.status} IN ('grace_period', 'blocked')`,
-    sql`${plans.name} != 'FREE'`,
-  ];
+  // Build SQL query with optional date filters
+  let query = sql`
+    SELECT 
+      u.id as "userId",
+      u.name as "userName",
+      u.email as "userEmail",
+      p."displayName" as "planName",
+      s."nextBillingDate",
+      p."priceMonthly",
+      p."priceYearly",
+      s."billingPeriod"
+    FROM subscriptions s
+    INNER JOIN users u ON s."userId" = u.id
+    INNER JOIN plans p ON s."planId" = p.id
+    WHERE s.status IN ('grace_period', 'blocked')
+      AND p.name != 'FREE'
+  `;
 
+  // Add date filters if provided
   if (startDate) {
-    conditions.push(gte(subscriptions.nextBillingDate, startDate));
+    query = sql`${query} AND s."nextBillingDate" >= ${startDate}`;
   }
   if (endDate) {
-    conditions.push(lte(subscriptions.nextBillingDate, endDate));
+    query = sql`${query} AND s."nextBillingDate" <= ${endDate}`;
   }
 
-  const delinquentSubs = await db
-    .select({
-      userId: users.id,
-      userName: users.name,
-      userEmail: users.email,
-      planName: plans.displayName,
-      nextBillingDate: subscriptions.nextBillingDate,
-      priceMonthly: plans.priceMonthly,
-      priceYearly: plans.priceYearly,
-      billingPeriod: subscriptions.billingPeriod,
-    })
-    .from(subscriptions)
-    .innerJoin(users, eq(subscriptions.userId, users.id))
-    .innerJoin(plans, eq(subscriptions.planId, plans.id))
-    .where(and(...conditions))
-    .orderBy(desc(subscriptions.nextBillingDate));
+  query = sql`${query} ORDER BY s."nextBillingDate" DESC`;
 
-  return delinquentSubs.map((sub) => {
-    const daysOverdue = sub.nextBillingDate
+  const result = await db.execute(query);
+
+  return result.rows.map((row) => {
+    const nextBillingDate = row.nextBillingDate as Date | null;
+    const daysOverdue = nextBillingDate
       ? Math.floor(
-          (now.getTime() - sub.nextBillingDate.getTime()) / (1000 * 60 * 60 * 24)
-        )
+        (now.getTime() - new Date(nextBillingDate).getTime()) / (1000 * 60 * 60 * 24)
+      )
       : 0;
 
+    const priceMonthly = Number(row.priceMonthly || 0);
+    const priceYearly = Number(row.priceYearly || 0);
+    const billingPeriod = row.billingPeriod as string;
+
     const subscriptionValue =
-      sub.billingPeriod === "yearly"
-        ? (sub.priceYearly || sub.priceMonthly * 12) / 100
-        : sub.priceMonthly / 100;
+      billingPeriod === "yearly"
+        ? (priceYearly || priceMonthly * 12) / 100
+        : priceMonthly / 100;
 
     return {
-      userId: sub.userId,
-      userName: sub.userName || "Sem nome",
-      userEmail: sub.userEmail || "Sem email",
-      planName: sub.planName,
-      nextBillingDate: sub.nextBillingDate || new Date(),
+      userId: Number(row.userId),
+      userName: (row.userName as string) || "Sem nome",
+      userEmail: (row.userEmail as string) || "Sem email",
+      planName: row.planName as string,
+      nextBillingDate: nextBillingDate ? new Date(nextBillingDate) : new Date(),
       daysOverdue,
       subscriptionValue,
     };

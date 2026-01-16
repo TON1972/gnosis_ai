@@ -24,7 +24,9 @@ import { getDb } from "./db";
 import { eq, desc, sql, and, lt, gte, or, asc } from "drizzle-orm";
 import { getUserCredits, useCredits, getUserActivePlan } from "./credits";
 import { checkSubscriptionStatus, markSubscriptionPaid } from "./subscriptionStatus";
-import { getUserStats, getFinancialCalendar, getDelinquentUsers } from "./admin";
+import { getUserStats, getFinancialCalendar, getDelinquentUsers, getUsersByPlan } from "./admin";
+import { getStripeFinancialData } from "./stripeFinancial";
+import { listUsers, deleteUser, getUserDetails } from "./userManagement";
 import { createSubscriptionCheckout, createCreditsCheckout, createManualPaymentCheckout } from "./mercadopago";
 import { createStripeCheckout, createPortalSession } from "./stripe";
 import { invokeLLM } from "./_core/llm";
@@ -512,12 +514,58 @@ export const appRouter = router({
       return await getUserStats();
     }),
 
+    usersByPlan: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+        throw new Error('Acesso negado');
+      }
+      return await getUsersByPlan();
+    }),
+
     financialCalendar: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
         throw new Error('Acesso negado');
       }
       return await getFinancialCalendar();
     }),
+
+    stripeFinancialData: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+        throw new Error('Acesso negado');
+      }
+      return await getStripeFinancialData();
+    }),
+
+    listUsers: protectedProcedure
+      .input(z.object({
+        page: z.number().default(1),
+        limit: z.number().default(20),
+        search: z.string().optional(),
+        planFilter: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+          throw new Error('Acesso negado');
+        }
+        return await listUsers(input.page, input.limit, input.search, input.planFilter);
+      }),
+
+    getUserDetails: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+          throw new Error('Acesso negado');
+        }
+        return await getUserDetails(input.userId);
+      }),
+
+    deleteUser: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+          throw new Error('Acesso negado');
+        }
+        return await deleteUser(input.userId);
+      }),
 
     // No seu appRouter dentro de admin:
     delinquentUsers: protectedProcedure

@@ -17,6 +17,23 @@ const requireUser = t.middleware(async opts => {
     throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
   }
 
+  // ✅ Set RLS context for database queries
+  // This allows RLS policies to use current_setting('app.current_user_id')
+  if (ctx.user.id) {
+    const { getDb } = await import('../db');
+    const { sql } = await import('drizzle-orm');
+    const db = await getDb();
+    if (db) {
+      try {
+        await db.execute(sql`SET LOCAL app.current_user_id = ${ctx.user.id.toString()}`);
+      } catch (error) {
+        console.error('Failed to set RLS context:', error);
+        // Don't fail the request if RLS context setting fails
+        // This allows the app to work even if RLS is not enabled yet
+      }
+    }
+  }
+
   return next({
     ctx: {
       ...ctx,

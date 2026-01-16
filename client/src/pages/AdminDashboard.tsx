@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { StatsOverview } from "@/components/admin/StatsOverview";
-import { FinancialTable } from "@/components/admin/FinancialTable";
+import { PlanDistributionChart } from "@/components/admin/PlanDistributionChart";
+import { FinancialDashboard } from "@/components/admin/FinancialDashboard";
 import { DelinquentList } from "@/components/admin/DelinquentList";
 import { SupportTickets } from "@/components/admin/SupportTickets";
+import { UserManagement } from "@/components/admin/UserManagement";
 import AdminManagement from "@/components/AdminManagement";
 import { AdminToolsManager } from "@/components/admin/AdminToolsManager";
 import { trpc } from "@/lib/trpc";
@@ -15,13 +17,14 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  
+
   // ✅ Estados de Navegação
   const [activeTab, setActiveTab] = useState('overview');
 
   // Queries Globais
   const { data: stats, isLoading: ldStats } = trpc.admin.userStats.useQuery();
-  const { data: financial, isLoading: ldFin } = trpc.admin.financialCalendar.useQuery();
+  const { data: planDistribution, isLoading: ldPlanDist } = trpc.admin.usersByPlan.useQuery();
+  const { data: stripeFinancial, isLoading: ldStripe } = trpc.admin.stripeFinancialData.useQuery();
 
   const handleLogout = () => {
     logout();
@@ -34,6 +37,7 @@ export default function AdminDashboard() {
   const tabTitles: Record<string, string> = {
     overview: "Visão Geral do Sistema",
     financial: "Calendário Financeiro",
+    'user-list': "Gerenciar Usuários",
     users: "Usuários Inadimplentes",
     support: "Tickets de Suporte",
     admins: "Gestão de Administradores",
@@ -43,12 +47,12 @@ export default function AdminDashboard() {
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
       {/* SIDEBAR - Removido onSelectTool para bater com a interface */}
-      <Sidebar 
+      <Sidebar
         isOpen={isSidebarOpen}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        role={user?.role} 
-        logout={handleLogout} 
+        role={user?.role}
+        logout={handleLogout}
         setLocation={setLocation}
       />
 
@@ -56,8 +60,8 @@ export default function AdminDashboard() {
         {/* TOPBAR */}
         <header className="h-16 bg-white border-b flex items-center justify-between px-8 shadow-sm">
           <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
             >
               {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
@@ -83,21 +87,27 @@ export default function AdminDashboard() {
 
         {/* ÁREA DE CONTEÚDO DINÂMICO */}
         <main className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-[#f8fafc]">
-          {ldStats || ldFin ? (
+          {ldStats || ldPlanDist || ldStripe ? (
             <div className="flex flex-col items-center justify-center py-20 text-[#d4af37]">
               <Loader2 className="animate-spin w-12 h-12 mb-4" />
               <p className="text-[#1e3a5f] font-bold animate-pulse">Sincronizando Dados...</p>
             </div>
           ) : (
             <div className="max-w-7xl mx-auto">
-              {activeTab === 'overview' && <StatsOverview stats={stats} />}
-              {activeTab === 'financial' && <FinancialTable data={financial || []} />}
+              {activeTab === 'overview' && (
+                <div className="space-y-8">
+                  <StatsOverview stats={stats} />
+                  <PlanDistributionChart data={planDistribution || []} />
+                </div>
+              )}
+              {activeTab === 'financial' && <FinancialDashboard data={stripeFinancial || null} />}
+              {activeTab === 'user-list' && <UserManagement />}
               {activeTab === 'users' && <DelinquentList />}
               {activeTab === 'support' && <SupportTickets />}
-              
+
               {/* ✅ REGRA SUPER ADMIN APLICADA */}
               {activeTab === 'admins' && isSuperAdmin && <AdminManagement />}
-              
+
               {/* ✅ ABA: GERENCIAR CATÁLOGO */}
               {activeTab === 'tools-manager' && <AdminToolsManager />}
             </div>

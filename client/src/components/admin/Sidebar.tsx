@@ -1,7 +1,7 @@
 import { APP_LOGO, APP_TITLE } from "@/const";
-import { 
-  LayoutDashboard, DollarSign, AlertTriangle, 
-  Mail, ShieldCheck, Wrench, Home, LogOut, Settings
+import {
+  LayoutDashboard, DollarSign, AlertTriangle,
+  Mail, ShieldCheck, Wrench, Home, LogOut, Users
 } from "lucide-react";
 
 interface SidebarProps {
@@ -19,9 +19,9 @@ export function Sidebar({ isOpen, activeTab, setActiveTab, role, logout, setLoca
   const menuItems = [
     { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
     { id: 'financial', label: 'Financeiro', icon: DollarSign },
-    { id: 'users', label: 'Inadimplentes', icon: AlertTriangle },
+    { id: 'user-list', label: 'Usuários', icon: Users },
     { id: 'support', label: 'Tickets Suporte', icon: Mail },
-    { id: 'tools-manager', label: 'Gerenciar Catálogo', icon: Wrench,  superOnly: true }, // ✅ Link para o CRUD
+    { id: 'tools-manager', label: 'Gerenciar Catálogo', icon: Wrench, superOnly: true }, // ✅ Link para o CRUD
     { id: 'admins', label: 'Equipe Admin', icon: ShieldCheck, superOnly: true },
   ];
 
@@ -41,11 +41,10 @@ export function Sidebar({ isOpen, activeTab, setActiveTab, role, logout, setLoca
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
-                activeTab === item.id 
-                ? 'bg-[#d4af37] text-[#1e3a5f] shadow-lg font-bold' 
+              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${activeTab === item.id
+                ? 'bg-[#d4af37] text-[#1e3a5f] shadow-lg font-bold'
                 : 'hover:bg-white/10 text-white/70'
-              }`}
+                }`}
             >
               <item.icon className={`w-5 h-5 shrink-0 ${activeTab === item.id ? 'text-[#1e3a5f]' : 'text-[#d4af37]'}`} />
               {isOpen && <span>{item.label}</span>}
