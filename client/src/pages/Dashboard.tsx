@@ -14,6 +14,7 @@ import { User, Lock, BookOpen } from "lucide-react";
 import Footer from "@/components/Footer";
 import { useUpgradeReminder } from "@/hooks/useUpgradeReminder";
 import UpgradeReminderModal from "@/components/UpgradeReminderModal";
+import HeaderCredits from "@/components/HeaderCredits";
 import "../dashboard-mobile.css";
 
 interface ToolFromDb {
@@ -85,6 +86,11 @@ export default function Dashboard() {
               </span>
             </Link>
             <div className="flex items-center gap-3">
+              {/* ✅ Novo display de créditos no header - Agora em primeiro */}
+              <div className="mr-2">
+                <HeaderCredits />
+              </div>
+
               {user && (user.role === 'admin' || user.role === 'super_admin') && (
                 <Link href="/admin">
                   <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
@@ -97,6 +103,7 @@ export default function Dashboard() {
                   <User className="w-6 h-6" />
                 </button>
               </Link>
+
               <DashboardMobileMenu user={user} onLogout={() => { logout(); setLocation("/"); }} />
             </div>
           </div>
@@ -108,8 +115,10 @@ export default function Dashboard() {
       <div className="container mx-auto px-4 py-6 md:py-8">
         <div className="grid lg:grid-cols-4 gap-6 md:gap-8">
           <div className="lg:col-span-1">
-            <CreditsPanel onNeedCredits={() => setShowNoCreditsModal(true)} />
-            <div className="mt-6">
+            {/* CreditsPanel removido conforme solicitado */}
+            {/* <CreditsPanel onNeedCredits={() => setShowNoCreditsModal(true)} /> */}
+
+            <div className="mt-0"> {/* Ajustado margem superior já que o painel saiu */}
               <SavedStudiesSection />
             </div>
           </div>

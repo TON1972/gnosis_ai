@@ -806,6 +806,69 @@ export const appRouter = router({
       return unreadCounts;
     }),
 
+    // ✅ NOVO: Atualizar Planos
+    updatePlan: protectedProcedure
+      .input(z.object({
+        planId: z.number(),
+        creditsDaily: z.number().nonnegative(),
+        creditsInitial: z.number().nonnegative(),
+        syncUsers: z.boolean().default(false),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+          throw new Error('Acesso negado');
+        }
+
+        const db = await getDb();
+        if (!db) throw new Error('Database not available');
+
+        // 1. Atualiza o PLANO
+        await db
+          .update(plans)
+          .set({
+            creditsDaily: input.creditsDaily,
+            creditsInitial: input.creditsInitial,
+          })
+          .where(eq(plans.id, input.planId));
+
+        // 2. Se solicitado, sincroniza usários ATIVOS naquele plano
+        if (input.syncUsers) {
+          // Busca usuários com assinatura ativa deste plano
+          const activeSubs = await db
+            .select({ userId: subscriptions.userId })
+            .from(subscriptions)
+            .where(and(
+              eq(subscriptions.planId, input.planId),
+              eq(subscriptions.status, 'active')
+            ));
+
+          const userIds = activeSubs.map(s => s.userId);
+
+          if (userIds.length > 0) {
+            // Atualiza os créditos desses usuários
+            // CUIDADO: Isso reseta o saldo mensal para o novo valor do plano
+            // Mas preserva o bônus, pois somamos (novoDaily + novoInitial + bonusAtual)
+            // Porém, o SQL update direto não consegue ler o 'bonus' individualmente fácil num batch update simples
+            // sem um join complexo ou subquery.
+
+            // Abordagem segura: Loop (se forem muitos usuários, pode ser lento, mas é seguro para calcular total)
+            // OU usar SQL raw para update em massa performático.
+
+            // Vamos usar SQL Raw para update em massa e recálculo
+            await db.execute(sql`
+              UPDATE credits
+              SET 
+                "creditsDaily" = ${input.creditsDaily},
+                "creditsInitial" = ${input.creditsInitial},
+                "amount" = ${input.creditsDaily} + ${input.creditsInitial} + "creditsBonus"
+              WHERE "userId" IN ${userIds}
+            `);
+          }
+        }
+
+        return { success: true };
+      }),
+
     sendClientTicketMessage: publicProcedure
       .input(z.object({
         ticketId: z.number(),

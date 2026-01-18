@@ -9,44 +9,47 @@ export function useUpgradeReminder() {
     const { data: activePlan } = trpc.credits.activePlan.useQuery();
 
     useEffect(() => {
-        // Só executa para usuários com plano free
-        if (!activePlan || activePlan.plan.name !== 'free') {
-            return;
-        }
+        // Feature desativada temporariamente
+        return;
 
-        // Verifica quando foi a última vez que o modal foi exibido
-        const lastShown = localStorage.getItem(STORAGE_KEY);
-        const now = Date.now();
+        // // Só executa para usuários com plano free
+        // if (!activePlan || activePlan.plan.name !== 'free') {
+        //     return;
+        // }
 
-        if (!lastShown) {
-            // Primeira vez: mostrar após 2 minutos de uso
-            const timer = setTimeout(() => {
-                setShowModal(true);
-                localStorage.setItem(STORAGE_KEY, now.toString());
-            }, 2 * 60 * 1000); // 2 minutos
+        // // Verifica quando foi a última vez que o modal foi exibido
+        // const lastShown = localStorage.getItem(STORAGE_KEY);
+        // const now = Date.now();
 
-            return () => clearTimeout(timer);
-        }
+        // if (!lastShown) {
+        //     // Primeira vez: mostrar após 2 minutos de uso
+        //     const timer = setTimeout(() => {
+        //         setShowModal(true);
+        //         localStorage.setItem(STORAGE_KEY, now.toString());
+        //     }, 2 * 60 * 1000); // 2 minutos
 
-        const timeSinceLastShown = now - parseInt(lastShown, 10);
+        //     return () => clearTimeout(timer);
+        // }
 
-        // Se já passou o intervalo, mostra o modal
-        if (timeSinceLastShown >= REMINDER_INTERVAL) {
-            const timer = setTimeout(() => {
-                setShowModal(true);
-                localStorage.setItem(STORAGE_KEY, now.toString());
-            }, 1000); // Mostra após 1 segundo de carregamento da página
+        // const timeSinceLastShown = now - parseInt(lastShown, 10);
 
-            return () => clearTimeout(timer);
-        }
+        // // Se já passou o intervalo, mostra o modal
+        // if (timeSinceLastShown >= REMINDER_INTERVAL) {
+        //     const timer = setTimeout(() => {
+        //         setShowModal(true);
+        //         localStorage.setItem(STORAGE_KEY, now.toString());
+        //     }, 1000); // Mostra após 1 segundo de carregamento da página
 
-        // Agenda para mostrar quando o intervalo completar
-        const timer = setTimeout(() => {
-            setShowModal(true);
-            localStorage.setItem(STORAGE_KEY, Date.now().toString());
-        }, REMINDER_INTERVAL - timeSinceLastShown);
+        //     return () => clearTimeout(timer);
+        // }
 
-        return () => clearTimeout(timer);
+        // // Agenda para mostrar quando o intervalo completar
+        // const timer = setTimeout(() => {
+        //     setShowModal(true);
+        //     localStorage.setItem(STORAGE_KEY, Date.now().toString());
+        // }, REMINDER_INTERVAL - timeSinceLastShown);
+
+        // return () => clearTimeout(timer);
     }, [activePlan]);
 
     const handleClose = () => {

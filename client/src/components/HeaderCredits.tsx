@@ -1,0 +1,25 @@
+import { trpc } from "@/lib/trpc";
+import { Zap } from "lucide-react";
+
+export default function HeaderCredits() {
+    const { data: credits, isLoading } = trpc.credits.balance.useQuery();
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full animate-pulse">
+                <div className="w-4 h-4 bg-white/20 rounded-full" />
+                <div className="w-12 h-4 bg-white/20 rounded" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#FFFACD]/10 hover:bg-[#FFFACD]/20 border border-[#d4af37]/30 rounded-full transition-colors group cursor-default">
+            <Zap className="w-4 h-4 text-[#d4af37] fill-[#d4af37]" />
+            <span className="text-sm font-bold text-[#d4af37]">
+                {credits?.total?.toLocaleString('pt-BR') || 0}
+            </span>
+            <span className="text-xs text-[#d4af37]/70 hidden sm:inline">créditos</span>
+        </div>
+    );
+}

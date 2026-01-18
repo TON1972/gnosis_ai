@@ -15,6 +15,7 @@ import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import Footer from "@/components/Footer";
 import { useUpgradeReminder } from "@/hooks/useUpgradeReminder";
 import UpgradeReminderModal from "@/components/UpgradeReminderModal";
+import HeaderCredits from "@/components/HeaderCredits";
 import "../dashboard-mobile.css";
 
 export default function ToolPage() {
@@ -134,30 +135,39 @@ export default function ToolPage() {
     <div className="tool-page-container min-h-screen bg-gradient-radial from-[#d4af37] via-[#DAA520] to-[#FFFACD]">
       <header className="sticky top-0 z-50 bg-[#1e3a5f] shadow-lg border-b-4 border-[#d4af37]">
         <div className="container mx-auto px-4 py-6 flex items-center justify-between">
-          <Link href="/">
-            <span className="flex items-center gap-4 cursor-pointer">
-              <img src={APP_LOGO} alt={APP_TITLE} className="h-16 w-16" />
-              <h1 className="text-3xl font-bold text-[#d4af37] hidden md:block">{APP_TITLE}</h1>
-            </span>
-          </Link>
-          <DashboardMobileMenu user={user} onLogout={() => { logout(); setLocation("/"); }} />
+          <div className="flex items-center gap-4">
+            <Link href="/">
+              <span className="flex items-center gap-4 cursor-pointer">
+                <img src={APP_LOGO} alt={APP_TITLE} className="h-16 w-16" />
+                <h1 className="text-3xl font-bold text-[#d4af37] hidden md:block">{APP_TITLE}</h1>
+              </span>
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* ✅ Novo display de créditos no header */}
+            <div className="mr-2">
+              <HeaderCredits />
+            </div>
+
+            {/* ✅ Botão Voltar movido para o header */}
+            <Link href="/dashboard">
+              <Button variant="outline" className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-[#1e3a5f] font-bold">
+                <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
+              </Button>
+            </Link>
+
+            <DashboardMobileMenu user={user} onLogout={() => { logout(); setLocation("/"); }} />
+          </div>
         </div>
       </header>
 
       <SubscriptionWarningBanner />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-4 gap-8">
-          <aside className="lg:col-span-1">
-            <CreditsPanel onNeedCredits={() => setShowNoCreditsModal(true)} />
-            <Link href="/dashboard">
-              <Button variant="outline" className="w-full mt-4 border-[#d4af37] text-[#1e3a5f] font-bold">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
-              </Button>
-            </Link>
-          </aside>
-
-          <main className="lg:col-span-3">
+        {/* Layout simplificado sem Grid de Sidebar */}
+        <div className="max-w-5xl mx-auto">
+          <main>
             <div className="bg-white/90 rounded-2xl p-8 shadow-xl border-4 border-[#d4af37] mb-6">
               <h2 className="text-3xl font-bold text-[#1e3a5f]">{dbTool?.displayName}</h2>
               <p className="text-[#8b6f47] mt-2">{dbTool?.description}</p>
@@ -215,7 +225,7 @@ export default function ToolPage() {
 
                     <div className="mt-8 pt-4 border-t-2 border-[#d4af37]/30 flex justify-between items-center text-[#1e3a5f] font-bold">
                       <span className="text-sm uppercase tracking-widest">{wordCount} palavras</span>
-                      <span className="bg-[#1e3a5f] text-[#d4af37] px-4 py-1 rounded-lg">Consumo: {computedCost} créditos</span>
+                      {/* <span className="bg-[#1e3a5f] text-[#d4af37] px-4 py-1 rounded-lg">Consumo: {computedCost} créditos</span> */}
                     </div>
                   </div>
                 </div>

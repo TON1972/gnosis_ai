@@ -305,9 +305,9 @@ export default function StudyChatPage() {
               {generateMutation.isPending ? <Loader2 className="animate-spin w-6 h-6" /> : <Send className="w-6 h-6" />}
             </Button>
           </div>
-          <p className="text-center text-[9px] text-[#8b6f47] mt-3 font-bold uppercase tracking-widest opacity-60">
+          {/* <p className="text-center text-[9px] text-[#8b6f47] mt-3 font-bold uppercase tracking-widest opacity-60">
             Cada interação consome créditos baseados na extensão da resposta.
-          </p>
+          </p> */}
         </div>
       </footer>
       <NoCreditsModal

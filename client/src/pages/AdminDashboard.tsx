@@ -9,6 +9,7 @@ import { SupportTickets } from "@/components/admin/SupportTickets";
 import { UserManagement } from "@/components/admin/UserManagement";
 import AdminManagement from "@/components/AdminManagement";
 import { AdminToolsManager } from "@/components/admin/AdminToolsManager";
+import { AdminPlansManager } from "@/components/admin/AdminPlansManager";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Menu, X } from "lucide-react";
 import { useLocation } from "wouter";
@@ -41,7 +42,8 @@ export default function AdminDashboard() {
     users: "Usuários Inadimplentes",
     support: "Tickets de Suporte",
     admins: "Gestão de Administradores",
-    'tools-manager': "Gerenciar Catálogo de Tools"
+    'tools-manager': "Gerenciar Catálogo de Tools",
+    'plans-manager': "Gerenciar Planos"
   };
 
   return (
@@ -110,6 +112,9 @@ export default function AdminDashboard() {
 
               {/* ✅ ABA: GERENCIAR CATÁLOGO */}
               {activeTab === 'tools-manager' && <AdminToolsManager />}
+
+              {/* ✅ ABA: GERENCIAR PLANOS - AGORA COMO ABA */}
+              {activeTab === 'plans-manager' && isSuperAdmin && <AdminPlansManager />}
             </div>
           )}
         </main>

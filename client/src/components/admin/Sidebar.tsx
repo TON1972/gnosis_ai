@@ -21,7 +21,8 @@ export function Sidebar({ isOpen, activeTab, setActiveTab, role, logout, setLoca
     { id: 'financial', label: 'Financeiro', icon: DollarSign },
     { id: 'user-list', label: 'Usuários', icon: Users },
     { id: 'support', label: 'Tickets Suporte', icon: Mail },
-    { id: 'tools-manager', label: 'Gerenciar Catálogo', icon: Wrench, superOnly: true }, // ✅ Link para o CRUD
+    { id: 'tools-manager', label: 'Gerenciar Catálogo', icon: Wrench, superOnly: true },
+    { id: 'plans-manager', label: 'Gerenciar Planos', icon: DollarSign, superOnly: true }, // ✅ Tab Interna
     { id: 'admins', label: 'Equipe Admin', icon: ShieldCheck, superOnly: true },
   ];
 
@@ -40,7 +41,13 @@ export function Sidebar({ isOpen, activeTab, setActiveTab, role, logout, setLoca
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                if ((item as any).path) {
+                  setLocation((item as any).path);
+                } else {
+                  setActiveTab(item.id);
+                }
+              }}
               className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${activeTab === item.id
                 ? 'bg-[#d4af37] text-[#1e3a5f] shadow-lg font-bold'
                 : 'hover:bg-white/10 text-white/70'
