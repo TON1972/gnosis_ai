@@ -113,6 +113,23 @@ export default function Dashboard() {
       <SubscriptionWarningBanner />
 
       <div className="container mx-auto px-4 py-6 md:py-8">
+        <div className="bg-white/90 rounded-2xl p-6 md:p-8 shadow-xl border-4 border-[#d4af37] mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#1e3a5f] mb-2">
+            Graça e paz, {user?.name || user?.email?.split('@')[0] || "Irmão"}!
+          </h2>
+          <p className="text-lg text-[#8b6f47]">
+            Seu portal de ferramentas bíblicas sincronizado com o Reino.
+          </p>
+          <div className="mt-4 p-4 bg-[#FFFACD] rounded-lg border-2 border-[#d4af37]">
+            <p className="text-sm text-[#1e3a5f]">
+              <strong>Plano:</strong> <span className="uppercase">{activePlanResponse?.plan?.displayName || "FREE"}</span>
+              {" • "}
+              {/* ✅ Contagem de ferramentas restaurada */}
+              <strong>Ferramentas Liberadas:</strong> {allowedToolIds.size} de {allTools.length}
+            </p>
+          </div>
+        </div>
+
         <div className="grid lg:grid-cols-4 gap-6 md:gap-8">
           <div className="lg:col-span-1">
             {/* CreditsPanel restaurado apenas com botões */}
@@ -124,22 +141,6 @@ export default function Dashboard() {
           </div>
 
           <div className="lg:col-span-3">
-            <div className="bg-white/90 rounded-2xl p-6 md:p-8 shadow-xl border-4 border-[#d4af37] mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-[#1e3a5f] mb-2">
-                Graça e paz, {user?.name || user?.email?.split('@')[0] || "Irmão"}!
-              </h2>
-              <p className="text-lg text-[#8b6f47]">
-                Seu portal de ferramentas bíblicas sincronizado com o Reino.
-              </p>
-              <div className="mt-4 p-4 bg-[#FFFACD] rounded-lg border-2 border-[#d4af37]">
-                <p className="text-sm text-[#1e3a5f]">
-                  <strong>Plano:</strong> <span className="uppercase">{activePlanResponse?.plan?.displayName || "FREE"}</span>
-                  {" • "}
-                  {/* ✅ Contagem de ferramentas restaurada */}
-                  <strong>Ferramentas Liberadas:</strong> {allowedToolIds.size} de {allTools.length}
-                </p>
-              </div>
-            </div>
 
             <div className="mb-6 flex flex-wrap gap-2">
               {categories.map(category => (
