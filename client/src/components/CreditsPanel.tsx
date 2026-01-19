@@ -8,9 +8,10 @@ import NoCreditsModal from "./NoCreditsModal";
 // ✅ Atualizado para aceitar o tipo da aba opcionalmente
 interface CreditsPanelProps {
   onNeedCredits?: (tab: 'plans' | 'credits') => void;
+  onlyButtons?: boolean;
 }
 
-export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
+export default function CreditsPanel({ onNeedCredits, onlyButtons = false }: CreditsPanelProps) {
   const { user } = useAuth();
   const [modalConfig, setModalConfig] = useState<{ open: boolean; tab: 'plans' | 'credits' }>({
     open: false,
@@ -44,6 +45,38 @@ export default function CreditsPanel({ onNeedCredits }: CreditsPanelProps) {
       setModalConfig({ open: true, tab }); // Usa o estado interno (Dashboard)
     }
   };
+
+  if (onlyButtons) {
+    return (
+      <div className="space-y-3 mb-8">
+        <Button
+          onClick={() => handleOpenModal('plans')}
+          className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-12 shadow-lg font-black flex items-center justify-center gap-2 transition-all active:scale-95"
+        >
+          <TrendingUp className="w-5 h-5" />
+          FAZER UPGRADE AGORA
+        </Button>
+
+        <Button
+          onClick={() => handleOpenModal('credits')}
+          variant="outline"
+          className="w-full border-2 border-[#d4af37] text-[#1e3a5f] hover:bg-[#d4af37]/10 h-12 font-black flex items-center justify-center gap-2 transition-all active:scale-95 bg-white/50"
+        >
+          <ShoppingCart className="w-5 h-5" />
+          COMPRAR AVULSOS
+        </Button>
+
+        {/* Só renderiza o modal interno se não houver controle externo */}
+        {!onNeedCredits && (
+          <NoCreditsModal
+            open={modalConfig.open}
+            onClose={() => setModalConfig({ ...modalConfig, open: false })}
+            initialTab={modalConfig.tab}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-linear-to-br from-[#FFFACD] to-[#F0E68C] rounded-2xl p-4 md:p-6 shadow-xl border-4 border-[#d4af37]">

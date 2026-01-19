@@ -62,6 +62,11 @@ export function Sidebar({ isOpen, activeTab, setActiveTab, role, logout, setLoca
 
       {/* FOOTER */}
       <div className="p-4 border-t border-white/10 space-y-2">
+        <button onClick={() => setLocation('/dashboard')} className="w-full flex items-center gap-3 p-3 text-[#d4af37] bg-white/5 hover:bg-white/10 rounded-xl transition-all text-sm font-bold border border-[#d4af37]/20">
+          <LayoutDashboard className="w-5 h-5" />
+          {isOpen && <span>Voltar para Dashboard</span>}
+        </button>
+
         <button onClick={() => setLocation('/')} className="w-full flex items-center gap-3 p-3 text-white/50 hover:text-white transition-colors text-sm font-bold">
           <Home className="w-5 h-5" />
           {isOpen && <span>Início Público</span>}

@@ -595,6 +595,30 @@ export const appRouter = router({
         return await getDelinquentUsers(startDate, endDate);
       }),
 
+    deleteSupportRequest: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+          throw new Error('Acesso negado');
+        }
+
+        const db = await getDb();
+        if (!db) throw new Error('Database not available');
+
+        // Deleta mensagens relacionadas primeiro (se houver constraints)
+        // Se o banco tiver ON DELETE CASCADE, isso não seria estritamente necessário, 
+        // mas é boa prática garantir na aplicação também.
+        await db
+          .delete(ticketMessages)
+          .where(eq(ticketMessages.ticketId, input.id));
+
+        await db
+          .delete(chatbotContacts)
+          .where(eq(chatbotContacts.id, input.id));
+
+        return { success: true };
+      }),
+
     supportRequests: protectedProcedure
       .input(z.object({
         status: z.enum(['pending', 'contacted', 'resolved', 'all']).optional(),
