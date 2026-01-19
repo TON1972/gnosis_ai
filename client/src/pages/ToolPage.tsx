@@ -134,26 +134,30 @@ export default function ToolPage() {
   return (
     <div className="tool-page-container min-h-screen bg-gradient-radial from-[#d4af37] via-[#DAA520] to-[#FFFACD]">
       <header className="sticky top-0 z-50 bg-[#1e3a5f] shadow-lg border-b-4 border-[#d4af37]">
-        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-3 py-4 md:px-4 md:py-6 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 md:gap-4">
             <Link href="/">
-              <span className="flex items-center gap-4 cursor-pointer">
-                <img src={APP_LOGO} alt={APP_TITLE} className="h-16 w-16" />
-                <h1 className="text-3xl font-bold text-[#d4af37] hidden md:block">{APP_TITLE}</h1>
+              <span className="flex items-center gap-1.5 md:gap-4 cursor-pointer">
+                <img src={APP_LOGO} alt={APP_TITLE} className="h-10 w-10 md:h-16 md:w-16" />
+                <h1 className="text-lg md:text-3xl font-bold text-[#d4af37] leading-tight">{APP_TITLE}</h1>
               </span>
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 md:gap-4">
             {/* ✅ Novo display de créditos no header */}
-            <div className="mr-2">
+            <div className="mr-1 md:mr-2">
               <HeaderCredits />
             </div>
 
             {/* ✅ Botão Voltar movido para o header */}
             <Link href="/dashboard">
-              <Button variant="outline" className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-[#1e3a5f] font-bold">
+              <Button variant="outline" className="hidden md:flex border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-[#1e3a5f] font-bold">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
+              </Button>
+              {/* Mobile Back Button - Ajustado */}
+              <Button variant="ghost" size="icon" className="flex md:hidden text-[#d4af37] hover:bg-[#2a4a7f] h-9 w-9">
+                <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
 

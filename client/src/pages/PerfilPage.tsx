@@ -64,21 +64,21 @@ export default function PerfilPage() {
     <div className="min-h-screen bg-gradient-to-b from-[#1e3a5f] to-[#0f1f3a]">
       {/* Header */}
       <header className="bg-[#1e3a5f] border-b border-[#d4af37]/20 sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-3 py-4 md:px-4 md:py-6">
           <div className="flex items-center justify-between">
             <Link href="/dashboard">
-              <span className="flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer">
-                <img src={APP_LOGO} alt={APP_TITLE} className="h-16 w-16 object-contain" loading="lazy" />
+              <span className="flex items-center gap-1.5 md:gap-4 hover:opacity-80 transition-opacity cursor-pointer">
+                <img src={APP_LOGO} alt={APP_TITLE} className="h-10 w-10 md:h-16 md:w-16 object-contain" loading="lazy" />
                 <h1 className="hidden md:block text-3xl font-bold text-[#d4af37]">{APP_TITLE}</h1>
-                <h1 className="block md:hidden text-3xl font-bold text-[#d4af37]">GNOSIS AI</h1>
+                <h1 className="block md:hidden text-lg font-bold text-[#d4af37] leading-tight">GNOSIS<br />AI</h1>
               </span>
             </Link>
 
             {/* Ícone de Perfil e Menu Hambúrguer */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 md:gap-3">
               <Link href="/perfil">
-                <button className="p-2 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors" aria-label="Meu Perfil">
-                  <User className="w-6 h-6" />
+                <button className="p-1.5 md:p-2 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors" aria-label="Meu Perfil">
+                  <User className="w-5 h-5 md:w-6 md:h-6" />
                 </button>
               </Link>
 

@@ -76,31 +76,31 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container min-h-screen bg-gradient-radial from-[#d4af37] via-[#DAA520] to-[#FFFACD]">
       <header className="sticky top-0 z-50 bg-[#1e3a5f] shadow-lg border-b-4 border-[#d4af37]">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-3 py-4 md:px-4 md:py-6">
           <div className="flex items-center justify-between">
             <Link href="/">
-              <span className="flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer">
-                <img src={APP_LOGO} alt={APP_TITLE} className="h-16 w-16 object-contain" />
+              <span className="flex items-center gap-1.5 md:gap-4 hover:opacity-80 transition-opacity cursor-pointer">
+                <img src={APP_LOGO} alt={APP_TITLE} className="h-10 w-10 md:h-16 md:w-16 object-contain" />
                 <h1 className="hidden md:block text-3xl font-bold text-[#d4af37]">{APP_TITLE}</h1>
-                <h1 className="block md:hidden text-3xl font-bold text-[#d4af37]">GNOSIS AI</h1>
+                <h1 className="block md:hidden text-lg font-bold text-[#d4af37] leading-tight">GNOSIS<br />AI</h1>
               </span>
             </Link>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 md:gap-3">
               {/* ✅ Novo display de créditos no header - Agora em primeiro */}
-              <div className="mr-2">
+              <div className="mr-1 md:mr-2">
                 <HeaderCredits />
               </div>
 
               {user && (user.role === 'admin' || user.role === 'super_admin') && (
                 <Link href="/admin">
-                  <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
+                  <span className="hidden md:block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
                     Painel Admin
                   </span>
                 </Link>
               )}
               <Link href="/perfil">
-                <button className="p-2 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors">
-                  <User className="w-6 h-6" />
+                <button className="p-1.5 md:p-2 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors">
+                  <User className="w-5 h-5 md:w-6 md:h-6" />
                 </button>
               </Link>
 
