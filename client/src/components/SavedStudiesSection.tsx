@@ -40,7 +40,7 @@ export default function SavedStudiesSection() {
     <div className="bg-white/90 rounded-2xl p-4 shadow-xl border-4 border-[#d4af37]">
       <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#d4af37]">
         <BookText className="w-5 h-5 text-[#1e3a5f]" />
-        <h3 className="text-lg font-bold text-[#1e3a5f]">Meus Estudos</h3>
+        <h3 className="text-lg font-bold text-[#1e3a5f]">Meus Estudos Salvos</h3>
       </div>
 
       <div className="saved-studies-list space-y-3 max-h-125 overflow-y-auto">
