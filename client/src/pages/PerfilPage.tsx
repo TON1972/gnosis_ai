@@ -70,7 +70,7 @@ export default function PerfilPage() {
               <span className="flex items-center gap-1.5 md:gap-4 hover:opacity-80 transition-opacity cursor-pointer">
                 <img src={APP_LOGO} alt={APP_TITLE} className="h-10 w-10 md:h-16 md:w-16 object-contain" loading="lazy" />
                 <h1 className="hidden md:block text-3xl font-bold text-[#d4af37]">{APP_TITLE}</h1>
-                <h1 className="block md:hidden text-lg font-bold text-[#d4af37] leading-tight">GNOSIS<br />AI</h1>
+                <h1 className="block md:hidden text-lg font-bold text-[#d4af37] leading-tight">GNOSIS AI</h1>
               </span>
             </Link>
 
