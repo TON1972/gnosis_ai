@@ -1,12 +1,11 @@
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Crown, Sparkles, CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface UpgradeReminderModalProps {
@@ -28,91 +27,75 @@ export default function UpgradeReminderModal({ open, onClose }: UpgradeReminderM
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-[#1e3a5f] to-[#2a4a7f] border-4 border-[#d4af37] text-white">
+            <DialogContent showCloseButton={false} className="sm:max-w-[600px] bg-gradient-to-br from-[#1e3a5f] to-[#2a4a7f] border-4 border-[#d4af37] text-white p-0 overflow-hidden border-box">
                 <button
                     onClick={onClose}
-                    className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+                    className="absolute right-3 top-3 z-50 rounded-full bg-black/20 p-1.5 hover:bg-black/40 transition-colors"
                 >
-                    <X className="h-4 w-4 text-[#d4af37]" />
+                    <X className="h-5 w-5 text-white" />
                     <span className="sr-only">Fechar</span>
                 </button>
 
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-3 text-3xl font-bold text-[#d4af37]">
-                        <Crown className="w-8 h-8" />
-                        Potencialize Seus Estudos!
-                    </DialogTitle>
-                    <DialogDescription className="text-gray-300 text-lg">
-                        Descubra todo o potencial da GNOSIS AI com um plano premium
-                    </DialogDescription>
-                </DialogHeader>
+                <div className="px-5 py-8 sm:p-8 space-y-5 sm:space-y-6">
+                    <DialogHeader className="pt-2 sm:pt-0">
+                        <DialogTitle className="text-center">
+                            <span className="block text-lg sm:text-2xl font-bold text-white mb-2 uppercase tracking-wide">
+                                Oferta válida SOMENTE
+                            </span>
+                            <span className="block text-2xl sm:text-4xl font-extrabold text-[#d4af37] bg-white/10 py-2 px-4 rounded-lg inline-block transform -rotate-1 shadow-lg backdrop-blur-sm">
+                                "até 20/02"
+                            </span>
+                        </DialogTitle>
+                    </DialogHeader>
 
-                <div className="space-y-6 py-4">
-                    {/* Benefícios */}
-                    <div className="bg-white/10 rounded-xl p-6 space-y-4">
-                        <h3 className="text-xl font-bold text-[#d4af37] flex items-center gap-2">
-                            <Sparkles className="w-5 h-5" />
-                            Por que fazer upgrade?
-                        </h3>
-
-                        <div className="space-y-3">
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                                <p className="text-sm">
-                                    <strong className="text-[#d4af37]">Mais créditos diários:</strong> Até 200 créditos por dia para estudos ilimitados
-                                </p>
+                    <div className="space-y-6 bg-white/10 rounded-xl p-6">
+                        <div className="space-y-4">
+                            <div className="flex items-start gap-4">
+                                <CheckCircle2 className="w-8 h-8 text-[#d4af37] flex-shrink-0 mt-1" />
+                                <div>
+                                    <h3 className="font-bold text-xl text-[#d4af37] mb-1">FREE</h3>
+                                    <p className="text-lg text-gray-200">
+                                        De 6 para <span className="font-bold text-white">todas as 19 ferramentas liberadas!</span>
+                                    </p>
+                                </div>
                             </div>
 
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                                <p className="text-sm">
-                                    <strong className="text-[#d4af37]">Acesso a todas as ferramentas:</strong> 19 ferramentas especializadas de teologia
-                                </p>
-                            </div>
-
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                                <p className="text-sm">
-                                    <strong className="text-[#d4af37]">Créditos iniciais generosos:</strong> Até 20.000 créditos para começar
-                                </p>
-                            </div>
-
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                                <p className="text-sm">
-                                    <strong className="text-[#d4af37]">Suporte prioritário:</strong> Atendimento diferenciado
-                                </p>
+                            <div className="flex items-start gap-4">
+                                <CheckCircle2 className="w-8 h-8 text-[#d4af37] flex-shrink-0 mt-1" />
+                                <div>
+                                    <h3 className="font-bold text-xl text-[#d4af37] mb-1">Bônus de Créditos</h3>
+                                    <p className="text-lg text-gray-200">
+                                        Créditos Iniciais aumentados de 1.000 para <span className="font-bold text-white">1.500</span> e diários de 50 para <span className="font-bold text-white">100</span>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Promoção */}
-                    <div className="bg-gradient-to-r from-[#d4af37] to-[#B8860B] rounded-xl p-4 text-center">
-                        <p className="text-[#1e3a5f] font-bold text-lg">
-                            🎉 PREÇOS PROMOCIONAIS DE LANÇAMENTO! 🎉
+                    <div className="text-center space-y-4">
+                        <p className="text-xl sm:text-2xl font-bold text-white italic">
+                            "A revolução em termos de Estudos Bíblicos Profundos chegou, aproveite!"
                         </p>
-                        <p className="text-[#1e3a5f] text-sm mt-1">
-                            A partir de R$ 9,90/mês
+                        <p className="text-lg text-[#d4af37]">
+                            Graça e Paz!
                         </p>
                     </div>
 
-                    {/* Botões */}
-                    <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="pt-4">
                         <Button
                             onClick={handleUpgrade}
-                            className="flex-1 bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B] font-bold py-6 text-lg"
+                            className="w-full bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B] font-bold py-6 text-xl rounded-xl shadow-lg transform transition hover:scale-[1.02]"
                         >
-                            <Crown className="w-5 h-5 mr-2" />
-                            Ver Planos e Preços
+                            APROVEITAR AGORA
                         </Button>
-
-                        <Button
-                            onClick={onClose}
-                            variant="outline"
-                            className="flex-1 border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-[#1e3a5f] font-bold py-6"
-                        >
-                            Continuar com Plano Free
-                        </Button>
+                        <p className="text-center mt-4">
+                            <button
+                                onClick={onClose}
+                                className="text-gray-400 hover:text-white underline text-sm"
+                            >
+                                Fechar e continuar navegando
+                            </button>
+                        </p>
                     </div>
                 </div>
             </DialogContent>

@@ -82,13 +82,24 @@ export default function Dashboard() {
               <span className="flex items-center gap-1.5 md:gap-4 hover:opacity-80 transition-opacity cursor-pointer">
                 <img src={APP_LOGO} alt={APP_TITLE} className="h-10 w-10 md:h-16 md:w-16 object-contain" />
                 <h1 className="hidden md:block text-3xl font-bold text-[#d4af37]">{APP_TITLE}</h1>
-                <h1 className="block md:hidden text-lg font-bold text-[#d4af37] leading-tight">GNOSIS<br />AI</h1>
+                <h1 className="block md:hidden text-lg font-bold text-[#d4af37] leading-tight">GNOSIS AI</h1>
               </span>
             </Link>
             <div className="flex items-center gap-1.5 md:gap-3">
               {/* ✅ Novo display de créditos no header - Agora em primeiro */}
               <div className="mr-1 md:mr-2">
                 <HeaderCredits />
+              </div>
+
+              {/* ✅ Botão de Upgrade no Header (Desktop apenas) */}
+              <div className="hidden md:block mr-2">
+                <Button
+                  onClick={() => setShowNoCreditsModal(true)}
+                  className="bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B] font-bold shadow-md h-9 px-4 text-sm"
+                >
+                  <LucideIcons.TrendingUp className="w-4 h-4 mr-2" />
+                  Upgrade de Plano ou Créditos avulso
+                </Button>
               </div>
 
               {user && (user.role === 'admin' || user.role === 'super_admin') && (
@@ -113,6 +124,17 @@ export default function Dashboard() {
       <SubscriptionWarningBanner />
 
       <div className="container mx-auto px-4 py-6 md:py-8">
+        {/* ✅ Novo botão mobile acima do card de boas vindas */}
+        <div className="block md:hidden mb-6">
+          <Button
+            onClick={() => setShowNoCreditsModal(true)}
+            className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-14 shadow-lg font-black flex items-center justify-center gap-2 text-lg rounded-xl border-2 border-[#d4af37]"
+          >
+            <LucideIcons.TrendingUp className="w-5 h-5" />
+            Upgrade de Plano ou Créditos avulso
+          </Button>
+        </div>
+
         <div className="bg-white/90 rounded-2xl p-6 md:p-8 shadow-xl border-4 border-[#d4af37] mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-[#1e3a5f] mb-2">
             Graça e paz, {user?.name || user?.email?.split('@')[0] || "Irmão"}!
@@ -132,8 +154,13 @@ export default function Dashboard() {
 
         <div className="grid lg:grid-cols-4 gap-6 md:gap-8">
           <div className="lg:col-span-1">
-            {/* CreditsPanel restaurado apenas com botões */}
-            <CreditsPanel onNeedCredits={() => setShowNoCreditsModal(true)} onlyButtons={true} />
+            {/* CreditsPanel restaurado apenas com botões - HIDDEN ON MOBILE */}
+            {/* CreditsPanel restaurado apenas com botões - REMOVIDO NO DESKTOP E SUBSTITUÍDO POR TEXTO */}
+            <div className="hidden md:block bg-white/50 rounded-xl p-6 border-2 border-[#d4af37]/50 text-center shadow-lg">
+              <p className="text-[#1e3a5f] font-bold text-lg leading-relaxed">
+                Clique em uma das ferramentas e comece já os seus estudos!
+              </p>
+            </div>
 
             <div className="mt-0"> {/* Ajustado margem superior já que o painel saiu */}
               <SavedStudiesSection />
