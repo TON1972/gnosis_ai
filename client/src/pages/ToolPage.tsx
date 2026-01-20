@@ -178,7 +178,7 @@ export default function ToolPage() {
             </div>
 
             <div className="bg-white/90 rounded-2xl p-8 shadow-xl border-4 border-[#d4af37] mb-6">
-              <label className="block text-lg font-bold text-[#1e3a5f] mb-3">Entrada de Dados</label>
+              {/* <label className="block text-lg font-bold text-[#1e3a5f] mb-3">Entrada de Dados</label> */}
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
