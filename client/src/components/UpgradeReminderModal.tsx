@@ -18,7 +18,7 @@ export default function UpgradeReminderModal({ open, onClose }: UpgradeReminderM
 
     const handleUpgrade = () => {
         onClose();
-        setLocation("/");
+        setLocation("/dashboard");
         setTimeout(() => {
             const plansSection = document.getElementById("planos");
             plansSection?.scrollIntoView({ behavior: "smooth" });
@@ -55,7 +55,7 @@ export default function UpgradeReminderModal({ open, onClose }: UpgradeReminderM
                                 <div>
                                     <h3 className="font-bold text-xl text-[#d4af37] mb-1">FREE</h3>
                                     <p className="text-lg text-gray-200">
-                                        De 6 para <span className="font-bold text-white">todas as 19 ferramentas liberadas!</span>
+                                        De 6 para <span className="font-bold text-white">todas as 20 ferramentas liberadas!</span>
                                     </p>
                                 </div>
                             </div>
