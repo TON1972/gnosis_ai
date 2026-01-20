@@ -1,15 +1,14 @@
 import { getMercadoPago } from '../mercadopago';
 import { getDb } from '../db';
-import { subscriptions, creditTransactions, payments, credits, plans } from '../../drizzle/schema';
+import { subscriptions, creditTransactions, payments, credits, plans, users } from '../../drizzle/schema';
 import { eq, sql, desc, and } from 'drizzle-orm';
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
-
-
+import { sendMetaEvent } from '../meta-capi';
 
 export async function handleMercadoPagoWebhook(req: ExpressRequest, res: ExpressResponse) {
     try {
         console.log("🔔 [Webhook] Recebido:", JSON.stringify(req.body, null, 2));
-        await processPaymentLogic(req.body);
+        await processPaymentLogic(req.body, req);
         res.setHeader("ngrok-skip-browser-warning", "true");
         return res.status(200).send("OK");
     } catch (error: any) {
@@ -33,7 +32,7 @@ export async function handleMercadoPagoWebhookStandard(req: Request) {
     }
 }
 
-export async function processPaymentLogic(body: any) {
+export async function processPaymentLogic(body: any, expressReq?: ExpressRequest) {
     const { type, data } = body;
 
     // Suporte a diferentes formatos de webhook (alguns enviam type='payment', outros topic='payment')
@@ -117,10 +116,11 @@ export async function processPaymentLogic(body: any) {
         }
 
         // 1. REGISTRA O PAGAMENTO (Atualizado com novos campos)
+        const amountTotal = Math.round((paymentDetails.transaction_amount || 0) * 100);
         await database.insert(payments).values({
             userId: userId,
             subscriptionId: subscriptionId,
-            amount: Math.round((paymentDetails.transaction_amount || 0) * 100),
+            amount: amountTotal,
             currency: 'BRL',
             status: 'approved',
             paymentMethod: paymentDetails.payment_method_id,
@@ -239,6 +239,22 @@ export async function processPaymentLogic(body: any) {
                 console.log(`✅ ${amountToAdd} Créditos adicionados para User ${userId}.`);
             } else {
                 console.warn(`⚠️ Webhook de créditos recebido mas quantidade zerada ou não identificada. Meta: ${JSON.stringify(meta)}`);
+            }
+        }
+
+        // ✅ 4. SEND TO META CAPI
+        if (amountTotal > 0) {
+            const [user] = await database.select().from(users).where(eq(users.id, userId)).limit(1);
+            if (user) {
+                await sendMetaEvent({
+                    eventName: 'Purchase',
+                    email: user.email || undefined,
+                    clientIpAddress: expressReq?.ip || undefined,
+                    clientUserAgent: (Array.isArray(expressReq?.headers['user-agent']) ? expressReq?.headers['user-agent'][0] : expressReq?.headers['user-agent']) || undefined,
+                    currency: 'BRL',
+                    value: amountTotal / 100,
+                    orderId: paymentId
+                });
             }
         }
     }

@@ -5,6 +5,8 @@ import { getDb } from "./db";
 import { users, subscriptions, credits, payments, plans } from "../drizzle/schema";
 import { eq, sql } from "drizzle-orm";
 
+import { sendMetaEvent } from "./meta-capi";
+
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
 export async function handleStripeWebhook(req: Request, res: Response) {
@@ -58,9 +60,10 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                     });
 
                     // 1. Atualizar Customer ID do usuário
-                    await db.update(users)
+                    const [user] = await db.update(users)
                         .set({ stripeCustomerId: customerId })
-                        .where(eq(users.id, userId));
+                        .where(eq(users.id, userId))
+                        .returning();
                     console.log(`✅ [Webhook] Customer ID updated for user ${userId}`);
 
                     // 2. Buscar detalhes do plano
@@ -172,10 +175,11 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                     console.log(`✅ [Webhook] Recording payment for subscription ${localSub?.id}`);
 
                     try {
+                        const amountTotal = session.amount_total;
                         await db.insert(payments).values({
                             userId: userId,
                             subscriptionId: localSub?.id,
-                            amount: session.amount_total,
+                            amount: amountTotal,
                             currency: session.currency || 'brl',
                             status: 'approved',
                             paymentMethod: 'stripe_subscription',
@@ -186,6 +190,20 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                             createdAt: new Date()
                         });
                         console.log(`✅ [Webhook] Payment recorded successfully`);
+
+                        // 7. ✅ SEND TO META CAPI
+                        if (amountTotal > 0 && user) {
+                            await sendMetaEvent({
+                                eventName: 'Purchase',
+                                email: user.email || undefined,
+                                clientIpAddress: req.ip || undefined,
+                                clientUserAgent: (Array.isArray(req.headers['user-agent']) ? req.headers['user-agent'][0] : req.headers['user-agent']) || undefined,
+                                currency: 'BRL',
+                                value: amountTotal / 100, // Stripe values are in cents
+                                orderId: session.id
+                            });
+                        }
+
                         console.log(`🎉 [Webhook] Subscription activation complete for User ${userId}!`);
                     } catch (paymentErr) {
                         console.error("❌ [Webhook] Error recording payment:", paymentErr);
@@ -222,10 +240,11 @@ export async function handleStripeWebhook(req: Request, res: Response) {
 
                     // Registrar pagamento
                     try {
+                        const amountPaid = invoice.amount_paid;
                         await db.insert(payments).values({
                             userId: sub.userId,
                             subscriptionId: sub.id, // ✅ Já temos a assinatura local aqui
-                            amount: invoice.amount_paid,
+                            amount: amountPaid,
                             currency: invoice.currency,
                             status: 'approved',
                             paymentMethod: 'stripe_recurring',
@@ -235,6 +254,22 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                             createdAt: new Date()
                         });
                         console.log(`✅ Renovação registrada para User ${sub.userId} (Invoice: ${invoice.id})`);
+
+                        // ✅ SEND TO META CAPI
+                        if (amountPaid > 0) {
+                            const [user] = await db.select().from(users).where(eq(users.id, sub.userId)).limit(1);
+                            if (user) {
+                                await sendMetaEvent({
+                                    eventName: 'Purchase',
+                                    email: user.email || undefined,
+                                    clientIpAddress: req.ip || undefined,
+                                    clientUserAgent: (Array.isArray(req.headers['user-agent']) ? req.headers['user-agent'][0] : req.headers['user-agent']) || undefined,
+                                    currency: (invoice.currency || 'brl').toUpperCase(),
+                                    value: amountPaid / 100,
+                                    orderId: invoice.id
+                                });
+                            }
+                        }
                     } catch (invErr) {
                         console.error("❌ Erro ao gravar renovação (Stripe):", invErr);
                     }
