@@ -92,6 +92,9 @@ export const appRouter = router({
         .where(eq(users.id, ctx.user.id))
         .limit(1);
 
+      // ✅ Validação de contagem diária no login
+      await getUserCredits(ctx.user.id);
+
       return result[0] || null;
     }),
 
@@ -137,6 +140,9 @@ export const appRouter = router({
       if (freshUser.length === 0) {
         throw new Error('Usuário não encontrado');
       }
+
+      // ✅ Validação de contagem diária no refresh
+      await getUserCredits(ctx.user.id);
 
       return freshUser[0];
     }),

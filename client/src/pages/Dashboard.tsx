@@ -128,7 +128,7 @@ export default function Dashboard() {
         <div className="block md:hidden mb-6">
           <Button
             onClick={() => setShowNoCreditsModal(true)}
-            className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-14 shadow-lg font-black flex items-center justify-center gap-2 text-lg rounded-xl border-2 border-[#d4af37]"
+            className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-14 shadow-lg font-black flex items-center justify-center gap-2 text-sm rounded-xl border-2 border-[#d4af37]"
           >
             <LucideIcons.TrendingUp className="w-5 h-5" />
             Upgrade de Plano ou Créditos avulso

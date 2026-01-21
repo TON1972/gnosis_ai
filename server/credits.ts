@@ -104,6 +104,9 @@ export async function useCredits(userId: number, amount: number, toolName: strin
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
+  // 0. Atualiza/Checa reset diário ANTES de ler o saldo
+  await getUserCredits(userId);
+
   // 1. Busca saldos atuais
   const currentCredit = await db.select().from(credits).where(eq(credits.userId, userId)).limit(1);
 

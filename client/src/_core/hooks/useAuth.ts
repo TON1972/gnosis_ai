@@ -20,13 +20,16 @@ export function useAuth(options?: UseAuthOptions) {
       // Limpa o cache do tRPC
       utils.auth.me.setData(undefined, null);
       utils.auth.me.invalidate();
-      
+
       // ✅ Limpa o cookie no cliente também por segurança
       document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-      
+
       // Limpa o localStorage
       localStorage.removeItem("manus-runtime-user-info");
-      
+
+      // ✅ Limpa flag da promoção na sessão para aparecer no próximo login
+      sessionStorage.removeItem("upgrade_reminder_shown");
+
       // Redireciona para a home
       window.location.href = "/";
     },

@@ -14,39 +14,18 @@ export function useUpgradeReminder() {
             return;
         }
 
-        // Verifica quando foi a última vez que o modal foi exibido
-        const lastShown = localStorage.getItem(STORAGE_KEY);
-        const now = Date.now();
+        // Verifica se já mostramos NESTA sessão
+        const sessionShown = sessionStorage.getItem("upgrade_reminder_shown");
 
-        if (!lastShown) {
-            // Primeira vez: mostrar após 2 minutos de uso
+        if (!sessionShown) {
             const timer = setTimeout(() => {
                 setShowModal(true);
-                localStorage.setItem(STORAGE_KEY, now.toString());
-            }, 2 * 60 * 1000); // 2 minutos
+                // Marca como mostrado nesta sessão
+                sessionStorage.setItem("upgrade_reminder_shown", "true");
+            }, 1000); // 1 segundo de delay para não ser invasivo demais logo no render
 
             return () => clearTimeout(timer);
         }
-
-        const timeSinceLastShown = now - parseInt(lastShown, 10);
-
-        // Se já passou o intervalo, mostra o modal
-        if (timeSinceLastShown >= REMINDER_INTERVAL) {
-            const timer = setTimeout(() => {
-                setShowModal(true);
-                localStorage.setItem(STORAGE_KEY, now.toString());
-            }, 1000); // Mostra após 1 segundo de carregamento da página
-
-            return () => clearTimeout(timer);
-        }
-
-        // Agenda para mostrar quando o intervalo completar
-        const timer = setTimeout(() => {
-            setShowModal(true);
-            localStorage.setItem(STORAGE_KEY, Date.now().toString());
-        }, REMINDER_INTERVAL - timeSinceLastShown);
-
-        return () => clearTimeout(timer);
     }, [activePlan]);
 
     const handleClose = () => {

@@ -64,6 +64,8 @@ export default function Auth() {
       const data = await response.json();
       if (data.success) {
         toast.success("Bem-vindo!");
+        // ✅ Garante que o modal de promoção apareça na nova sessão
+        sessionStorage.removeItem("upgrade_reminder_shown");
         window.location.href = "/dashboard";
       } else {
         toast.error(data.message || "Credenciais inválidas");
