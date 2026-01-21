@@ -78,13 +78,11 @@ export default function Dashboard() {
       <header className="sticky top-0 z-50 bg-[#1e3a5f] shadow-lg border-b-4 border-[#d4af37]">
         <div className="container mx-auto px-3 py-4 md:px-4 md:py-6">
           <div className="flex items-center justify-between">
-            <Link href="/">
-              <span className="flex items-center gap-1.5 md:gap-4 hover:opacity-80 transition-opacity cursor-pointer">
-                <img src={APP_LOGO} alt={APP_TITLE} className="h-10 w-10 md:h-16 md:w-16 object-contain" />
-                <h1 className="hidden md:block text-3xl font-bold text-[#d4af37]">{APP_TITLE}</h1>
-                <h1 className="block md:hidden text-lg font-bold text-[#d4af37] leading-tight">GNOSIS AI</h1>
-              </span>
-            </Link>
+            <span className="flex items-center gap-1.5 md:gap-4 hover:opacity-80 transition-opacity cursor-pointer">
+              <img src={APP_LOGO} alt={APP_TITLE} className="h-10 w-10 md:h-16 md:w-16 object-contain" />
+              <h1 className="hidden md:block text-3xl font-bold text-[#d4af37]">{APP_TITLE}</h1>
+              <h1 className="block md:hidden text-lg font-bold text-[#d4af37] leading-tight">GNOSIS AI</h1>
+            </span>
             <div className="flex items-center gap-1.5 md:gap-3">
               {/* ✅ Novo display de créditos no header - Agora em primeiro */}
               <div className="mr-1 md:mr-2">

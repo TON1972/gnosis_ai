@@ -192,12 +192,17 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                         console.log(`✅ [Webhook] Payment recorded successfully`);
 
                         // 7. ✅ SEND TO META CAPI
+                        // Modificado para usar METADATA (Dados originais do usuário) em vez do IP do Stripe webhook
                         if (amountTotal > 0 && user) {
+                            const metaData = session.metadata || {}; // Pegamos do metadata salvo na criação
+
                             await sendMetaEvent({
                                 eventName: 'Purchase',
                                 email: user.email || undefined,
-                                clientIpAddress: req.ip || undefined,
-                                clientUserAgent: (Array.isArray(req.headers['user-agent']) ? req.headers['user-agent'][0] : req.headers['user-agent']) || undefined,
+                                clientIpAddress: metaData.clientIp || req.ip || undefined,
+                                clientUserAgent: metaData.clientUserAgent || (Array.isArray(req.headers['user-agent']) ? req.headers['user-agent'][0] : req.headers['user-agent']) || undefined,
+                                fbc: metaData.fbc || undefined,
+                                fbp: metaData.fbp || undefined,
                                 currency: 'BRL',
                                 value: amountTotal / 100, // Stripe values are in cents
                                 orderId: session.id

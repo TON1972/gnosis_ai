@@ -1262,6 +1262,24 @@ export const appRouter = router({
             const planName = input.title.replace('Plano ', '').replace(' - Gnosis AI', '');
             const isTrialEligible = planName.toLowerCase().includes('lumen') || planName.toLowerCase().includes('premium');
 
+            // ✅ Extrair dados de rastreamento (Cookies Meta)
+            let fbc = "";
+            let fbp = "";
+            const cookieHeader = ctx.req.headers.get?.("cookie") || ctx.req.headers.cookie;
+
+            if (cookieHeader) {
+              const cookies: Record<string, string> = {};
+              cookieHeader.split(";").forEach((c: string) => {
+                const [key, val] = c.trim().split("=");
+                cookies[key] = val;
+              });
+              fbc = cookies["_fbc"] || "";
+              fbp = cookies["_fbp"] || "";
+            }
+
+            const clientIp = (ctx.req.headers.get?.("x-forwarded-for") || ctx.req.headers["x-forwarded-for"] || ctx.req.socket?.remoteAddress || "").split(',')[0].trim();
+            const clientUserAgent = ctx.req.headers.get?.("user-agent") || ctx.req.headers["user-agent"] || "";
+
             const stripeSession = await createStripeCheckout({
               planId: Number(input.id),
               planName: planName,
@@ -1270,7 +1288,11 @@ export const appRouter = router({
               userId: ctx.user.id,
               userEmail: user.email,
               customerId: customerId,
-              trialDays: isTrialEligible ? 30 : undefined
+              trialDays: isTrialEligible ? 30 : undefined,
+              fbc,
+              fbp,
+              clientIp,
+              clientUserAgent
             });
 
             // O frontend espera `init_point`, mas o Stripe retorna `url`

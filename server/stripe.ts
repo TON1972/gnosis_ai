@@ -40,8 +40,13 @@ export async function createStripeCheckout(params: {
     userEmail: string;
     customerId: string; // ✅ Agora obrigatório
     trialDays?: number;
+    // ✅ Dados para Meta CAPI (Pixel)
+    fbc?: string;
+    fbp?: string;
+    clientIp?: string;
+    clientUserAgent?: string;
 }) {
-    const { planId, planName, price, billingPeriod, userId, userEmail, customerId, trialDays } = params;
+    const { planId, planName, price, billingPeriod, userId, userEmail, customerId, trialDays, fbc, fbp, clientIp, clientUserAgent } = params;
 
     try {
         const unitAmount = Math.round(price * 100);
@@ -70,7 +75,12 @@ export async function createStripeCheckout(params: {
                 userId: userId.toString(),
                 planId: planId.toString(),
                 billingPeriod: billingPeriod,
-                type: 'subscription'
+                type: 'subscription',
+                // ✅ Armazena dados originais do usuário para o Webhook usar no CAPI
+                fbc: fbc || "",
+                fbp: fbp || "",
+                clientIp: clientIp || "",
+                clientUserAgent: clientUserAgent || ""
             },
             subscription_data: trialDays ? {
                 trial_period_days: trialDays
