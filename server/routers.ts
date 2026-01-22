@@ -1260,7 +1260,6 @@ export const appRouter = router({
 
             // Delegate to Stripe helper
             const planName = input.title.replace('Plano ', '').replace(' - Gnosis AI', '');
-            const isTrialEligible = planName.toLowerCase().includes('lumen') || planName.toLowerCase().includes('premium');
 
             // ✅ Extrair dados de rastreamento (Cookies Meta)
             let fbc = "";
@@ -1288,7 +1287,7 @@ export const appRouter = router({
               userId: ctx.user.id,
               userEmail: user.email,
               customerId: customerId,
-              trialDays: isTrialEligible ? 30 : undefined,
+              // trialDays removido para Lumem e Premium
               fbc,
               fbp,
               clientIp,
