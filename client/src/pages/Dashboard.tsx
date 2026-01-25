@@ -154,8 +154,8 @@ export default function Dashboard() {
           <div className="lg:col-span-1">
             {/* CreditsPanel restaurado apenas com botões - HIDDEN ON MOBILE */}
             {/* CreditsPanel restaurado apenas com botões - REMOVIDO NO DESKTOP E SUBSTITUÍDO POR TEXTO */}
-            <div className="bg-white/50 rounded-xl p-6 border-2 border-[#d4af37]/50 text-center shadow-lg mb-6 md:mb-0">
-              <p className="text-[#1e3a5f] font-bold text-lg leading-relaxed">
+            <div className="bg-[#1e3a5f] rounded-xl p-6 border-2 border-[#d4af37] text-center shadow-lg mb-6 md:mb-0">
+              <p className="text-[#d4af37] font-bold text-lg leading-relaxed">
                 Clique em uma das ferramentas e comece já os seus estudos!
               </p>
             </div>

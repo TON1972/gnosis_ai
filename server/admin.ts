@@ -48,11 +48,11 @@ export async function getUserStats(): Promise<UserStats> {
     SELECT 
       (SELECT COUNT(*) FROM users) as total_users,
       COUNT(DISTINCT CASE 
-        WHEN s.status = 'active' AND p.name != 'free' AND u."stripeCustomerId" IS NOT NULL 
+        WHEN s.status = 'active' AND p.name != 'free' 
         THEN u.id 
       END) as paid_users,
       (SELECT COUNT(*) FROM users) - COUNT(DISTINCT CASE 
-        WHEN s.status = 'active' AND p.name != 'free' AND u."stripeCustomerId" IS NOT NULL 
+        WHEN s.status = 'active' AND p.name != 'free' 
         THEN u.id 
       END) as free_users
     FROM users u
@@ -87,7 +87,6 @@ export async function getUsersByPlan(): Promise<PlanDistribution[]> {
     INNER JOIN subscriptions s ON u.id = s."userId"
     INNER JOIN plans p ON s."planId" = p.id
     WHERE s.status = 'active'
-      AND u."stripeCustomerId" IS NOT NULL
     GROUP BY p.name, p."displayName"
     ORDER BY user_count DESC
   `);
