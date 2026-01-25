@@ -4,11 +4,12 @@ import { Crown, Sparkles, Gift, CheckCircle2, Zap, Rocket, Loader2 } from "lucid
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import CreditPackages from "./CreditPackages";
 
 interface NoCreditsModalProps {
   open: boolean;
   onClose: () => void;
-  initialTab?: 'plans' | 'credits'; 
+  initialTab?: 'plans' | 'credits';
 }
 
 const BONUS_CREDITS = [
@@ -22,7 +23,7 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
   const { data: allPlans, isLoading: isLoadingPlans } = trpc.plans.list.useQuery();
   const { data: allTools, isLoading: isLoadingTools } = trpc.tools.list.useQuery();
   const { data: activePlanData } = trpc.credits.activePlan.useQuery();
-  
+
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
   const [view, setView] = useState<'plans' | 'credits'>(initialTab);
 
@@ -58,7 +59,7 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[98vw] md:max-w-7xl h-[95vh] md:h-auto md:max-h-[92vh] overflow-y-auto bg-linear-to-br from-[#FFFACD] to-[#F0E68C] border-4 border-[#d4af37] p-4 md:p-8 custom-scrollbar">
-        
+
         <DialogHeader className="p-4 text-center">
           <DialogTitle className="text-xl md:text-3xl font-black text-[#1e3a5f] flex items-center justify-center gap-2">
             <Rocket className="w-8 h-8 text-[#d4af37]" /> IMPULSIONE SUA TEOLOGIA
@@ -68,14 +69,14 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
 
         {/* SELETOR DE ABAS */}
         <div className="flex justify-center gap-2 mb-8 px-4">
-          <Button 
-            onClick={() => setView('plans')} 
+          <Button
+            onClick={() => setView('plans')}
             className={`flex-1 md:w-48 font-bold rounded-xl transition-all h-12 border-2 ${view === 'plans' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f] shadow-lg scale-105' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]/20'}`}
           >
             <Crown className="w-4 h-4 mr-2" /> Assinaturas
           </Button>
-          <Button 
-            onClick={() => setView('credits')} 
+          <Button
+            onClick={() => setView('credits')}
             className={`flex-1 md:w-48 font-bold rounded-xl transition-all h-12 border-2 ${view === 'credits' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f] shadow-lg scale-105' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]/20'}`}
           >
             <Gift className="w-4 h-4 mr-2" /> Avulsos
@@ -91,7 +92,7 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
           ) : view === 'plans' ? (
             /* CONTEÚDO DE PLANOS */
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-                <div className="flex justify-center items-center gap-4 mb-8">
+              <div className="flex justify-center items-center gap-4 mb-8">
                 <button onClick={() => setBillingPeriod('monthly')} className={`px-6 py-2 rounded-full font-bold text-sm border-2 transition-all ${billingPeriod === 'monthly' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f]' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]'}`}>Mensal</button>
                 <button onClick={() => setBillingPeriod('yearly')} className={`px-6 py-2 rounded-full font-bold text-sm border-2 relative transition-all ${billingPeriod === 'yearly' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f]' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]'}`}>
                   Anual <span className="absolute -top-3 -right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse shadow-md">-16,5%</span>
@@ -128,15 +129,15 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
                           );
                         })}
                       </div>
-                      <Button 
-                        onClick={() => !isActive && createCheckout.mutate({ 
-                          type: 'plan', 
-                          id: String(plan.id), 
+                      <Button
+                        onClick={() => !isActive && createCheckout.mutate({
+                          type: 'plan',
+                          id: String(plan.id),
                           price: price / 100, // MP espera valor em reais, banco guarda em cents
                           title: `Plano ${plan.displayName} - Gnosis AI`,
-                          billingPeriod 
-                        })} 
-                        disabled={isActive || createCheckout.isPending || plan.name === 'free'} 
+                          billingPeriod
+                        })}
+                        disabled={isActive || createCheckout.isPending || plan.name === 'free'}
                         className={`w-full font-black py-5 rounded-xl transition-all shadow-md active:scale-95 ${isActive ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-none' : isLumen ? 'bg-[#d4af37] text-[#1e3a5f] hover:bg-white' : 'bg-[#1e3a5f] text-white'}`}
                       >
                         {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : isActive ? 'PLANO ATUAL' : plan.name === 'free' ? 'PLANO BASE' : 'ASSINAR AGORA'}
@@ -148,36 +149,10 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
             </div>
           ) : (
             /* CONTEÚDO DE CRÉDITOS AVULSOS */
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                {BONUS_CREDITS.map((credit, index) => {
-                  const isProcessing = createCheckout.isPending && createCheckout.variables?.id === String(credit.amount);
-                  return (
-                    <div key={index} className="p-4 md:p-6 rounded-2xl border-4 text-center transition-all flex flex-col items-center bg-white border-[#d4af37]/20 shadow-md hover:border-[#d4af37] hover:shadow-xl group">
-                      <Sparkles className="w-8 h-8 mb-2 text-[#d4af37] group-hover:scale-125 transition-transform" />
-                      <h5 className="text-2xl font-black text-[#1e3a5f]">{credit.amount.toLocaleString('pt-BR')}</h5>
-                      <p className="text-[10px] uppercase font-bold opacity-60 mb-4 text-[#8b6f47]">Créditos</p>
-                      <div className="mt-auto w-full">
-                        <p className="text-xl font-black mb-4 text-[#1e3a5f]">{credit.label}</p>
-                        <Button 
-                          onClick={() => createCheckout.mutate({
-                            type: 'credits',
-                            id: String(credit.amount),
-                            price: credit.price,
-                            title: `Recarga de ${credit.amount} créditos - Gnosis AI`
-                          })} 
-                          disabled={createCheckout.isPending} 
-                          className="w-full font-bold text-xs bg-[#1e3a5f] text-white active:scale-95 transition-all hover:bg-[#d4af37] hover:text-[#1e3a5f]"
-                        >
-                          {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'COMPRAR'}
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
+            <CreditPackages />
           )}
         </div>
-        
+
         <div className="text-center pt-8">
           <Button variant="ghost" onClick={onClose} className="text-[#1e3a5f] font-bold hover:bg-[#d4af37]/10 px-8 py-2 rounded-lg transition-all">Talvez mais tarde</Button>
         </div>

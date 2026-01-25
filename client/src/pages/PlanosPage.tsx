@@ -6,6 +6,7 @@ import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { CheckCircle2, Crown, Loader2 } from "lucide-react";
 import MobileMenu from "@/components/MobileMenu";
+import CreditPackages from "@/components/CreditPackages";
 
 export default function PlanosPage() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -300,6 +301,16 @@ export default function PlanosPage() {
             })}
           </div>
         )}
+      </section>
+
+      {/* Credit Packages Section */}
+      <section className="container mx-auto px-4 pb-20">
+        <div className="max-w-2xl md:max-w-7xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#1e3a5f] text-center mb-8">
+            Ou recarregue com Créditos Avulsos
+          </h2>
+          <CreditPackages />
+        </div>
       </section>
     </div>
   );
