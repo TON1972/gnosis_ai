@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   password: text("password"),
   role: varchar("role", { length: 20 }).notNull().default("user"),
+  currentSessionId: varchar("currentSessionId", { length: 255 }), // Session Control
   lastSignedIn: timestamp("lastSignedIn"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(), // Adicionado para consistência

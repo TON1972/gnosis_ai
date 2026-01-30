@@ -35,6 +35,7 @@ export const users = pgTable("users", {
   password: varchar("password", { length: 255 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: roleEnum("role").default("user").notNull(),
+  currentSessionId: varchar("currentSessionId", { length: 255 }), // Session Control
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -161,7 +162,7 @@ export const tools = pgTable("tools", {
   displayName: varchar("displayName", { length: 150 }).notNull(),
   description: text("description"),
   inputPlaceholder: text("inputPlaceholder"),
-  promptTemplate: text("prompt_template"), // ✅ Mapeado para a coluna real (snake_case)
+  promptTemplate: text("prompt_template"), // ✅ Revertido para preservar dados na coluna snake_case
   creditCost: integer("creditCost").default(50),
   category: text("category"),
   categoryId: integer("categoryId").references(() => toolCategories.id), // ✅ A nova coluna

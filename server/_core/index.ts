@@ -122,6 +122,7 @@ app.post("/api/register", async (req, res) => {
     // 3. Persistência no Banco Local com openId para evitar erro de constraint
     const hashedPassword = await bcrypt.hash(password, 10);
     const openId = `supabase:${authData.user.id}`;
+    const sessionId = crypto.randomUUID(); // ✅ Gerar Session ID
 
     const [newUser] = await db.insert(users).values({
       name,
@@ -130,7 +131,8 @@ app.post("/api/register", async (req, res) => {
       supabaseId: authData.user.id,
       openId: openId,
       loginMethod: "password",
-      role: "user"
+      role: "user",
+      currentSessionId: sessionId // ✅ Salvar Session ID
     } as any).returning({ id: users.id, email: users.email, role: users.role });
 
     // 4. Ativação de Assinatura e Créditos
@@ -158,7 +160,7 @@ app.post("/api/register", async (req, res) => {
 
     // ✅ 5. LOGAR AUTOMATICAMENTE: Gerar Token JWT imediatamente
     const token = jwt.sign(
-      { userId: newUser.id, email: newUser.email, role: newUser.role },
+      { userId: newUser.id, email: newUser.email, role: newUser.role, sessionId }, // ✅ Incluir Session ID
       process.env.JWT_SECRET || "sua_chave_secreta_aqui",
       { expiresIn: "7d" }
     );
@@ -203,8 +205,12 @@ app.post("/api/login", async (req, res) => {
 
     if (!user) return res.status(404).json({ success: false, message: "Usuário não sincronizado." });
 
+    // ✅ NOVO: Gerar e salvar Session ID para invalidar logins anteriores
+    const sessionId = crypto.randomUUID();
+    await db.update(users).set({ currentSessionId: sessionId, lastSignedIn: new Date() }).where(eq(users.id, user.id));
+
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
+      { userId: user.id, email: user.email, role: user.role, sessionId }, // ✅ Incluir Session ID no Token
       process.env.JWT_SECRET || "chave_padrao_gnosis",
       { expiresIn: "7d" }
     );

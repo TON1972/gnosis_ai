@@ -17,19 +17,33 @@ const requireUser = t.middleware(async opts => {
     throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
   }
 
-  // ✅ Set RLS context for database queries
-  // This allows RLS policies to use current_setting('app.current_user_id')
+  // ✅ Validate Session ID for concurrency control
   if (ctx.user.id) {
     const { getDb } = await import('../db');
-    const { sql } = await import('drizzle-orm');
+    const { users } = await import('../../drizzle/schema');
+    const { eq } = await import('drizzle-orm');
+
     const db = await getDb();
     if (db) {
+      // Check user session
+      const [dbUser] = await db.select({ currentSessionId: users.currentSessionId }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+
+      // Access sessionId from user context (needs strict type augmentation or casting if not in type definition yet)
+      const tokenSessionId = (ctx.user as any).sessionId;
+
+      if (dbUser && dbUser.currentSessionId && dbUser.currentSessionId !== tokenSessionId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Sessão expirada. Você conectou em outro dispositivo."
+        });
+      }
+
+      // Set RLS Context (Existing logic)
+      const { sql } = await import('drizzle-orm');
       try {
         await db.execute(sql`SELECT set_config('app.current_user_id', ${ctx.user.id.toString()}, true)`);
       } catch (error) {
         console.error('Failed to set RLS context:', error);
-        // Don't fail the request if RLS context setting fails
-        // This allows the app to work even if RLS is not enabled yet
       }
     }
   }
