@@ -14,13 +14,14 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
 
-  const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
+  const isUnauthorized = error.message === UNAUTHED_ERR_MSG || error.message.includes("Sessão expirada");
 
   if (!isUnauthorized) return;
 
-  // Redirect to login page (DISABLED - causing issues on Home page)
-  // window.location.href = "/auth";
-  console.warn("Unauthorized access detected, but auto-redirect is disabled");
+  // Redirect to login page
+  if (window.location.pathname !== "/auth" && window.location.pathname !== "/") {
+    window.location.href = "/auth";
+  }
 };
 
 queryClient.getQueryCache().subscribe(event => {
