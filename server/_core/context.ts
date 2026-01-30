@@ -9,6 +9,7 @@ export type TrpcUser = {
   email: string;
   role: string;
   name?: string | null;
+  sessionId?: string; // ✅ Adicionado
 };
 
 export type TrpcContext = {
@@ -95,6 +96,7 @@ export async function createContext(
         id: decoded.userId,
         email: decoded.email,
         role: decoded.role,
+        sessionId: decoded.sessionId, // ✅ Mapear Session ID
       };
     } catch (jwtError) {
       // Token inválido ou expirado - ignorar silenciosamente
