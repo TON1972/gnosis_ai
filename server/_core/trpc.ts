@@ -31,11 +31,18 @@ const requireUser = t.middleware(async opts => {
       // Access sessionId from user context (needs strict type augmentation or casting if not in type definition yet)
       const tokenSessionId = (ctx.user as any).sessionId;
 
-      if (dbUser && dbUser.currentSessionId && dbUser.currentSessionId !== tokenSessionId) {
+      console.log(`[AuthDebug] User: ${ctx.user.id} | DB Session: ${dbUser?.currentSessionId} | Token Session: ${tokenSessionId}`);
+
+      if (dbUser && dbUser.currentSessionId && tokenSessionId && dbUser.currentSessionId !== tokenSessionId) {
+        console.log('[AuthDebug] Session Mismatch! Throwing Unauthorized.');
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "Sessão expirada. Você conectou em outro dispositivo."
         });
+      } else if (!tokenSessionId) {
+        // If token has no session ID (old token), we might want to allow or block.
+        // For now, let's log it. strict mode would block it.
+        console.log('[AuthDebug] Token has NO Session ID (Legacy Token?)');
       }
 
       // Set RLS Context (Existing logic)

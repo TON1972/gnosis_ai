@@ -98,6 +98,7 @@ export async function createContext(
         role: decoded.role,
         sessionId: decoded.sessionId, // ✅ Mapear Session ID
       };
+      console.log(`[ContextDebug] Decoded Token for User ${user.id}. SessionID: ${user.sessionId}`);
     } catch (jwtError) {
       // Token inválido ou expirado - ignorar silenciosamente
     }
