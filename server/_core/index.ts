@@ -52,9 +52,48 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", time: new Date().toISOString() });
 });
 
+import { z } from "zod";
+
+// Schema de Validação
+const registerSchema = z.object({
+  name: z.string().min(3, "Nome muito curto"),
+  email: z.string().email("Email inválido").refine((email) => {
+    const lowerEmail = email.toLowerCase();
+
+    // 1. Validar provedores comuns estritamente
+    if (lowerEmail.includes("@gmail")) {
+      return lowerEmail.endsWith("@gmail.com");
+    }
+    if (lowerEmail.includes("@hotmail")) {
+      return lowerEmail.endsWith("@hotmail.com") || lowerEmail.endsWith("@hotmail.com.br");
+    }
+    if (lowerEmail.includes("@outlook")) {
+      return lowerEmail.endsWith("@outlook.com") || lowerEmail.endsWith("@outlook.com.br");
+    }
+    if (lowerEmail.includes("@yahoo")) {
+      return lowerEmail.endsWith("@yahoo.com") || lowerEmail.endsWith("@yahoo.com.br");
+    }
+
+    // 2. Lista negra geral de typos para outros domínios
+    const typos = [".comcom", ".coom", ".comm", ".cmo", ".con", ".ocmoc"];
+    return !typos.some(typo => lowerEmail.endsWith(typo));
+  }, "Email com formato inválido ou com erro de digitação. Verifique o provedor (ex: @gmail.com)."),
+  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+  planId: z.any().optional()
+});
+
 app.post("/api/register", async (req, res) => {
   try {
-    const { name, email, password, planId } = req.body;
+    // Validate Input
+    const parseResult = registerSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: parseResult.error.issues[0].message
+      });
+    }
+
+    const { name, email, password, planId } = parseResult.data;
     const db = await getDb();
 
     if (!db) return res.status(500).json({ success: false, message: "Banco indisponível." });

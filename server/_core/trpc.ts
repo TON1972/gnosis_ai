@@ -25,7 +25,7 @@ const requireUser = t.middleware(async opts => {
     const db = await getDb();
     if (db) {
       try {
-        await db.execute(sql`SET LOCAL app.current_user_id = ${ctx.user.id.toString()}`);
+        await db.execute(sql`SELECT set_config('app.current_user_id', ${ctx.user.id.toString()}, true)`);
       } catch (error) {
         console.error('Failed to set RLS context:', error);
         // Don't fail the request if RLS context setting fails

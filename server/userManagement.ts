@@ -17,6 +17,7 @@ export interface UserListItem {
     stripeStatus: string | null;
     createdAt: Date;
     stripeCustomerId: string | null;
+    creditsSpent: number;
 }
 
 export interface PaginatedUsers {
@@ -34,7 +35,11 @@ export async function listUsers(
     page: number = 1,
     limit: number = 20,
     search?: string,
-    planFilter?: string
+    planFilter?: string,
+    sortBy: 'newest' | 'oldest' | 'credits_asc' | 'credits_desc' = 'newest',
+    // Removed unused parameters
+    _minCreditsUsed?: number,
+    _maxCreditsUsed?: number
 ): Promise<PaginatedUsers> {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -54,7 +59,27 @@ export async function listUsers(
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
+    // Determine ORDER BY clause
+    let orderByClause = `ORDER BY u."createdAt" DESC`; // Default
+    if (sortBy === 'oldest') {
+        orderByClause = `ORDER BY u."createdAt" ASC`;
+    } else if (sortBy === 'credits_desc') {
+        orderByClause = `ORDER BY credits_spent DESC NULLS LAST`;
+    } else if (sortBy === 'credits_asc') {
+        orderByClause = `ORDER BY credits_spent ASC NULLS FIRST`;
+    }
+
+    // HAVING clause no longer used for sorting
+    const havingClause = '';
+
     // Get total count
+    // NOTE: This count query needs to be simpler or use a subquery if we strictly need to count filtered by credits.
+    // However, exact count for complex HAVING clauses might be heavy. Let's try to approximate or use a subquery count if filters are applied.
+
+    // let total = 0; // Removed to avoid redeclaration error
+
+    // Get total count
+    // Since we removed credit filtering, we can always use the simpler count query
     const countQuery = sql.raw(`
         SELECT COUNT(DISTINCT u.id) as count 
         FROM users u
@@ -62,11 +87,11 @@ export async function listUsers(
         LEFT JOIN plans p ON s."planId" = p.id
         ${whereClause}
     `);
-
     const countResult = await db.execute(countQuery);
     const total = Number(countResult.rows[0]?.count || 0);
 
-    // Get users with plan info
+    // Get users with plan info and credits spent
+    // We need to group by u.id for the SUM aggregation
     const query = sql.raw(`
         SELECT 
             u.id,
@@ -77,12 +102,15 @@ export async function listUsers(
             p.name as plan_name,
             p."displayName" as plan_display_name,
             s.status as subscription_status,
-            s."stripeStatus" as stripe_status
+            s."stripeStatus" as stripe_status,
+            COALESCE(ABS(SUM(ct.amount)), 0) as credits_spent
         FROM users u
         LEFT JOIN subscriptions s ON u.id = s."userId" AND s.status = 'active'
         LEFT JOIN plans p ON s."planId" = p.id
+        LEFT JOIN credit_transactions ct ON u.id = ct."userId" AND ct.amount < 0
         ${whereClause}
-        ORDER BY u."createdAt" DESC 
+        GROUP BY u.id, p.name, p."displayName", s.status, s."stripeStatus"
+        ${orderByClause} 
         LIMIT ${limit} 
         OFFSET ${offset}
     `);
@@ -99,6 +127,7 @@ export async function listUsers(
         stripeStatus: row.stripe_status as string | null,
         createdAt: new Date(row.createdAt as string),
         stripeCustomerId: row.stripeCustomerId as string | null,
+        creditsSpent: Number(row.credits_spent || 0),
     }));
 
     return {
@@ -200,6 +229,7 @@ export async function getUserDetails(userId: number) {
       s."nextBillingDate",
       s."billingPeriod",
       (SELECT COUNT(*) FROM saved_studies WHERE "userId" = u.id) as studies_count,
+      (SELECT COUNT(*) FROM credit_transactions WHERE "userId" = u.id AND type = 'usage') as usage_count,
       (SELECT COALESCE(ABS(SUM(amount)), 0) FROM credit_transactions WHERE "userId" = u.id AND amount < 0) as credits_spent
     FROM users u
     LEFT JOIN subscriptions s ON u.id = s."userId" AND s.status = 'active'

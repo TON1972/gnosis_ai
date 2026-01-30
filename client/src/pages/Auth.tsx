@@ -82,6 +82,24 @@ export default function Auth() {
     if (!registerName || !registerEmail || !registerPassword) return toast.error("Preencha todos os campos");
     if (registerPassword !== registerConfirmPassword) return toast.error("As senhas não coincidem");
 
+    // Validação de Email com verificação rigorosa de provedores
+    const lowerEmail = registerEmail.toLowerCase();
+    let isInvalidEmail = false;
+
+    // 1. Validar provedores comuns estritamente
+    if (lowerEmail.includes("@gmail") && !lowerEmail.endsWith("@gmail.com")) isInvalidEmail = true;
+    else if (lowerEmail.includes("@hotmail") && !lowerEmail.match(/@hotmail\.com(\.br)?$/)) isInvalidEmail = true;
+    else if (lowerEmail.includes("@outlook") && !lowerEmail.match(/@outlook\.com(\.br)?$/)) isInvalidEmail = true;
+    else if (lowerEmail.includes("@yahoo") && !lowerEmail.match(/@yahoo\.com(\.br)?$/)) isInvalidEmail = true;
+
+    // 2. Lista negra geral de typos
+    const typos = [".comcom", ".coom", ".comm", ".cmo", ".con", ".ocmoc"];
+    if (typos.some(typo => lowerEmail.endsWith(typo))) isInvalidEmail = true;
+
+    if (isInvalidEmail) {
+      return toast.error("Parece que há um erro de digitação no seu email (ex: @gmail.com).");
+    }
+
     setLoading(true);
     try {
       // 1. Criar a conta (Backend agora força o plano FREE inicialmente)

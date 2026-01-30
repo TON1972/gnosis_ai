@@ -547,12 +547,13 @@ export const appRouter = router({
         limit: z.number().default(20),
         search: z.string().optional(),
         planFilter: z.string().optional(),
+        sortBy: z.enum(['newest', 'oldest', 'credits_asc', 'credits_desc']).default('newest'),
       }))
       .query(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
           throw new Error('Acesso negado');
         }
-        return await listUsers(input.page, input.limit, input.search, input.planFilter);
+        return await listUsers(input.page, input.limit, input.search, input.planFilter, input.sortBy);
       }),
 
     getUserDetails: protectedProcedure

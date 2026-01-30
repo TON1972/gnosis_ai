@@ -50,15 +50,22 @@ export function UserManagement() {
     const [planFilter, setPlanFilter] = useState("all");
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
     const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
+    const [sortBy, setSortBy] = useState<"newest" | "oldest" | "credits_asc" | "credits_desc">("newest");
 
     const limit = 20;
 
     // Queries
+    const handleSearch = () => {
+        setSearch(searchInput);
+        setPage(1);
+    };
+
     const { data, isLoading, refetch } = trpc.admin.listUsers.useQuery({
         page,
         limit,
         search: search || undefined,
         planFilter: planFilter !== "all" ? planFilter : undefined,
+        sortBy: sortBy,
     });
 
     const { data: userDetails } = trpc.admin.getUserDetails.useQuery(
@@ -76,11 +83,6 @@ export function UserManagement() {
             toast.error(`Erro ao deletar usuário: ${error.message}`);
         },
     });
-
-    const handleSearch = () => {
-        setSearch(searchInput);
-        setPage(1);
-    };
 
     const handleDelete = () => {
         if (deleteUserId) {
@@ -123,17 +125,30 @@ export function UserManagement() {
                     <div className="flex items-center gap-2 flex-wrap">
                         <Select value={planFilter} onValueChange={setPlanFilter}>
                             <SelectTrigger
-                                className="w-48 border-gray-300"
-                                style={{ backgroundColor: 'white' }}
+                                className="w-48 border-gray-300 bg-white"
                             >
                                 <SelectValue placeholder="Filtrar por plano" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white">
                                 <SelectItem value="all">Todos os planos</SelectItem>
                                 <SelectItem value="free">FREE</SelectItem>
                                 <SelectItem value="lumen">LUMEN</SelectItem>
                                 <SelectItem value="alianca">ALIANÇA</SelectItem>
                                 <SelectItem value="premium">PREMIUM</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                            <SelectTrigger
+                                className="w-48 border-gray-300 bg-white"
+                            >
+                                <SelectValue placeholder="Ordenar por" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white">
+                                <SelectItem value="newest">Mais Recentes</SelectItem>
+                                <SelectItem value="oldest">Mais Antigos</SelectItem>
+                                <SelectItem value="credits_desc">Maior Uso de Créditos</SelectItem>
+                                <SelectItem value="credits_asc">Menor Uso de Créditos</SelectItem>
                             </SelectContent>
                         </Select>
 
@@ -176,6 +191,9 @@ export function UserManagement() {
                                         Plano
                                     </th>
                                     <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Créditos Usados
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
                                         Data de Criação
                                     </th>
                                     <th className="text-right py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -212,6 +230,11 @@ export function UserManagement() {
                                                     </span>
                                                 )}
                                             </div>
+                                        </td>
+                                        <td className="py-4 px-4">
+                                            <p className="text-sm font-medium text-gray-700">
+                                                {user.creditsSpent}
+                                            </p>
                                         </td>
                                         <td className="py-4 px-4">
                                             <p className="text-sm text-gray-600">
@@ -371,10 +394,10 @@ export function UserManagement() {
                                         </div>
                                         <div>
                                             <p className="text-xs font-bold text-blue-600 uppercase tracking-wide">
-                                                Estudos Salvos
+                                                Estudos Gerados
                                             </p>
                                             <p className="text-3xl font-black text-blue-700 mt-1">
-                                                {String(userDetails.studies_count || 0)}
+                                                {String(userDetails.usage_count || 0)}
                                             </p>
                                         </div>
                                     </div>
