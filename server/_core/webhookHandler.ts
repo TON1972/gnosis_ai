@@ -5,6 +5,8 @@ import { eq, sql, desc, and } from 'drizzle-orm';
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { sendMetaEvent } from '../meta-capi';
 
+console.log(">>> LOADING webhookHandler.ts");
+
 export async function handleMercadoPagoWebhook(req: ExpressRequest, res: ExpressResponse) {
     try {
         console.log("🔔 [Webhook] Recebido:", JSON.stringify(req.body, null, 2));
