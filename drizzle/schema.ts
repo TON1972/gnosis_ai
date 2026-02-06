@@ -252,3 +252,14 @@ export const payments = pgTable("payments", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
+
+/**
+ * Dashboard Settings (Video, etc.)
+ */
+export const dashboardSettings = pgTable("dashboard_settings", {
+  id: serial("id").primaryKey(),
+  videoUrl: text("video_url"),
+  videoTitle: text("video_title"),
+  showVideo: boolean("show_video").default(false),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});

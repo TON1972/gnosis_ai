@@ -10,6 +10,7 @@ import { UserManagement } from "@/components/admin/UserManagement";
 import AdminManagement from "@/components/AdminManagement";
 import { AdminToolsManager } from "@/components/admin/AdminToolsManager";
 import { AdminPlansManager } from "@/components/admin/AdminPlansManager";
+import { AdminVideoManagement } from "@/components/admin/AdminVideoManagement";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Menu, X } from "lucide-react";
 import { useLocation } from "wouter";
@@ -43,7 +44,8 @@ export default function AdminDashboard() {
     support: "Tickets de Suporte",
     admins: "Gestão de Administradores",
     'tools-manager': "Gerenciar Catálogo de Tools",
-    'plans-manager': "Gerenciar Planos"
+    'plans-manager': "Gerenciar Planos",
+    video: "Gerenciar Vídeo Destaque"
   };
 
   return (
@@ -115,6 +117,9 @@ export default function AdminDashboard() {
 
               {/* ✅ ABA: GERENCIAR PLANOS - AGORA COMO ABA */}
               {activeTab === 'plans-manager' && isSuperAdmin && <AdminPlansManager />}
+
+              {/* ✅ ABA: GERENCIAR VIDEO */}
+              {activeTab === 'video' && isSuperAdmin && <AdminVideoManagement />}
             </div>
           )}
         </main>

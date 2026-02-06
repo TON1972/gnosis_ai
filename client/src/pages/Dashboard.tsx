@@ -46,6 +46,7 @@ export default function Dashboard() {
   }, []);
 
   const { data: activePlanResponse } = trpc.credits.activePlan.useQuery();
+  const { data: dashboardConfig } = trpc.settings.getDashboardConfig.useQuery();
   const currentPlanId = activePlanResponse?.plan?.id || 1;
 
   const { data: planTools } = trpc.plans.getTools.useQuery(
@@ -122,6 +123,28 @@ export default function Dashboard() {
       <SubscriptionWarningBanner />
 
       <div className="container mx-auto px-4 py-6 md:py-8">
+
+        {/* ✅ MOBILE VIDEO - TOP OF CONTENT */}
+        <div className="block lg:hidden mb-6">
+          {dashboardConfig?.showVideo && dashboardConfig.videoUrl && (
+            <div className="bg-white/90 rounded-2xl p-4 shadow-xl border-4 border-[#d4af37]">
+              <h3 className="text-lg font-bold text-[#1e3a5f] mb-3 flex items-center gap-2">
+                <LucideIcons.Video className="w-5 h-5 text-[#d4af37]" />
+                {dashboardConfig.videoTitle || "Destaque da Semana"}
+              </h3>
+              <div className="relative w-full pb-[56.25%] rounded-xl overflow-hidden shadow-lg border-2 border-[#1e3a5f]/10">
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full"
+                  src={dashboardConfig.videoUrl.replace("watch?v=", "embed/")}
+                  title={dashboardConfig.videoTitle || "Vídeo Destaque"}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+            </div>
+          )}
+        </div>
         {/* ✅ Novo botão mobile acima do card de boas vindas */}
         <div className="block md:hidden mb-6">
           <Button
@@ -148,6 +171,8 @@ export default function Dashboard() {
               <strong>Ferramentas Liberadas:</strong> {allowedToolIds.size} de {allTools.length}
             </p>
           </div>
+
+
         </div>
 
         <div className="grid lg:grid-cols-4 gap-6 md:gap-8">
@@ -166,6 +191,28 @@ export default function Dashboard() {
           </div>
 
           <div className="lg:col-span-3">
+
+            {/* ✅ DESKTOP VIDEO - ABOVE FILTERS */}
+            <div className="hidden lg:block mb-8">
+              {dashboardConfig?.showVideo && dashboardConfig.videoUrl && (
+                <div className="bg-white/90 rounded-2xl p-6 shadow-xl border-4 border-[#d4af37]">
+                  <h3 className="text-xl font-bold text-[#1e3a5f] mb-4 flex items-center gap-2">
+                    <LucideIcons.Video className="w-6 h-6 text-[#d4af37]" />
+                    {dashboardConfig.videoTitle || "Destaque da Semana"}
+                  </h3>
+                  <div className="relative w-full pb-[56.25%] rounded-xl overflow-hidden shadow-lg border-2 border-[#1e3a5f]/10">
+                    <iframe
+                      className="absolute top-0 left-0 w-full h-full"
+                      src={dashboardConfig.videoUrl.replace("watch?v=", "embed/")}
+                      title={dashboardConfig.videoTitle || "Vídeo Destaque"}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="mb-6 flex flex-wrap gap-2">
               {categories.map(category => (

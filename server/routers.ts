@@ -19,6 +19,7 @@ import {
   payments,
   credits,
   subscriptions,
+  dashboardSettings,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { eq, desc, sql, and, lt, gte, or, asc } from "drizzle-orm";
@@ -75,6 +76,48 @@ function calculateDynamicCost(text: string): { words: number; cost: number } {
 
 export const appRouter = router({
   system: systemRouter,
+
+
+  settings: router({
+    getDashboardConfig: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return null;
+      const config = await db.select().from(dashboardSettings).where(eq(dashboardSettings.id, 1)).limit(1);
+      return config[0] || { videoUrl: "", videoTitle: "", showVideo: false };
+    }),
+
+    updateDashboardConfig: protectedProcedure
+      .input(z.object({
+        videoUrl: z.string(),
+        videoTitle: z.string(),
+        showVideo: z.boolean(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+          throw new Error("Acesso negado");
+        }
+
+        const db = await getValidatedDb();
+
+        // Upsert logic using standard SQL if onConflictDoUpdate is tricky with type inference here,
+        // but Drizzle standard is cleaner. Let's try simple check-and-update or insert.
+        const existing = await db.select().from(dashboardSettings).where(eq(dashboardSettings.id, 1)).limit(1);
+
+        if (existing.length > 0) {
+          await db.update(dashboardSettings)
+            .set({ ...input, updatedAt: new Date() })
+            .where(eq(dashboardSettings.id, 1));
+        } else {
+          await db.insert(dashboardSettings).values({
+            id: 1,
+            ...input,
+            updatedAt: new Date()
+          });
+        }
+
+        return { success: true };
+      }),
+  }),
 
   auth: router({
     /**
