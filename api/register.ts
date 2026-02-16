@@ -1,11 +1,11 @@
-import { getDb } from "../server/db";
-import { users, credits, plans, subscriptions } from "../drizzle/schema";
+import { getDb } from "../server/db.js";
+import { users, credits, plans, subscriptions } from "../drizzle/schema.js";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { COOKIE_NAME } from "../shared/const";
+import { COOKIE_NAME } from "../shared/const.js";
 import { serialize } from "cookie";
-import { supabaseAdmin } from "../server/_core/supabaseAdmin";
+import { supabaseAdmin } from "../server/_core/supabaseAdmin.js";
 
 export const runtime = 'nodejs';
 
