@@ -2,8 +2,8 @@ import { eq } from "drizzle-orm";
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import pg from "pg";
 const { Pool } = pg;
-import { ENV } from "./_core/env";
-import * as schema from "../drizzle/schema";
+import { ENV } from "./_core/env.js";
+import * as schema from "../drizzle/schema.js";
 
 // Tipos auxiliares
 type InsertUser = typeof schema.users.$inferInsert;
