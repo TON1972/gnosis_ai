@@ -1,4 +1,4 @@
-import { ENV } from "./_core/env";
+import { ENV } from "./_core/env.js";
 
 interface SendTicketEmailParams {
   clientEmail: string;
@@ -133,4 +133,5 @@ export async function sendTicketEmail({
     return false;
   }
 }
+
 

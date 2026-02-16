@@ -1,12 +1,12 @@
 import { Request, Response, Router } from "express";
 import jwt from "jsonwebtoken";
-import { getDb } from "./db";
-import { users, plans, subscriptions, credits } from "../shared/schema";
+import { getDb } from "./db.js";
+import { users, plans, subscriptions, credits } from "../shared/schema.js";
 import { eq } from "drizzle-orm";
-import { ENV } from "./_core/env";
-import { COOKIE_NAME } from "../shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
-import { supabaseAdmin } from "./_core/supabaseAdmin";
+import { ENV } from "./_core/env.js";
+import { COOKIE_NAME } from "../shared/const.js";
+import { getSessionCookieOptions } from "./_core/cookies.js";
+import { supabaseAdmin } from "./_core/supabaseAdmin.js";
 
 const router = Router();
 

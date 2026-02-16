@@ -1,4 +1,4 @@
-import { getDb } from "./db";
+import { getDb } from "./db.js";
 import { plans, tools, planTools } from "../drizzle/schema";
 
 /**

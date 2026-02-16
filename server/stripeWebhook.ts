@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { stripe } from "./stripe";
+import { stripe } from "./stripe.js";
 
-import { getDb } from "./db";
+import { getDb } from "./db.js";
 import { users, subscriptions, credits, payments, plans } from "../drizzle/schema";
 import { eq, sql } from "drizzle-orm";
 
-import { sendMetaEvent } from "./meta-capi";
+import { sendMetaEvent } from "./meta-capi.js";
 
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 

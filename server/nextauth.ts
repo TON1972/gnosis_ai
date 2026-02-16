@@ -7,7 +7,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
-import { ENV } from "./_core/env";
+import { ENV } from "./_core/env.js";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -52,3 +52,4 @@ export const authOptions: NextAuthOptions = {
 };
 
 export default NextAuth(authOptions);
+
