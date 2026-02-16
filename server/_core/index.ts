@@ -10,23 +10,23 @@ import { createServer } from "http";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import jwt from "jsonwebtoken";
 
-import { appRouter } from "../routers";
-import { oauthRouter } from "../oauth";
-import { createContext } from "./context";
-import { serveStatic, setupVite } from "./vite";
-import { handleMercadoPagoWebhook } from "./webhookHandler";
-import { handleStripeWebhook } from "../stripeWebhook";
-import { COOKIE_NAME } from "../../shared/const";
-import { getSessionCookieOptions } from "./cookies";
+import { appRouter } from "../routers.js";
+import { oauthRouter } from "../oauth.js";
+import { createContext } from "./context.js";
+import { serveStatic, setupVite } from "./vite.js";
+import { handleMercadoPagoWebhook } from "./webhookHandler.js";
+import { handleStripeWebhook } from "../stripeWebhook.js";
+import { COOKIE_NAME } from "../../shared/const.js";
+import { getSessionCookieOptions } from "./cookies.js";
 
 // Integração com Banco de Dados e Schema
-import { getDb } from "../db";
-import { users, credits, plans, subscriptions } from "../../shared/schema";
+import { getDb } from "../db.js";
+import { users, credits, plans, subscriptions } from "../../shared/schema.js";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 // ✅ Import do cliente Admin (essencial para evitar o erro "User not allowed")
-import { supabaseAdmin } from "./supabaseAdmin";
+import { supabaseAdmin } from "./supabaseAdmin.js";
 
 const app = express();
 

@@ -1,9 +1,9 @@
-import { getMercadoPago } from '../mercadopago';
-import { getDb } from '../db';
-import { subscriptions, creditTransactions, payments, credits, plans, users } from '../../drizzle/schema';
+import { getMercadoPago } from '../mercadopago.js';
+import { getDb } from '../db.js';
+import { subscriptions, creditTransactions, payments, credits, plans, users } from '../../drizzle/schema.js';
 import { eq, sql, desc, and } from 'drizzle-orm';
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
-import { sendMetaEvent } from '../meta-capi';
+import { sendMetaEvent } from '../meta-capi.js';
 
 console.log(">>> LOADING webhookHandler.ts");
 

@@ -1,6 +1,6 @@
 import { eq, desc, sql, like, or } from "drizzle-orm";
-import { getDb } from "./db";
-import { users, subscriptions, plans, creditTransactions, savedStudies, studyMessages } from "../drizzle/schema";
+import { getDb } from "./db.js";
+import { users, subscriptions, plans, creditTransactions, savedStudies, studyMessages } from "../drizzle/schema.js";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {

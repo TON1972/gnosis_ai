@@ -1,8 +1,8 @@
-import { COOKIE_NAME } from "../shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
-import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
-import { getAllPlans, getToolsForPlan, getAllTools } from "./db";
+import { COOKIE_NAME } from "../shared/const.js";
+import { getSessionCookieOptions } from "./_core/cookies.js";
+import { systemRouter } from "./_core/systemRouter.js";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc.js";
+import { getAllPlans, getToolsForPlan, getAllTools } from "./db.js";
 // Gnosis.log removido - usando OAuth apenas
 import {
   savedStudies,
@@ -20,19 +20,19 @@ import {
   credits,
   subscriptions,
   dashboardSettings,
-} from "../drizzle/schema";
-import { getDb } from "./db";
+} from "../drizzle/schema.js";
+import { getDb } from "./db.js";
 import { eq, desc, sql, and, lt, gte, or, asc } from "drizzle-orm";
-import { getUserCredits, useCredits, getUserActivePlan } from "./credits";
-import { checkSubscriptionStatus, markSubscriptionPaid } from "./subscriptionStatus";
-import { getUserStats, getFinancialCalendar, getDelinquentUsers, getUsersByPlan } from "./admin";
-import { getStripeFinancialData } from "./stripeFinancial";
-import { listUsers, deleteUser, getUserDetails } from "./userManagement";
-import { createSubscriptionCheckout, createCreditsCheckout, createManualPaymentCheckout } from "./mercadopago";
-import { createStripeCheckout, createPortalSession } from "./stripe";
-import { invokeLLM } from "./_core/llm";
-import { notifyOwner } from "./_core/notification";
-import { chatbotContacts, ticketMessages } from "../drizzle/schema";
+import { getUserCredits, useCredits, getUserActivePlan } from "./credits.js";
+import { checkSubscriptionStatus, markSubscriptionPaid } from "./subscriptionStatus.js";
+import { getUserStats, getFinancialCalendar, getDelinquentUsers, getUsersByPlan } from "./admin.js";
+import { getStripeFinancialData } from "./stripeFinancial.js";
+import { listUsers, deleteUser, getUserDetails } from "./userManagement.js";
+import { createSubscriptionCheckout, createCreditsCheckout, createManualPaymentCheckout } from "./mercadopago.js";
+import { createStripeCheckout, createPortalSession } from "./stripe.js";
+import { invokeLLM } from "./_core/llm.js";
+import { notifyOwner } from "./_core/notification.js";
+import { chatbotContacts, ticketMessages } from "../drizzle/schema.js";
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";

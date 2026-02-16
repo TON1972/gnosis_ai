@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { notifyOwner } from "./notification";
-import { adminProcedure, publicProcedure, router } from "./trpc";
-import { getDb } from "../db";
-import { users, credits, plans } from "../../drizzle/schema";
+import { notifyOwner } from "./notification.js";
+import { adminProcedure, publicProcedure, router } from "./trpc.js";
+import { getDb } from "../db.js";
+import { users, credits, plans } from "../../drizzle/schema.js";
 import { eq } from "drizzle-orm";
 
 export const systemRouter = router({

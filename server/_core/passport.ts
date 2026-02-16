@@ -5,9 +5,9 @@ import passport from "passport";
 import { Strategy as FacebookStrategy } from "passport-facebook";
 import { Strategy as GoogleStrategy } from "passport-google-oidc";
 import { Strategy as LocalStrategy } from "passport-local";
-import { users } from "../../drizzle/schema";
-import { getDb } from "../db";
-import { ENV } from "./env";
+import { users } from "../../drizzle/schema.js";
+import { getDb } from "../db.js";
+import { ENV } from "./env.js";
 
 /*
  * Configure LocalStrategy for login using e-mail and password.

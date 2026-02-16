@@ -1,7 +1,7 @@
-import { getDb } from "../../server/db";
-import { users, subscriptions, credits, payments, plans } from "../../drizzle/schema";
+import { getDb } from "../../server/db.js";
+import { users, subscriptions, credits, payments, plans } from "../../drizzle/schema.js";
 import { eq, sql } from "drizzle-orm";
-import { stripe } from "../../server/stripe";
+import { stripe } from "../../server/stripe.js";
 
 export const runtime = 'nodejs';
 

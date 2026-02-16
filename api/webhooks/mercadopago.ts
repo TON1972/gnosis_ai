@@ -1,4 +1,4 @@
-import { handleMercadoPagoWebhookStandard } from "../../server/_core/webhookHandler";
+import { handleMercadoPagoWebhookStandard } from "../../server/_core/webhookHandler.js";
 
 export const runtime = 'nodejs';
 

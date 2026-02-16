@@ -1,13 +1,13 @@
 
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { getDb } from "../../../server/db";
-import { users, plans, subscriptions, credits } from "../../../drizzle/schema";
+import { getDb } from "../../../server/db.js";
+import { users, plans, subscriptions, credits } from "../../../drizzle/schema.js";
 import { eq } from "drizzle-orm";
-import { ENV } from "../../../server/_core/env";
-import { COOKIE_NAME } from "../../../shared/const";
-import { getSessionCookieOptions } from "../../../server/_core/cookies";
-import { supabaseAdmin } from "../../../server/_core/supabaseAdmin";
+import { ENV } from "../../../server/_core/env.js";
+import { COOKIE_NAME } from "../../../shared/const.js";
+import { getSessionCookieOptions } from "../../../server/_core/cookies.js";
+import { supabaseAdmin } from "../../../server/_core/supabaseAdmin.js";
 
 export const runtime = 'nodejs';
 

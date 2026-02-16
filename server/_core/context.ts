@@ -1,8 +1,8 @@
 import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import jwt from "jsonwebtoken";
-import { COOKIE_NAME } from "../../shared/const";
-import { ENV } from "./env";
+import { COOKIE_NAME } from "../../shared/const.js";
+import { ENV } from "./env.js";
 
 export type TrpcUser = {
   id: number;
