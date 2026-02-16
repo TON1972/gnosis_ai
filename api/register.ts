@@ -1,11 +1,11 @@
-import { getDb } from "../server/db.js.js";
-import { users, credits, plans, subscriptions } from "../drizzle/schema.js.js";
+import { getDb } from "../server/db.js";
+import { users, credits, plans, subscriptions } from "../drizzle/schema.js";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { COOKIE_NAME } from "../shared/const.js.js";
+import { COOKIE_NAME } from "../shared/const.js";
 import { serialize } from "cookie";
-import { supabaseAdmin } from "../server/_core/supabaseAdmin.js.js";
+import { supabaseAdmin } from "../server/_core/supabaseAdmin.js";
 
 export const runtime = 'nodejs';
 
@@ -102,3 +102,4 @@ export async function POST(req: Request) {
         return new Response(JSON.stringify({ success: false, message: error.message }), { status: 500 });
     }
 }
+
