@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { stripe } from "./stripe.js";
 import { getDb } from "./db.js";
-import { users, subscriptions as subscriptionsTable } from "../drizzle/schema";
+import { users, subscriptions as subscriptionsTable } from "../drizzle/schema.js";
 import { eq } from "drizzle-orm";
 
 /**

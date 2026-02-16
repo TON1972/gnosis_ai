@@ -5,7 +5,7 @@
 
 import { Request, Response } from "express";
 import NextAuth from "next-auth";
-import { authOptions } from "./nextauth";
+import { authOptions } from "./nextauth.js";
 
 // Criar handler NextAuth
 const handler = NextAuth(authOptions);
@@ -17,10 +17,10 @@ const handler = NextAuth(authOptions);
 export async function handleNextAuth(req: Request, res: Response) {
   // NextAuth espera req.query como objeto
   req.query = req.query || {};
-  
+
   // NextAuth espera req.body como objeto
   req.body = req.body || {};
-  
+
   // Chamar handler NextAuth
   return handler(req as any, res as any);
 }

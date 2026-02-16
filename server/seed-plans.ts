@@ -1,5 +1,5 @@
 import { getDb } from "./db.js";
-import { plans, tools, planTools } from "../drizzle/schema";
+import { plans, tools, planTools } from "../drizzle/schema.js";
 
 /**
  * Seed script to populate plans and tools
@@ -220,7 +220,7 @@ async function seedPlansAndTools() {
     // Insert plans
     console.log("📋 Inserting plans...");
     await db.delete(plans); // Clear existing
-    const insertedPlans = await db.insert(plans).values(PLANS_DATA).$returningId();
+    const insertedPlans = await db.insert(plans).values(PLANS_DATA).returning();
     console.log(`✅ Inserted ${insertedPlans.length} plans`);
 
     // Get plan IDs
@@ -230,7 +230,7 @@ async function seedPlansAndTools() {
     // Insert tools
     console.log("🔧 Inserting tools...");
     await db.delete(tools); // Clear existing
-    const insertedTools = await db.insert(tools).values(TOOLS_DATA).$returningId();
+    const insertedTools = await db.insert(tools).values(TOOLS_DATA).returning();
     console.log(`✅ Inserted ${insertedTools.length} tools`);
 
     // Get tool IDs

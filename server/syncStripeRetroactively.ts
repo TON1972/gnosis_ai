@@ -1,7 +1,7 @@
 import 'dotenv/config'; // Load .env variables
 import { stripe } from "./stripe.js";
 import { getDb } from "./db.js";
-import { users, subscriptions, credits, plans } from "../drizzle/schema";
+import { users, subscriptions, credits, plans } from "../drizzle/schema.js";
 import { eq, isNull, isNotNull, and } from "drizzle-orm";
 
 /**
