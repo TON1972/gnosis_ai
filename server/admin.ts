@@ -1,6 +1,6 @@
 import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
-import { getDb } from "./db";
-import { users, subscriptions, plans } from "../drizzle/schema";
+import { getDb } from "./db.js";
+import { users, subscriptions, plans } from "../drizzle/schema.js";
 
 /**
  * Admin functions for dashboard

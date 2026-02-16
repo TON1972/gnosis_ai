@@ -1,7 +1,7 @@
 import { eq, and, sql } from "drizzle-orm";
-import { getDb } from "./db";
+import { getDb } from "./db.js";
 // Certifique-se de que o caminho do schema está correto conforme seu projeto (shared ou drizzle)
-import { credits, creditTransactions, subscriptions, users, plans } from "../drizzle/schema";
+import { credits, creditTransactions, subscriptions, users, plans } from "../drizzle/schema.js";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 

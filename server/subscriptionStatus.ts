@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
-import { getDb } from "./db";
-import { subscriptions, users, plans, credits, creditTransactions } from "../drizzle/schema";
+import { getDb } from "./db.js";
+import { subscriptions, users, plans, credits, creditTransactions } from "../drizzle/schema.js";
 
 /**
  * Subscription status management
