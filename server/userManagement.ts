@@ -37,6 +37,8 @@ export async function listUsers(
     search?: string,
     planFilter?: string,
     sortBy: 'newest' | 'oldest' | 'credits_asc' | 'credits_desc' = 'newest',
+    dateFrom?: Date,
+    dateTo?: Date,
     // Removed unused parameters
     _minCreditsUsed?: number,
     _maxCreditsUsed?: number
@@ -55,6 +57,18 @@ export async function listUsers(
 
     if (planFilter && planFilter !== 'all') {
         conditions.push(`p.name = '${planFilter}'`);
+    }
+
+    // Date filters
+    if (dateFrom) {
+        conditions.push(`u."createdAt" >= '${dateFrom.toISOString()}'`);
+    }
+
+    if (dateTo) {
+        // Add one day to include the entire end date
+        const endDate = new Date(dateTo);
+        endDate.setDate(endDate.getDate() + 1);
+        conditions.push(`u."createdAt" < '${endDate.toISOString()}'`);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -137,6 +151,91 @@ export async function listUsers(
         limit,
         totalPages: Math.ceil(total / limit),
     };
+}
+
+/**
+ * List ALL users matching filters - for CSV export (no pagination)
+ */
+export async function listAllUsersForExport(
+    search?: string,
+    planFilter?: string,
+    sortBy: 'newest' | 'oldest' | 'credits_asc' | 'credits_desc' = 'newest',
+    dateFrom?: Date,
+    dateTo?: Date
+): Promise<UserListItem[]> {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    // Build WHERE conditions (same as listUsers)
+    const conditions: string[] = [];
+
+    if (search) {
+        conditions.push(`(u.name ILIKE '%${search}%' OR u.email ILIKE '%${search}%')`);
+    }
+
+    if (planFilter && planFilter !== 'all') {
+        conditions.push(`p.name = '${planFilter}'`);
+    }
+
+    // Date filters
+    if (dateFrom) {
+        conditions.push(`u."createdAt" >= '${dateFrom.toISOString()}'`);
+    }
+
+    if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setDate(endDate.getDate() + 1);
+        conditions.push(`u."createdAt" < '${endDate.toISOString()}'`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Determine ORDER BY clause
+    let orderByClause = `ORDER BY u."createdAt" DESC`;
+    if (sortBy === 'oldest') {
+        orderByClause = `ORDER BY u."createdAt" ASC`;
+    } else if (sortBy === 'credits_desc') {
+        orderByClause = `ORDER BY credits_spent DESC NULLS LAST`;
+    } else if (sortBy === 'credits_asc') {
+        orderByClause = `ORDER BY credits_spent ASC NULLS FIRST`;
+    }
+
+    // Get ALL users (no LIMIT/OFFSET)
+    const query = sql.raw(`
+        SELECT 
+            u.id,
+            u.name,
+            u.email,
+            u."stripeCustomerId",
+            u."createdAt",
+            p.name as plan_name,
+            p."displayName" as plan_display_name,
+            s.status as subscription_status,
+            s."stripeStatus" as stripe_status,
+            COALESCE(ABS(SUM(ct.amount)), 0) as credits_spent
+        FROM users u
+        LEFT JOIN subscriptions s ON u.id = s."userId" AND s.status = 'active'
+        LEFT JOIN plans p ON s."planId" = p.id
+        LEFT JOIN credit_transactions ct ON u.id = ct."userId" AND ct.amount < 0
+        ${whereClause}
+        GROUP BY u.id, p.name, p."displayName", s.status, s."stripeStatus"
+        ${orderByClause}
+    `);
+
+    const result = await db.execute(query);
+
+    return result.rows.map((row) => ({
+        id: Number(row.id),
+        name: row.name as string | null,
+        email: row.email as string | null,
+        planName: row.plan_name as string | null,
+        planDisplayName: row.plan_display_name as string | null,
+        subscriptionStatus: row.subscription_status as string | null,
+        stripeStatus: row.stripe_status as string | null,
+        createdAt: new Date(row.createdAt as string),
+        stripeCustomerId: row.stripeCustomerId as string | null,
+        creditsSpent: Number(row.credits_spent || 0),
+    }));
 }
 
 /**

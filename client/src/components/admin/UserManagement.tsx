@@ -28,6 +28,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { trpc } from "@/lib/trpc";
 import {
     Search,
@@ -39,6 +45,9 @@ import {
     Calendar,
     CreditCard,
     BookOpen,
+    CalendarIcon,
+    X,
+    Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -52,6 +61,8 @@ export function UserManagement() {
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
     const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
     const [sortBy, setSortBy] = useState<"newest" | "oldest" | "credits_asc" | "credits_desc">("newest");
+    const [dateFrom, setDateFrom] = useState<Date | undefined>();
+    const [dateTo, setDateTo] = useState<Date | undefined>();
     const { user: currentUser } = useAuth();
     const isSuperAdmin = currentUser?.role === 'super_admin';
 
@@ -73,6 +84,8 @@ export function UserManagement() {
         search: search || undefined,
         planFilter: planFilter !== "all" ? planFilter : undefined,
         sortBy: sortBy,
+        dateFrom: dateFrom?.toISOString(),
+        dateTo: dateTo?.toISOString(),
     });
 
     const { data: userDetails } = trpc.admin.getUserDetails.useQuery(
@@ -144,6 +157,75 @@ export function UserManagement() {
         }
     };
 
+    const trpcUtils = trpc.useUtils();
+
+    const exportToCSV = async () => {
+        try {
+            toast.loading("Buscando dados para exportação...");
+
+            // Fetch ALL filtered data (not just current page)
+            const allUsers = await trpcUtils.client.admin.exportUsers.query({
+                search: search || undefined,
+                planFilter: planFilter !== "all" ? planFilter : undefined,
+                sortBy: sortBy,
+                dateFrom: dateFrom?.toISOString(),
+                dateTo: dateTo?.toISOString(),
+            });
+
+            if (!allUsers || allUsers.length === 0) {
+                toast.dismiss();
+                toast.error("Não há dados para exportar");
+                return;
+            }
+
+            // CSV Headers
+            const headers = ["Nome", "Email", "Plano", "Status da Assinatura", "Créditos Usados", "Data de Criação"];
+
+            // CSV Rows
+            const rows = allUsers.map(user => [
+                user.name || "Sem nome",
+                user.email || "Sem email",
+                user.planDisplayName || "FREE",
+                user.subscriptionStatus || "Sem assinatura",
+                user.creditsSpent.toString(),
+                formatDate(user.createdAt)
+            ]);
+
+            // Build CSV content
+            const csvContent = [
+                headers.join(","),
+                ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+            ].join("\n");
+
+            // Add BOM for UTF-8 encoding (ensures Excel opens correctly with special characters)
+            const BOM = "\uFEFF";
+            const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+
+            // Create download link
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+
+            // Generate filename with current date
+            const now = new Date();
+            const dateStr = format(now, "yyyy-MM-dd_HH-mm");
+            link.setAttribute("download", `usuarios_${dateStr}.csv`);
+
+            // Trigger download
+            link.style.visibility = "hidden";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.dismiss();
+            toast.success(`${allUsers.length} usuário(s) exportado(s) com sucesso!`);
+        } catch (error) {
+            toast.dismiss();
+            toast.error("Erro ao exportar dados");
+            console.error("Export error:", error);
+        }
+    };
+
     const getPlanBadgeColor = (planName: string | null) => {
         if (!planName) return "bg-gray-100 text-gray-700";
         const name = planName.toLowerCase();
@@ -159,13 +241,25 @@ export function UserManagement() {
             {/* Header e Busca */}
             <Card className="p-6 bg-white shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div>
-                        <h2 className="text-2xl font-black text-[#1e3a5f] uppercase tracking-tight">
-                            Gerenciar Usuários
-                        </h2>
-                        <p className="text-sm text-gray-400 mt-1">
-                            {data?.total || 0} usuários cadastrados
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <div>
+                            <h2 className="text-2xl font-black text-[#1e3a5f] uppercase tracking-tight">
+                                Gerenciar Usuários
+                            </h2>
+                            <p className="text-sm text-gray-400 mt-1">
+                                {data?.total || 0} usuários cadastrados
+                            </p>
+                        </div>
+                        <Button
+                            onClick={exportToCSV}
+                            disabled={isLoading}
+                            variant="outline"
+                            size="sm"
+                            className="bg-green-50 text-green-700 border-green-300 hover:bg-green-100 hover:text-green-800 disabled:opacity-50"
+                        >
+                            <Download className="w-4 h-4 mr-2" />
+                            Exportar CSV
+                        </Button>
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
@@ -197,6 +291,71 @@ export function UserManagement() {
                                 <SelectItem value="credits_asc">Menor Uso de Créditos</SelectItem>
                             </SelectContent>
                         </Select>
+
+                        {/* Date Filter From */}
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="w-48 justify-start text-left font-normal border-gray-300 bg-white"
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "De"}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-white" align="start">
+                                <CalendarComponent
+                                    mode="single"
+                                    selected={dateFrom}
+                                    onSelect={(date) => {
+                                        setDateFrom(date);
+                                        setPage(1);
+                                    }}
+                                    locale={ptBR}
+                                />
+                            </PopoverContent>
+                        </Popover>
+
+                        {/* Date Filter To */}
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="w-48 justify-start text-left font-normal border-gray-300 bg-white"
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Até"}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-white" align="start">
+                                <CalendarComponent
+                                    mode="single"
+                                    selected={dateTo}
+                                    onSelect={(date) => {
+                                        setDateTo(date);
+                                        setPage(1);
+                                    }}
+                                    locale={ptBR}
+                                />
+                            </PopoverContent>
+                        </Popover>
+
+                        {/* Clear Dates Button */}
+                        {(dateFrom || dateTo) && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setDateFrom(undefined);
+                                    setDateTo(undefined);
+                                    setPage(1);
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                                <X className="w-4 h-4 mr-1" />
+                                Limpar Datas
+                            </Button>
+                        )}
 
                         <Input
                             placeholder="Buscar por nome ou email..."

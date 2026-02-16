@@ -591,12 +591,54 @@ export const appRouter = router({
         search: z.string().optional(),
         planFilter: z.string().optional(),
         sortBy: z.enum(['newest', 'oldest', 'credits_asc', 'credits_desc']).default('newest'),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
       }))
       .query(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
           throw new Error('Acesso negado');
         }
-        return await listUsers(input.page, input.limit, input.search, input.planFilter, input.sortBy);
+
+        // Convert date strings to Date objects
+        const dateFrom = input.dateFrom ? new Date(input.dateFrom) : undefined;
+        const dateTo = input.dateTo ? new Date(input.dateTo) : undefined;
+
+        return await listUsers(
+          input.page,
+          input.limit,
+          input.search,
+          input.planFilter,
+          input.sortBy,
+          dateFrom,
+          dateTo
+        );
+      }),
+
+    exportUsers: protectedProcedure
+      .input(z.object({
+        search: z.string().optional(),
+        planFilter: z.string().optional(),
+        sortBy: z.enum(['newest', 'oldest', 'credits_asc', 'credits_desc']).default('newest'),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+          throw new Error('Acesso negado');
+        }
+
+        // Convert date strings to Date objects
+        const dateFrom = input.dateFrom ? new Date(input.dateFrom) : undefined;
+        const dateTo = input.dateTo ? new Date(input.dateTo) : undefined;
+
+        const { listAllUsersForExport } = await import('./userManagement');
+        return await listAllUsersForExport(
+          input.search,
+          input.planFilter,
+          input.sortBy,
+          dateFrom,
+          dateTo
+        );
       }),
 
     getUserDetails: protectedProcedure
