@@ -19,8 +19,8 @@ const requireUser = t.middleware(async opts => {
 
   // ✅ Validate Session ID for concurrency control
   if (ctx.user.id) {
-    const { getDb } = await import('../db');
-    const { users } = await import('../../drizzle/schema');
+    const { getDb } = await import('../db.js');
+    const { users } = await import('../../drizzle/schema.js');
     const { eq } = await import('drizzle-orm');
 
     const db = await getDb();
