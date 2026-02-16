@@ -284,7 +284,7 @@ export const appRouter = router({
         })).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { invokeLLM } = await import("./_core/llm");
+        const { invokeLLM } = await import("./_core/llm.js");
         const db = await getValidatedDb();
 
         const toolRecord = await db
@@ -631,7 +631,7 @@ export const appRouter = router({
         const dateFrom = input.dateFrom ? new Date(input.dateFrom) : undefined;
         const dateTo = input.dateTo ? new Date(input.dateTo) : undefined;
 
-        const { listAllUsersForExport } = await import('./userManagement');
+        const { listAllUsersForExport } = await import('./userManagement.js');
         return await listAllUsersForExport(
           input.search,
           input.planFilter,
@@ -1407,12 +1407,12 @@ export const appRouter = router({
 
             if (!customerId) {
               // Create Stripe Customer
-              const { createStripeCustomer } = await import("./stripe");
+              const { createStripeCustomer } = await import("./stripe.js");
               const newCustomer = await createStripeCustomer(user.email, user.name || "Novo Cliente");
               customerId = newCustomer.id;
 
               // Update user in DB
-              const { users } = await import("../drizzle/schema"); // Dynamic import to avoid cycles/conflicts if any
+              const { users } = await import("../drizzle/schema.js"); // Dynamic import to avoid cycles/conflicts if any
               await db.update(users)
                 .set({ stripeCustomerId: customerId })
                 .where(eq(users.id, user.id));
