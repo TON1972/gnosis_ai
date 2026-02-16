@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,12 @@ export function UserManagement() {
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
     const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
     const [sortBy, setSortBy] = useState<"newest" | "oldest" | "credits_asc" | "credits_desc">("newest");
+    const { user: currentUser } = useAuth();
+    const isSuperAdmin = currentUser?.role === 'super_admin';
+
+    // Estado para gerenciamento de plano
+    const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+    const [selectedBilling, setSelectedBilling] = useState<"monthly" | "yearly">("monthly");
 
     const limit = 20;
 
@@ -83,6 +90,45 @@ export function UserManagement() {
             toast.error(`Erro ao deletar usuário: ${error.message}`);
         },
     });
+
+    const { data: plans } = trpc.plans.list.useQuery();
+
+    const updatePlanMutation = trpc.admin.updateUserPlan.useMutation({
+        onSuccess: (data) => {
+            toast.success(`Plano alterado para ${data.planName} com sucesso!`);
+            refetch(); // Atualiza a lista
+            // Se estiver com o modal aberto, poderia refetch user details também, mas o trpc geralmente cuida disso se a query key bater
+            // Como userDetails depende de selectedUserId, ele deve atualizar se invalidarmos
+        },
+        onError: (error) => {
+            toast.error(`Erro ao alterar plano: ${error.message}`);
+        }
+    });
+
+    const handleUpdatePlan = () => {
+        if (!selectedUserId || !selectedPlanId) return;
+
+        updatePlanMutation.mutate({
+            userId: selectedUserId,
+            planId: Number(selectedPlanId),
+            billingPeriod: selectedBilling
+        });
+    };
+
+    // Atualiza estados locais quando abrir modal
+    useEffect(() => {
+        if (userDetails) {
+            // Tenta encontrar o plano atual do usuário na lista de planos
+            const currentPlan = plans?.find(p => p.name === userDetails.plan_name);
+            if (currentPlan) {
+                setSelectedPlanId(String(currentPlan.id));
+            } else {
+                setSelectedPlanId("");
+            }
+
+            setSelectedBilling((userDetails.billingPeriod as "monthly" | "yearly") || "monthly");
+        }
+    }, [userDetails, plans]);
 
     const handleDelete = () => {
         if (deleteUserId) {
@@ -385,6 +431,72 @@ export function UserManagement() {
                             {/* Divider */}
                             <div className="border-t border-gray-200 my-4" />
 
+                            {/* ÁREA DE GESTÃO DE PLANO (SUPER ADMIN) */}
+                            {isSuperAdmin && (
+                                <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border-2 border-orange-200 mb-6 shadow-sm">
+                                    {/* Header */}
+                                    <div className="flex items-center gap-3 mb-5 pb-4 border-b border-orange-200">
+                                        <div className="p-2.5 bg-orange-500 rounded-lg shadow-sm">
+                                            <CreditCard className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-black text-[#1e3a5f] uppercase tracking-wide">
+                                                Gerenciar Plano
+                                            </h3>
+                                            <p className="text-xs text-orange-700 font-medium">
+                                                Super Admin
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Form */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                                Novo Plano
+                                            </label>
+                                            <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+                                                <SelectTrigger className="bg-white border-2 border-orange-300 hover:border-orange-400 focus:border-orange-500 transition-colors h-11">
+                                                    <SelectValue placeholder="Selecione um plano" />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white">
+                                                    {plans?.map(plan => (
+                                                        <SelectItem key={plan.id} value={String(plan.id)}>
+                                                            {plan.displayName}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <Button
+                                            onClick={handleUpdatePlan}
+                                            disabled={updatePlanMutation.status === 'pending'}
+                                            className="bg-orange-600 hover:bg-orange-700 text-white font-bold w-full h-11 shadow-md hover:shadow-lg transition-all"
+                                        >
+                                            {updatePlanMutation.status === 'pending' ? (
+                                                <span className="flex items-center gap-2">
+                                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                    </svg>
+                                                    Atualizando...
+                                                </span>
+                                            ) : (
+                                                "Salvar Alteração"
+                                            )}
+                                        </Button>
+
+                                        {/* Warning */}
+                                        <div className="bg-orange-200/50 border-l-4 border-orange-600 p-3 rounded">
+                                            <p className="text-[10px] text-orange-900 font-medium leading-relaxed">
+                                                ⚠️ <strong>Atenção:</strong> Ao alterar o plano manualmente, os créditos serão resetados para os limites do novo plano e a assinatura será atualizada imediatamente.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Cards de Estatísticas */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Card className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
@@ -397,7 +509,7 @@ export function UserManagement() {
                                                 Estudos Gerados
                                             </p>
                                             <p className="text-3xl font-black text-blue-700 mt-1">
-                                                {String(userDetails.usage_count || 0)}
+                                                {String(userDetails?.usage_count || 0)}
                                             </p>
                                         </div>
                                     </div>
@@ -413,7 +525,7 @@ export function UserManagement() {
                                                 Créditos Gastos
                                             </p>
                                             <p className="text-3xl font-black text-purple-700 mt-1">
-                                                {Math.abs(Number(userDetails.credits_spent || 0))}
+                                                {Math.abs(Number(userDetails?.credits_spent || 0))}
                                             </p>
                                         </div>
                                     </div>

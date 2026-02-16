@@ -1099,6 +1099,80 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    /**
+     * ✅ ALTERAR PLANO DO USUÁRIO (SUPER ADMIN)
+     */
+    updateUserPlan: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        planId: z.number(),
+        billingPeriod: z.enum(['monthly', 'yearly']).default('monthly'),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'super_admin') {
+          throw new Error('Apenas Super Administradores podem realizar essa ação.');
+        }
+
+        const db = await getValidatedDb();
+
+        const [targetPlan] = await db.select().from(plans).where(eq(plans.id, input.planId));
+        if (!targetPlan) throw new Error('Plano não encontrado.');
+
+        // 1. Atualizar ou Criar Assinatura
+        const existingSub = await db.select().from(subscriptions).where(eq(subscriptions.userId, input.userId)).limit(1);
+
+        const startDate = new Date();
+        const endDate = new Date();
+        if (input.billingPeriod === 'yearly') {
+          endDate.setFullYear(endDate.getFullYear() + 1);
+        } else {
+          endDate.setMonth(endDate.getMonth() + 1);
+        }
+
+        if (existingSub.length > 0) {
+          await db.update(subscriptions)
+            .set({
+              planId: input.planId,
+              status: 'active',
+              billingPeriod: input.billingPeriod,
+              updatedAt: new Date(),
+              startDate: startDate,
+              endDate: endDate,
+              // Mantemos o stripeSubscriptionId se existir, ou limpamos se for migração manual pura?
+              // Melhor não limpar para não quebrar webhook se tiver, mas aqui é manual override.
+            })
+            .where(eq(subscriptions.userId, input.userId));
+        } else {
+          await db.insert(subscriptions).values({
+            userId: input.userId,
+            planId: input.planId,
+            status: 'active',
+            billingPeriod: input.billingPeriod,
+            startDate: startDate,
+            endDate: endDate,
+          } as any);
+        }
+
+        // 2. Atualizar Créditos (Resetar para os limites do novo plano)
+        // ATENÇÃO: Isso reseta o saldo do usuário para o padrão do plano.
+
+        // Calcular base credits em JS para evitar erro de parâmetros na query
+        const baseCredits = targetPlan.creditsInitial + targetPlan.creditsDaily;
+
+        // Correção do amount usando SQL para somar com bonus existente corretamente
+        await db.execute(sql`
+          UPDATE credits 
+          SET 
+            "creditsInitial" = ${targetPlan.creditsInitial},
+            "creditsDaily" = ${targetPlan.creditsDaily},
+            "expiresAt" = ${endDate},
+            "amount" = ${baseCredits} + COALESCE("creditsBonus", 0)
+          WHERE "userId" = ${input.userId}
+        `);
+
+        return { success: true, planName: targetPlan.displayName };
+      }),
+
     // ✅ 1. Listagem completa para a tabela (com o JOIN para a categoria)
     listAllTools: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
