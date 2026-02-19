@@ -43,7 +43,7 @@ export default function UpgradeReminderModal({ open, onClose }: UpgradeReminderM
                                 Oferta válida SOMENTE
                             </span>
                             <span className="block text-lg sm:text-4xl font-extrabold text-[#d4af37] bg-white/10 py-1 sm:py-2 px-3 sm:px-4 rounded-lg inline-block transform -rotate-1 shadow-lg backdrop-blur-sm">
-                                "até 20/02"
+                                "até 28/02"
                             </span>
                         </DialogTitle>
                     </DialogHeader>
