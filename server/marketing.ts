@@ -3,6 +3,7 @@ import { getDb } from "./db.js";
 import { users, sentEmails, subscriptions, plans, marketingGroups } from "../drizzle/schema.js";
 import { eq, desc, sql } from "drizzle-orm";
 import { Resend } from "resend";
+import { generateBaseEmailHtml } from "./emailTemplate.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy");
 
@@ -137,7 +138,7 @@ export async function sendMarketingEmail(ctx: { user: { id: number, role: string
             from: process.env.EMAIL_FROM || "Contato <contato@gnosisai.global>",
             to: user.email,
             subject: input.subject,
-            html: input.content.replace(/{{name}}/g, user.name || "Usuário"),
+            html: generateBaseEmailHtml(input.content.replace(/{{name}}/g, user.name || "Usuário")),
         }));
 
         try {
