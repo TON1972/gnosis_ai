@@ -48,6 +48,17 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                     const planId = Number(metadata.planId);
                     const billingPeriod = metadata.billingPeriod as 'monthly' | 'yearly';
                     const subscriptionId = session.subscription as string;
+
+                    // ✅ IDEMPOTENCY: Check if this event was already processed
+                    const existingPayment = await db.select()
+                        .from(payments)
+                        .where(eq(payments.stripePaymentId, session.payment_intent as string || session.id))
+                        .limit(1);
+
+                    if (existingPayment.length > 0) {
+                        console.log(`⚠️ [Webhook] Event already processed (payment ${existingPayment[0].id}), skipping`);
+                        break;
+                    }
                     const customerId = session.customer as string;
 
                     console.log(`💰 [Webhook] Checkout Completed:`, {
@@ -226,6 +237,22 @@ export async function handleStripeWebhook(req: Request, res: Response) {
 
                 if (!subscriptionId) break; // Se for fatura avulsa ignorar (por enquanto)
 
+                // ✅ FIX: Skip initial subscription invoice (already handled by checkout.session.completed)
+                if (invoice.billing_reason === 'subscription_create') {
+                    console.log(`ℹ️ [Webhook] Skipping initial invoice (handled by checkout.session.completed)`);
+                    break;
+                }
+
+                // ✅ IDEMPOTENCY: Check if this invoice was already processed
+                const existingInvoicePayment = await db.select()
+                    .from(payments)
+                    .where(eq(payments.externalId, invoice.id))
+                    .limit(1);
+                if (existingInvoicePayment.length > 0) {
+                    console.log(`⚠️ [Webhook] Invoice ${invoice.id} already processed, skipping`);
+                    break;
+                }
+
                 // Buscar usuário pela subscriptionId
                 const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, subscriptionId));
 
@@ -239,7 +266,9 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                             status: 'active',
                             stripeStatus: 'active',
                             endDate: sql`NOW() + ${sql.raw(`interval '${intervalStr}'`)}`,
-                            lastPaymentDate: new Date()
+                            nextBillingDate: sql`NOW() + ${sql.raw(`interval '${intervalStr}'`)}`,
+                            lastPaymentDate: new Date(),
+                            gracePeriodEndsAt: null, // ✅ Clear any active grace period
                         })
                         .where(eq(subscriptions.id, sub.id));
 
@@ -307,12 +336,12 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                 const subscriptionId = subscriptionObj.id || subscriptionObj.subscription;
 
                 if (subscriptionId) {
-                    console.log(`⚠️ Stripe Falha/Cancelamento: Sub ${subscriptionId}`);
+                    const isDeleted = event.type === 'customer.subscription.deleted';
+                    console.log(`⚠️ Stripe ${isDeleted ? 'Cancelamento' : 'Falha'}: Sub ${subscriptionId}`);
                     await db.update(subscriptions)
                         .set({
-                            stripeStatus: event.type === 'customer.subscription.deleted' ? 'canceled' : 'past_due',
-                            // Não removemos o acesso imediatamente, deixamos o checkSubscriptionStatus lidar com datas ou mudamos status local se quiser
-                            // status: 'expired' 
+                            stripeStatus: isDeleted ? 'canceled' : 'past_due',
+                            status: isDeleted ? 'expired' : 'grace_period', // ✅ FIX: Expire on deletion, grace_period on failure
                         })
                         .where(eq(subscriptions.stripeSubscriptionId, subscriptionId));
                 }

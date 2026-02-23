@@ -66,7 +66,55 @@ export async function checkSubscriptionStatus(userId: number): Promise<Subscript
   const subscription = subs[0];
   const now = new Date();
 
-  // Check if payment is overdue
+  // ✅ If Stripe explicitly canceled, honor that status immediately
+  if (subscription.stripeStatus === 'canceled' || subscription.status === 'expired') {
+    return {
+      status: "expired",
+      isBlocked: true,
+      gracePeriodEndsAt: null,
+      nextBillingDate: null,
+      daysUntilBlock: null,
+    };
+  }
+
+  // ✅ If Stripe reports past_due, start/check grace period
+  if (subscription.stripeStatus === 'past_due') {
+    if (!subscription.gracePeriodEndsAt) {
+      const gracePeriodEndsAt = new Date(now.getTime() + 72 * 60 * 60 * 1000);
+      await db.update(subscriptions)
+        .set({ status: "grace_period", gracePeriodEndsAt })
+        .where(eq(subscriptions.id, subscription.id));
+      return {
+        status: "grace_period",
+        isBlocked: false,
+        gracePeriodEndsAt,
+        nextBillingDate: subscription.nextBillingDate,
+        daysUntilBlock: 3,
+      };
+    }
+    // Check if grace period expired
+    if (now > subscription.gracePeriodEndsAt) {
+      await db.update(subscriptions)
+        .set({ status: "blocked" })
+        .where(eq(subscriptions.id, subscription.id));
+      return {
+        status: "blocked",
+        isBlocked: true,
+        gracePeriodEndsAt: subscription.gracePeriodEndsAt,
+        nextBillingDate: subscription.nextBillingDate,
+        daysUntilBlock: 0,
+      };
+    }
+    const hoursLeft = Math.ceil((subscription.gracePeriodEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60));
+    return {
+      status: "grace_period",
+      isBlocked: false,
+      gracePeriodEndsAt: subscription.gracePeriodEndsAt,
+      nextBillingDate: subscription.nextBillingDate,
+      daysUntilBlock: hoursLeft / 24,
+    };
+  }
+
   if (subscription.nextBillingDate && now > subscription.nextBillingDate) {
     // Payment is overdue
 

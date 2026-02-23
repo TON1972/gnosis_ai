@@ -1518,55 +1518,11 @@ export const appRouter = router({
     /**
      * ✅ UPGRADE DE PLANO
      */
-    createSubscriptionCheckout: protectedProcedure
-      .input(z.object({
-        planId: z.union([z.number(), z.string()]),
-        billingPeriod: z.enum(['monthly', 'yearly']).default('monthly'),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const db = await getDb();
-        if (!db) throw new Error("Conexão com o banco falhou");
-
-        const targetPlanId = Number(input.planId);
-        const [targetPlan] = await db.select().from(plans).where(eq(plans.id, targetPlanId));
-        if (!targetPlan) throw new Error('Plano destino não encontrado');
-
-        const amount = input.billingPeriod === 'yearly' ? targetPlan.priceYearly : targetPlan.priceMonthly;
-
-        // 1. Registrar transação
-        await db.insert(payments).values({
-          userId: ctx.user.id,
-          amount: amount,
-          currency: 'BRL',
-          status: 'approved',
-          paymentMethod: 'plan_transition'
-        });
-
-        // 2. Atualizar Assinatura
-        const intervalPeriod = input.billingPeriod === 'yearly' ? '1 year' : '1 month';
-        await db.update(subscriptions)
-          .set({
-            planId: targetPlanId,
-            billingPeriod: input.billingPeriod,
-            updatedAt: new Date(),
-            endDate: sql`NOW() + ${sql.raw(`interval '${intervalPeriod}'`)}`,
-            status: 'active'
-          })
-          .where(eq(subscriptions.userId, ctx.user.id));
-
-        // 3. Atualizar Créditos (CORREÇÃO DA SOMA SQL)
-        // Usamos cast explícito para garantir que o Postgres trate os inputs como inteiros
-        await db.update(credits)
-          .set({
-            creditsInitial: targetPlan.creditsInitial,
-            creditsDaily: targetPlan.creditsDaily,
-            expiresAt: sql`NOW() + interval '30 days'`,
-            amount: sql`(${targetPlan.creditsInitial}::integer + ${targetPlan.creditsDaily}::integer + ${credits.creditsBonus})`
-          })
-          .where(eq(credits.userId, ctx.user.id));
-
-        return { success: true, newPlanName: targetPlan.displayName };
-      }),
+    // ✅ REMOVIDO: createSubscriptionCheckout
+    // Esse endpoint ativava planos como 'approved' SEM verificar pagamento real no Stripe.
+    // Toda ativação de plano agora passa exclusivamente pelo webhook do Stripe
+    // (checkout.session.completed) ou pelo admin (updateUserPlan).
+    // Para upgrades, use createCheckoutSession com type: 'plan'.
   }),
 
   chatbot: router({
