@@ -11,6 +11,7 @@ import AdminManagement from "@/components/AdminManagement";
 import { AdminToolsManager } from "@/components/admin/AdminToolsManager";
 import { AdminPlansManager } from "@/components/admin/AdminPlansManager";
 import { AdminVideoManagement } from "@/components/admin/AdminVideoManagement";
+import { AdminMarketing } from "@/components/admin/AdminMarketing";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Menu, X } from "lucide-react";
 import { useLocation } from "wouter";
@@ -45,7 +46,8 @@ export default function AdminDashboard() {
     admins: "Gestão de Administradores",
     'tools-manager': "Gerenciar Catálogo de Tools",
     'plans-manager': "Gerenciar Planos",
-    video: "Gerenciar Vídeo Destaque"
+    video: "Gerenciar Vídeo Destaque",
+    marketing: "Email Marketing (Resend)"
   };
 
   return (
@@ -111,6 +113,9 @@ export default function AdminDashboard() {
 
               {/* ✅ REGRA SUPER ADMIN APLICADA */}
               {activeTab === 'admins' && isSuperAdmin && <AdminManagement />}
+
+              {/* ✅ ABA: EMAIL MARKETING */}
+              {activeTab === 'marketing' && isSuperAdmin && <AdminMarketing />}
 
               {/* ✅ ABA: GERENCIAR CATÁLOGO */}
               {activeTab === 'tools-manager' && <AdminToolsManager />}

@@ -32,6 +32,11 @@ import { createSubscriptionCheckout, createCreditsCheckout, createManualPaymentC
 import { createStripeCheckout, createPortalSession } from "./stripe.js";
 import { invokeLLM } from "./_core/llm.js";
 import { notifyOwner } from "./_core/notification.js";
+import {
+  marketingEmailSchema, audienceFilterSchema, getTargetAudience,
+  sendMarketingEmail, getSentEmailsList, marketingGroupSchema,
+  createMarketingGroup, getMarketingGroups, deleteMarketingGroup
+} from "./marketing.js";
 import { chatbotContacts, ticketMessages } from "../drizzle/schema.js";
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { z } from "zod";
@@ -1613,6 +1618,41 @@ export const appRouter = router({
       }),
   }),
 
+  marketing: router({
+    getAudience: protectedProcedure
+      .input(audienceFilterSchema)
+      .query(async ({ input }) => {
+        return await getTargetAudience(input);
+      }),
+
+    sendEmail: protectedProcedure
+      .input(marketingEmailSchema)
+      .mutation(async ({ ctx, input }) => {
+        return await sendMarketingEmail(ctx, input);
+      }),
+
+    getLogs: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await getSentEmailsList(ctx);
+      }),
+
+    createGroup: protectedProcedure
+      .input(marketingGroupSchema)
+      .mutation(async ({ ctx, input }) => {
+        return await createMarketingGroup(ctx, input);
+      }),
+
+    getGroups: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await getMarketingGroups(ctx);
+      }),
+
+    deleteGroup: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return await deleteMarketingGroup(ctx, input);
+      }),
+  }),
 });
 
 // No final do server/routers.ts

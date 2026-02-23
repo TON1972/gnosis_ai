@@ -263,3 +263,31 @@ export const dashboardSettings = pgTable("dashboard_settings", {
   showVideo: boolean("show_video").default(false),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// --- EMAIL MARKETING LOGS ---
+export const sentEmails = pgTable("sent_emails", {
+  id: serial("id").primaryKey(),
+  subject: text("subject").notNull(),
+  content: text("content").notNull(),
+  audienceSize: integer("audienceSize").notNull(),
+  targetPlans: text("targetPlans"), // Comma separated or JSON string of plans
+  targetRoles: text("targetRoles"), // Comma separated or JSON string of roles
+  targetSubscriptions: text("targetSubscriptions"), // active, inactive, etc.
+  targetEmails: text("targetEmails"), // Comma separated specific emails
+  status: varchar("status", { length: 50 }).default("sent"),
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+  sentBy: integer("sentBy").references(() => users.id),
+  groupName: text("groupName"), // Nome do grupo usado, se houver
+});
+
+export const marketingGroups = pgTable("marketing_groups", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  targetPlans: text("targetPlans"), // Comma separated or JSON string of plans
+  targetRoles: text("targetRoles"), // Comma separated or JSON string of roles
+  targetSubscriptions: text("targetSubscriptions"), // active, inactive, etc.
+  targetEmails: text("targetEmails"), // Comma separated specific emails
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdBy: integer("createdBy").references(() => users.id),
+});
+

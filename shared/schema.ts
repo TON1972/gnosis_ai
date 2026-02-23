@@ -122,3 +122,18 @@ export const savedStudies = pgTable("saved_studies", {
   creditCost: integer("creditCost").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+// --- EMAIL MARKETING LOGS ---
+export const sentEmails = pgTable("sent_emails", {
+  id: serial("id").primaryKey(),
+  subject: text("subject").notNull(),
+  content: text("content").notNull(),
+  audienceSize: integer("audienceSize").notNull(),
+  targetPlans: text("targetPlans"), // Comma separated or JSON string of plans
+  targetRoles: text("targetRoles"), // Comma separated or JSON string of roles
+  targetSubscriptions: text("targetSubscriptions"), // active, inactive, etc.
+  targetEmails: text("targetEmails"), // Comma separated specific emails
+  status: varchar("status", { length: 50 }).default("sent"),
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+  sentBy: integer("sentBy").references(() => users.id),
+});

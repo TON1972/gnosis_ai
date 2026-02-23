@@ -165,13 +165,13 @@ export function SupportTickets() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-hidden flex flex-col gap-4">
-            <ScrollArea className="flex-1 bg-white rounded-lg border p-4 h-[300px]">
+          <div className="flex-1 min-h-0 flex flex-col gap-4">
+            <div className="flex-1 bg-white rounded-lg border p-4 overflow-y-auto">
               <div className="space-y-4">
                 {/* Mensagem Original */}
                 <div className="flex flex-col gap-1 items-start">
                   <span className="text-xs font-bold text-gray-500">{selectedTicket?.name} (Cliente)</span>
-                  <div className="bg-gray-100 p-3 rounded-tr-lg rounded-br-lg rounded-bl-lg text-sm text-[#1e3a5f]">
+                  <div className="bg-gray-100 p-3 rounded-tr-lg rounded-br-lg rounded-bl-lg text-sm text-[#1e3a5f] whitespace-pre-wrap break-words">
                     {selectedTicket?.message}
                   </div>
                   <span className="text-[10px] text-gray-400">{new Date(selectedTicket?.createdAt).toLocaleString()}</span>
@@ -183,7 +183,7 @@ export function SupportTickets() {
                     <span className="text-xs font-bold text-gray-500">
                       {msg.senderType === 'admin' ? 'Você (Admin)' : `${selectedTicket?.name} (Cliente)`}
                     </span>
-                    <div className={`p-3 text-sm max-w-[80%] ${msg.senderType === 'admin'
+                    <div className={`p-3 text-sm max-w-[80%] whitespace-pre-wrap break-words ${msg.senderType === 'admin'
                       ? 'bg-[#1e3a5f] text-white rounded-tl-lg rounded-bl-lg rounded-br-lg'
                       : 'bg-gray-200 text-[#1e3a5f] rounded-tr-lg rounded-br-lg rounded-bl-lg'
                       }`}>
@@ -193,9 +193,9 @@ export function SupportTickets() {
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 shrink-0">
               <Textarea
                 placeholder="Escreva sua resposta..."
                 value={replyMessage}

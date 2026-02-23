@@ -119,11 +119,10 @@ export default function PublicTicket() {
             {ticketMessages.map((msg) => (
               <div
                 key={msg.id}
-                className={`mb-4 p-3 rounded-lg ${
-                  msg.senderType === "admin"
+                className={`mb-4 p-3 rounded-lg ${msg.senderType === "admin"
                     ? "bg-[#d4af37]/20 ml-8"
                     : "bg-[#1e3a5f]/10 mr-8"
-                }`}
+                  }`}
               >
                 <div className="flex justify-between items-start mb-1">
                   <span className="font-bold text-[#1e3a5f]">
@@ -134,7 +133,7 @@ export default function PublicTicket() {
                     {new Date(msg.createdAt).toLocaleString("pt-BR")}
                   </span>
                 </div>
-                <p className="text-[#1e3a5f] whitespace-pre-wrap">{msg.message}</p>
+                <p className="text-[#1e3a5f] whitespace-pre-wrap break-words max-h-60 overflow-y-auto">{msg.message}</p>
               </div>
             ))}
             {ticketMessages.length === 0 && (
