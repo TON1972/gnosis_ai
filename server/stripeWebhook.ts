@@ -49,7 +49,7 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                     const billingPeriod = metadata.billingPeriod as 'monthly' | 'yearly';
                     const subscriptionId = session.subscription as string;
 
-                    // ✅ IDEMPOTENCY: Check if this event was already processed
+                    // ✅ IDEMPOTENCY: Check if this event was already processed (outside transaction - read only)
                     const existingPayment = await db.select()
                         .from(payments)
                         .where(eq(payments.stripePaymentId, session.payment_intent as string || session.id))
@@ -70,124 +70,118 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                         sessionId: session.id
                     });
 
-                    // 1. Atualizar Customer ID do usuário
-                    const [user] = await db.update(users)
-                        .set({ stripeCustomerId: customerId })
-                        .where(eq(users.id, userId))
-                        .returning();
-                    console.log(`✅ [Webhook] Customer ID updated for user ${userId}`);
+                    // ✅ ATOMIC TRANSACTION: All-or-nothing — if any step fails, everything rolls back
+                    // and Stripe will retry the webhook
+                    await db.transaction(async (tx) => {
+                        // 1. Atualizar Customer ID do usuário
+                        const [user] = await tx.update(users)
+                            .set({ stripeCustomerId: customerId })
+                            .where(eq(users.id, userId))
+                            .returning();
+                        console.log(`✅ [Webhook] Customer ID updated for user ${userId}`);
 
-                    // 2. Buscar detalhes do plano
-                    const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
-                    if (!plan) {
-                        console.error(`❌ [Webhook] Plan ${planId} not found!`);
-                        throw new Error("Plano não encontrado");
-                    }
-                    console.log(`✅ [Webhook] Plan found:`, { planId, planName: plan.name });
+                        // 2. Buscar detalhes do plano
+                        const [plan] = await tx.select().from(plans).where(eq(plans.id, planId));
+                        if (!plan) {
+                            console.error(`❌ [Webhook] Plan ${planId} not found!`);
+                            throw new Error("Plano não encontrado");
+                        }
+                        console.log(`✅ [Webhook] Plan found:`, { planId, planName: plan.name });
 
-                    // 3. BUSCAR DADOS REAIS DA SUBSCRIPTION NO STRIPE (Crucial para Trials)
-                    // Adicionado expand para garantir que tudos os campos venham (igual ao script de sync)
-                    const stripeSub = await stripe.subscriptions.retrieve(subscriptionId, {
-                        expand: ['latest_invoice', 'default_payment_method']
-                    }) as any;
+                        // 3. BUSCAR DADOS REAIS DA SUBSCRIPTION NO STRIPE (Crucial para Trials)
+                        const stripeSub = await stripe.subscriptions.retrieve(subscriptionId, {
+                            expand: ['latest_invoice', 'default_payment_method']
+                        }) as any;
 
-                    console.log(`✅ [Webhook] Stripe Subscription Retrieved:`, {
-                        id: stripeSub.id,
-                        status: stripeSub.status,
-                        current_period_start: stripeSub.current_period_start,
-                        current_period_end: stripeSub.current_period_end,
-                        trial_start: stripeSub.trial_start,
-                        trial_end: stripeSub.trial_end
-                    });
-
-                    // Determinar datas e status reais com FALLBACKS robustos
-                    const trialEndTimestamp = stripeSub.trial_end;
-                    const periodEndTimestamp = stripeSub.current_period_end;
-                    const startDateTimestamp = stripeSub.start_date;
-
-                    // ✅ IMPORTANTE: Durante trial, current_period_end pode ser undefined
-                    let effectivePeriodEnd = periodEndTimestamp || trialEndTimestamp;
-
-                    // FALBACK EXTREMO: Se for 'active' e não tiver data, assumir start_date + 30 dias
-                    if (!effectivePeriodEnd && stripeSub.status === 'active' && startDateTimestamp) {
-                        console.warn('⚠️ [Webhook] Usando Fallback de Data: start_date + 30 dias');
-                        effectivePeriodEnd = startDateTimestamp + (30 * 24 * 60 * 60);
-                    }
-
-                    const trialEnd = trialEndTimestamp ? new Date(trialEndTimestamp * 1000) : null;
-                    let periodEnd = new Date();
-
-                    if (effectivePeriodEnd) {
-                        periodEnd = new Date(effectivePeriodEnd * 1000);
-                    } else {
-                        console.warn("⚠️ [Webhook] CRITICAL: current_period_end is missing even after fallbacks, using now()");
-                    }
-
-                    const nextBillingDate = trialEnd && trialEnd > new Date() ? trialEnd : periodEnd;
-                    const isActiveOrTrial = ['active', 'trialing'].includes(stripeSub.status);
-                    const appStatus = isActiveOrTrial ? 'active' : 'expired';
-
-                    console.log(`✅ [Webhook] Computed values:`, {
-                        appStatus,
-                        stripeStatus: stripeSub.status,
-                        nextBillingDate: nextBillingDate.toISOString(),
-                        trialEnd: trialEnd?.toISOString(),
-                        periodEnd: periodEnd.toISOString()
-                    });
-
-                    // 4. ✅ UPSERT: Tentar UPDATE primeiro, se não existir, INSERT
-                    const existingSub = await db.select()
-                        .from(subscriptions)
-                        .where(eq(subscriptions.userId, userId))
-                        .limit(1);
-
-                    const subscriptionData = {
-                        planId: planId,
-                        status: appStatus as 'active' | 'expired',
-                        billingPeriod: billingPeriod,
-                        stripeSubscriptionId: subscriptionId,
-                        stripeStatus: stripeSub.status,
-                        startDate: new Date(stripeSub.start_date * 1000),
-                        endDate: periodEnd,
-                        nextBillingDate: nextBillingDate,
-                        updatedAt: new Date()
-                    };
-
-                    if (existingSub.length > 0) {
-                        console.log(`✅ [Webhook] Updating existing subscription ${existingSub[0].id}`);
-                        await db.update(subscriptions)
-                            .set(subscriptionData)
-                            .where(eq(subscriptions.id, existingSub[0].id));
-                        console.log(`✅ [Webhook] Subscription updated successfully`);
-                    } else {
-                        console.log(`⚠️ [Webhook] No subscription found, creating new one`);
-                        await db.insert(subscriptions).values({
-                            userId: userId,
-                            ...subscriptionData,
-                            createdAt: new Date()
+                        console.log(`✅ [Webhook] Stripe Subscription Retrieved:`, {
+                            id: stripeSub.id,
+                            status: stripeSub.status,
+                            current_period_start: stripeSub.current_period_start,
+                            current_period_end: stripeSub.current_period_end,
+                            trial_start: stripeSub.trial_start,
+                            trial_end: stripeSub.trial_end
                         });
-                        console.log(`✅ [Webhook] New subscription created`);
-                    }
 
-                    // 5. Conceder créditos do plano
-                    console.log(`✅ [Webhook] Updating credits for user ${userId}`);
-                    await db.update(credits)
-                        .set({
-                            creditsInitial: plan.creditsInitial,
-                            creditsDaily: plan.creditsDaily,
-                            amount: sql`(${plan.creditsInitial}::integer + ${plan.creditsDaily}::integer + ${credits.creditsBonus})`,
-                            lastDailyReset: new Date()
-                        })
-                        .where(eq(credits.userId, userId));
-                    console.log(`✅ [Webhook] Credits updated successfully`);
+                        // Determinar datas e status reais com FALLBACKS robustos
+                        const trialEndTimestamp = stripeSub.trial_end;
+                        const periodEndTimestamp = stripeSub.current_period_end;
+                        const startDateTimestamp = stripeSub.start_date;
 
-                    // 6. Registrar pagamento
-                    const [localSub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
-                    console.log(`✅ [Webhook] Recording payment for subscription ${localSub?.id}`);
+                        let effectivePeriodEnd = periodEndTimestamp || trialEndTimestamp;
 
-                    try {
+                        if (!effectivePeriodEnd && stripeSub.status === 'active' && startDateTimestamp) {
+                            console.warn('⚠️ [Webhook] Usando Fallback de Data: start_date + 30 dias');
+                            effectivePeriodEnd = startDateTimestamp + (30 * 24 * 60 * 60);
+                        }
+
+                        const trialEnd = trialEndTimestamp ? new Date(trialEndTimestamp * 1000) : null;
+                        let periodEnd = new Date();
+
+                        if (effectivePeriodEnd) {
+                            periodEnd = new Date(effectivePeriodEnd * 1000);
+                        } else {
+                            console.warn("⚠️ [Webhook] CRITICAL: current_period_end is missing even after fallbacks, using now()");
+                        }
+
+                        const nextBillingDate = trialEnd && trialEnd > new Date() ? trialEnd : periodEnd;
+                        const isActiveOrTrial = ['active', 'trialing'].includes(stripeSub.status);
+                        const appStatus = isActiveOrTrial ? 'active' : 'expired';
+
+                        console.log(`✅ [Webhook] Computed values:`, {
+                            appStatus,
+                            stripeStatus: stripeSub.status,
+                            nextBillingDate: nextBillingDate.toISOString(),
+                            trialEnd: trialEnd?.toISOString(),
+                            periodEnd: periodEnd.toISOString()
+                        });
+
+                        // 4. ✅ UPSERT: Tentar UPDATE primeiro, se não existir, INSERT
+                        const existingSub = await tx.select()
+                            .from(subscriptions)
+                            .where(eq(subscriptions.userId, userId))
+                            .limit(1);
+
+                        const subscriptionData = {
+                            planId: planId,
+                            status: appStatus as 'active' | 'expired',
+                            billingPeriod: billingPeriod,
+                            stripeSubscriptionId: subscriptionId,
+                            stripeStatus: stripeSub.status,
+                            startDate: new Date(stripeSub.start_date * 1000),
+                            endDate: periodEnd,
+                            nextBillingDate: nextBillingDate,
+                            updatedAt: new Date()
+                        };
+
+                        if (existingSub.length > 0) {
+                            console.log(`✅ [Webhook] Updating existing subscription ${existingSub[0].id}`);
+                            await tx.update(subscriptions)
+                                .set(subscriptionData)
+                                .where(eq(subscriptions.id, existingSub[0].id));
+                        } else {
+                            console.log(`⚠️ [Webhook] No subscription found, creating new one`);
+                            await tx.insert(subscriptions).values({
+                                userId: userId,
+                                ...subscriptionData,
+                                createdAt: new Date()
+                            });
+                        }
+
+                        // 5. Conceder créditos do plano
+                        console.log(`✅ [Webhook] Updating credits for user ${userId}`);
+                        await tx.update(credits)
+                            .set({
+                                creditsInitial: plan.creditsInitial,
+                                creditsDaily: plan.creditsDaily,
+                                amount: sql`(${plan.creditsInitial}::integer + ${plan.creditsDaily}::integer + ${credits.creditsBonus})`,
+                                lastDailyReset: new Date()
+                            })
+                            .where(eq(credits.userId, userId));
+
+                        // 6. Registrar pagamento (inside transaction — rollback if fails)
+                        const [localSub] = await tx.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
                         const amountTotal = session.amount_total;
-                        await db.insert(payments).values({
+                        await tx.insert(payments).values({
                             userId: userId,
                             subscriptionId: localSub?.id,
                             amount: amountTotal,
@@ -202,28 +196,28 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                         });
                         console.log(`✅ [Webhook] Payment recorded successfully`);
 
-                        // 7. ✅ SEND TO META CAPI
-                        // Modificado para usar METADATA (Dados originais do usuário) em vez do IP do Stripe webhook
+                        // 7. ✅ SEND TO META CAPI (best effort — don't fail transaction for analytics)
                         if (amountTotal > 0 && user) {
-                            const metaData = session.metadata || {}; // Pegamos do metadata salvo na criação
-
-                            await sendMetaEvent({
-                                eventName: 'Purchase',
-                                email: user.email || undefined,
-                                clientIpAddress: metaData.clientIp || req.ip || undefined,
-                                clientUserAgent: metaData.clientUserAgent || (Array.isArray(req.headers['user-agent']) ? req.headers['user-agent'][0] : req.headers['user-agent']) || undefined,
-                                fbc: metaData.fbc || undefined,
-                                fbp: metaData.fbp || undefined,
-                                currency: 'BRL',
-                                value: amountTotal / 100, // Stripe values are in cents
-                                orderId: session.id
-                            });
+                            try {
+                                const metaData = session.metadata || {};
+                                await sendMetaEvent({
+                                    eventName: 'Purchase',
+                                    email: user.email || undefined,
+                                    clientIpAddress: metaData.clientIp || req.ip || undefined,
+                                    clientUserAgent: metaData.clientUserAgent || (Array.isArray(req.headers['user-agent']) ? req.headers['user-agent'][0] : req.headers['user-agent']) || undefined,
+                                    fbc: metaData.fbc || undefined,
+                                    fbp: metaData.fbp || undefined,
+                                    currency: 'BRL',
+                                    value: amountTotal / 100,
+                                    orderId: session.id
+                                });
+                            } catch (metaErr) {
+                                console.warn(`⚠️ [Webhook] Meta CAPI failed (non-critical):`, metaErr);
+                            }
                         }
 
                         console.log(`🎉 [Webhook] Subscription activation complete for User ${userId}!`);
-                    } catch (paymentErr) {
-                        console.error("❌ [Webhook] Error recording payment:", paymentErr);
-                    }
+                    }); // end transaction
                 }
                 break;
             }
@@ -324,6 +318,108 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                             .where(eq(credits.userId, sub.userId));
                     }
                 }
+                break;
+            }
+
+            /**
+             * ✅ SUBSCRIPTION UPDATED -> Troca de plano via Stripe Portal/Dashboard
+             */
+            case 'customer.subscription.updated': {
+                const stripeSubObj = event.data.object as any;
+                const subId = stripeSubObj.id;
+                const previousAttributes = (event.data as any).previous_attributes || {};
+
+                console.log(`🔄 [Webhook] Subscription Updated: ${subId}`, {
+                    status: stripeSubObj.status,
+                    changedFields: Object.keys(previousAttributes)
+                });
+
+                // Find local subscription
+                const [localSub] = await db.select()
+                    .from(subscriptions)
+                    .where(eq(subscriptions.stripeSubscriptionId, subId))
+                    .limit(1);
+
+                if (!localSub) {
+                    console.warn(`⚠️ [Webhook] subscription.updated: No local sub found for ${subId}`);
+                    break;
+                }
+
+                // Always sync status from Stripe
+                const updateData: any = {
+                    stripeStatus: stripeSubObj.status,
+                    updatedAt: new Date(),
+                };
+
+                // Map Stripe status to local status
+                if (['active', 'trialing'].includes(stripeSubObj.status)) {
+                    updateData.status = 'active';
+                } else if (stripeSubObj.status === 'past_due') {
+                    updateData.status = 'grace_period';
+                } else if (stripeSubObj.status === 'canceled' || stripeSubObj.status === 'unpaid') {
+                    updateData.status = 'expired';
+                }
+
+                // Sync period dates
+                if (stripeSubObj.current_period_end) {
+                    updateData.endDate = new Date(stripeSubObj.current_period_end * 1000);
+                    updateData.nextBillingDate = new Date(stripeSubObj.current_period_end * 1000);
+                }
+
+                // Detect plan/price change (items changed)
+                if (previousAttributes.items) {
+                    const newPriceId = stripeSubObj.items?.data?.[0]?.price?.id;
+                    if (newPriceId) {
+                        console.log(`🔄 [Webhook] Price changed to: ${newPriceId}`);
+
+                        // Try to find the matching local plan by price lookup
+                        // We search plans by their Stripe price metadata or by interval
+                        const newInterval = stripeSubObj.items?.data?.[0]?.price?.recurring?.interval;
+                        const newBillingPeriod = newInterval === 'year' ? 'yearly' : 'monthly';
+                        updateData.billingPeriod = newBillingPeriod;
+
+                        // Try to match Stripe product to local plan via metadata
+                        const stripeProductId = stripeSubObj.items?.data?.[0]?.price?.product;
+                        if (stripeProductId) {
+                            // Check all plans to find one matching this Stripe product
+                            const allPlans = await db.select().from(plans);
+                            // Match by stripePriceId metadata if available, otherwise try by price amount
+                            const newAmount = stripeSubObj.items?.data?.[0]?.price?.unit_amount;
+                            const matchedPlan = allPlans.find(p => {
+                                const planPrice = newBillingPeriod === 'yearly' ? p.priceYearly : p.priceMonthly;
+                                return planPrice === newAmount;
+                            });
+
+                            if (matchedPlan) {
+                                console.log(`✅ [Webhook] Matched plan: ${matchedPlan.displayName} (ID: ${matchedPlan.id})`);
+                                updateData.planId = matchedPlan.id;
+
+                                // Update credits for the new plan
+                                await db.update(credits)
+                                    .set({
+                                        creditsInitial: matchedPlan.creditsInitial,
+                                        creditsDaily: matchedPlan.creditsDaily,
+                                        amount: sql`(${matchedPlan.creditsInitial}::integer + ${matchedPlan.creditsDaily}::integer + COALESCE(${credits.creditsBonus}, 0))`,
+                                    })
+                                    .where(eq(credits.userId, localSub.userId));
+                                console.log(`✅ [Webhook] Credits updated for new plan`);
+                            } else {
+                                console.warn(`⚠️ [Webhook] Could not match Stripe price ${newPriceId} (amount: ${newAmount}) to any local plan`);
+                            }
+                        }
+                    }
+                }
+
+                // Clear grace period if subscription is now active
+                if (stripeSubObj.status === 'active') {
+                    updateData.gracePeriodEndsAt = null;
+                }
+
+                await db.update(subscriptions)
+                    .set(updateData)
+                    .where(eq(subscriptions.id, localSub.id));
+
+                console.log(`✅ [Webhook] Subscription ${subId} synced locally`);
                 break;
             }
 

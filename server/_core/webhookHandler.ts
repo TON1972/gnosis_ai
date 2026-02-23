@@ -63,6 +63,18 @@ export async function processPaymentLogic(body: any, expressReq?: ExpressRequest
         const database = await getDb();
         if (!database) return;
 
+        // ✅ IDEMPOTENCY: Check if this payment was already processed
+        const existingPayment = await database.select()
+            .from(payments)
+            .where(eq(payments.mercadoPagoId, paymentId))
+            .limit(1);
+
+        if (existingPayment.length > 0) {
+            console.log(`⚠️ [MercadoPago] Payment ${paymentId} already processed (ID: ${existingPayment[0].id}), skipping`);
+            return;
+        }
+
+
         const meta = paymentDetails.metadata || {};
         const externalRef = paymentDetails.external_reference || "";
 

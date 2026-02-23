@@ -1,7 +1,69 @@
 import { eq, sql } from "drizzle-orm";
 import { getDb } from "./db.js";
 import { subscriptions, users, plans, credits, creditTransactions } from "../drizzle/schema.js";
+import Stripe from "stripe";
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-12-15.clover",
+});
+
+// ✅ Rate limit: Only sync with Stripe once per hour per user
+const lastSyncMap = new Map<number, number>();
+const SYNC_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Sync local subscription status from Stripe (catches missed webhooks)
+ * Only runs if stripeSubscriptionId exists and last sync was >1h ago
+ */
+async function syncFromStripeIfNeeded(
+  db: any,
+  subscription: any,
+): Promise<void> {
+  if (!subscription.stripeSubscriptionId) return;
+
+  const lastSync = lastSyncMap.get(subscription.userId) || 0;
+  if (Date.now() - lastSync < SYNC_INTERVAL_MS) return;
+
+  try {
+    const stripeSub = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId) as any;
+    lastSyncMap.set(subscription.userId, Date.now());
+
+    // Only update if there's a mismatch
+    if (stripeSub.status !== subscription.stripeStatus) {
+      console.log(`🔄 [Sync] Stripe status mismatch for user ${subscription.userId}: local=${subscription.stripeStatus} -> stripe=${stripeSub.status}`);
+
+      const updateData: any = {
+        stripeStatus: stripeSub.status,
+        updatedAt: new Date(),
+      };
+
+      if (['active', 'trialing'].includes(stripeSub.status)) {
+        updateData.status = 'active';
+        updateData.gracePeriodEndsAt = null;
+      } else if (stripeSub.status === 'past_due') {
+        updateData.status = 'grace_period';
+      } else if (stripeSub.status === 'canceled' || stripeSub.status === 'unpaid') {
+        updateData.status = 'expired';
+      }
+
+      // Sync dates
+      if (stripeSub.current_period_end) {
+        updateData.endDate = new Date(stripeSub.current_period_end * 1000);
+        updateData.nextBillingDate = new Date(stripeSub.current_period_end * 1000);
+      }
+
+      await db.update(subscriptions)
+        .set(updateData)
+        .where(eq(subscriptions.id, subscription.id));
+
+      // Update the local object so the rest of the function uses fresh data
+      Object.assign(subscription, updateData);
+    }
+  } catch (err: any) {
+    // Don't fail the status check if Stripe is unreachable
+    console.warn(`⚠️ [Sync] Failed to sync from Stripe for user ${subscription.userId}: ${err.message}`);
+  }
+}
 /**
  * Subscription status management
  * 
@@ -53,9 +115,9 @@ export async function checkSubscriptionStatus(userId: number): Promise<Subscript
     .where(eq(subscriptions.userId, userId))
     .limit(1);
 
-  if (subs.length === 0 || subs[0].status === "cancelled" || subs[0].status === "expired") {
+  if (subs.length === 0) {
     return {
-      status: subs[0]?.status || "expired",
+      status: "expired",
       isBlocked: true,
       gracePeriodEndsAt: null,
       nextBillingDate: null,
@@ -64,10 +126,25 @@ export async function checkSubscriptionStatus(userId: number): Promise<Subscript
   }
 
   const subscription = subs[0];
+
+  // ✅ Periodic sync from Stripe to catch missed webhooks (max once per hour)
+  await syncFromStripeIfNeeded(db, subscription);
+
+  // Re-check after sync (subscription object may have been mutated by syncFromStripeIfNeeded)
+  if (subscription.status === "cancelled" || subscription.status === "expired") {
+    return {
+      status: subscription.status as any || "expired",
+      isBlocked: true,
+      gracePeriodEndsAt: null,
+      nextBillingDate: null,
+      daysUntilBlock: null,
+    };
+  }
+
   const now = new Date();
 
   // ✅ If Stripe explicitly canceled, honor that status immediately
-  if (subscription.stripeStatus === 'canceled' || subscription.status === 'expired') {
+  if (subscription.stripeStatus === 'canceled' || (subscription.status as string) === 'expired') {
     return {
       status: "expired",
       isBlocked: true,
