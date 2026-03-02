@@ -1434,44 +1434,61 @@ export const appRouter = router({
             const planName = targetPlan.displayName;
             const price = (input.billingPeriod === 'yearly' ? targetPlan.priceYearly : targetPlan.priceMonthly) / 100;
 
-            // ✅ Extrair dados de rastreamento (Cookies Meta)
-            let fbc = "";
-            let fbp = "";
-            const cookieHeader = ctx.req.headers.get?.("cookie") || ctx.req.headers.cookie;
-
-            if (cookieHeader) {
-              const cookies: Record<string, string> = {};
-              cookieHeader.split(";").forEach((c: string) => {
-                const [key, val] = c.trim().split("=");
-                cookies[key] = val;
+            if (input.billingPeriod === 'yearly') {
+              const mpSession = await createManualPaymentCheckout({
+                planId: Number(input.id),
+                planName: planName,
+                price: price,
+                duration: 1, // 1 ano
+                billingPeriod: 'yearly',
+                userId: ctx.user.id,
+                userEmail: user.email
               });
-              fbc = cookies["_fbc"] || "";
-              fbp = cookies["_fbp"] || "";
+
+              return {
+                id: mpSession.id,
+                init_point: mpSession.init_point,
+              };
+            } else {
+              // ✅ Extrair dados de rastreamento (Cookies Meta)
+              let fbc = "";
+              let fbp = "";
+              const cookieHeader = ctx.req.headers.get?.("cookie") || ctx.req.headers.cookie;
+
+              if (cookieHeader) {
+                const cookies: Record<string, string> = {};
+                cookieHeader.split(";").forEach((c: string) => {
+                  const [key, val] = c.trim().split("=");
+                  cookies[key] = val;
+                });
+                fbc = cookies["_fbc"] || "";
+                fbp = cookies["_fbp"] || "";
+              }
+
+              const clientIp = (ctx.req.headers.get?.("x-forwarded-for") || ctx.req.headers["x-forwarded-for"] || ctx.req.socket?.remoteAddress || "").split(',')[0].trim();
+              const clientUserAgent = ctx.req.headers.get?.("user-agent") || ctx.req.headers["user-agent"] || "";
+
+              const stripeSession = await createStripeCheckout({
+                planId: Number(input.id),
+                planName: planName,
+                price: price, // Valor em reais buscado no banco
+                billingPeriod: input.billingPeriod || 'monthly',
+                userId: ctx.user.id,
+                userEmail: user.email,
+                customerId: customerId,
+                // trialDays removido para Lumem e Premium
+                fbc,
+                fbp,
+                clientIp,
+                clientUserAgent
+              });
+
+              // O frontend espera `init_point`, mas o Stripe retorna `url`
+              return {
+                id: stripeSession.id,
+                init_point: stripeSession.url, // Mapeamos url do Stripe para init_point
+              };
             }
-
-            const clientIp = (ctx.req.headers.get?.("x-forwarded-for") || ctx.req.headers["x-forwarded-for"] || ctx.req.socket?.remoteAddress || "").split(',')[0].trim();
-            const clientUserAgent = ctx.req.headers.get?.("user-agent") || ctx.req.headers["user-agent"] || "";
-
-            const stripeSession = await createStripeCheckout({
-              planId: Number(input.id),
-              planName: planName,
-              price: price, // Valor em reais buscado no banco
-              billingPeriod: input.billingPeriod || 'monthly',
-              userId: ctx.user.id,
-              userEmail: user.email,
-              customerId: customerId,
-              // trialDays removido para Lumem e Premium
-              fbc,
-              fbp,
-              clientIp,
-              clientUserAgent
-            });
-
-            // O frontend espera `init_point`, mas o Stripe retorna `url`
-            return {
-              id: stripeSession.id,
-              init_point: stripeSession.url, // Mapeamos url do Stripe para init_point
-            };
           }
         } catch (error: any) {
           console.error("❌ ERRO NO MP:", error.message);
