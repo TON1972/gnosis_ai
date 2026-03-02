@@ -50,7 +50,9 @@ export async function createStripeCheckout(params: {
 
     try {
         const unitAmount = Math.round(price * 100);
-        const isYearly = billingPeriod === 'yearly';
+        const isYearly = String(billingPeriod).toLowerCase().trim() === 'yearly';
+
+        console.log(`[Stripe] Creating checkout for ${userEmail}. Mode: ${isYearly ? 'PAYMENT (One-time)' : 'SUBSCRIPTION'}`);
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -61,8 +63,8 @@ export async function createStripeCheckout(params: {
                     price_data: {
                         currency: 'brl',
                         product_data: {
-                            name: `Plano ${planName} - GNOSIS AI`,
-                            description: `Assinatura ${billingPeriod === 'yearly' ? 'Anual' : 'Mensal'}`,
+                            name: isYearly ? `Plano ${planName} - GNOSIS AI (Anual)` : `Plano ${planName} - GNOSIS AI`,
+                            description: isYearly ? `Pagamento Único (Acesso por 1 Ano)` : `Assinatura Mensal`,
                         },
                         unit_amount: unitAmount,
                         ...(isYearly ? {} : {
