@@ -97,6 +97,14 @@ export async function createStripeCheckout(params: {
             subscription_data: (!isYearly && trialDays) ? {
                 trial_period_days: trialDays
             } : undefined,
+            payment_intent_data: isYearly ? {
+                description: `Compra de Plano Anual - ${planName}`,
+                metadata: {
+                    userId: userId.toString(),
+                    planId: planId.toString(),
+                    billingPeriod: 'yearly'
+                }
+            } : undefined,
             success_url: `${BASE_URL}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${BASE_URL}/dashboard?payment=cancelled`,
             allow_promotion_codes: true,
