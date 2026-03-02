@@ -8,8 +8,8 @@ import {
   savedStudies,
   users,
   creditTransactions,
-  // chatbotContacts, 
-  // ticketMessages,
+  chatbotContacts,
+  ticketMessages,
   tools,      // ✅ Adicionado
   planTools,   // ✅ Adicionado
   planToolsSnake, // ✅ Adicionado para corrigir vinculação de planos
@@ -21,6 +21,7 @@ import {
   subscriptions,
   dashboardSettings,
 } from "../drizzle/schema.js";
+import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { getDb } from "./db.js";
 import { eq, desc, sql, and, lt, gte, or, asc } from "drizzle-orm";
 import { getUserCredits, useCredits, getUserActivePlan } from "./credits.js";
@@ -37,8 +38,10 @@ import {
   sendMarketingEmail, getSentEmailsList, marketingGroupSchema,
   createMarketingGroup, getMarketingGroups, deleteMarketingGroup
 } from "./marketing.js";
-import { chatbotContacts, ticketMessages } from "../drizzle/schema.js";
-import { MercadoPagoConfig, Preference } from 'mercadopago';
+import {
+  createAutomation, updateAutomation, deleteAutomation, listAutomations,
+  automationSchema
+} from "./automation.js";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 //import {  userCredits } from "@shared/schema";
@@ -1627,11 +1630,29 @@ export const appRouter = router({
       .query(async ({ ctx }) => {
         return await getMarketingGroups(ctx);
       }),
+  }),
 
-    deleteGroup: protectedProcedure
+  /**
+   * ✅ EMAIL AUTOMATION SYSTEM (SUPER ADMIN)
+   */
+  automations: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await listAutomations(ctx);
+    }),
+    create: protectedProcedure
+      .input(automationSchema)
+      .mutation(async ({ ctx, input }) => {
+        return await createAutomation(ctx, input);
+      }),
+    update: protectedProcedure
+      .input(automationSchema.extend({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return await updateAutomation(ctx, input);
+      }),
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        return await deleteMarketingGroup(ctx, input);
+        return await deleteAutomation(ctx, input);
       }),
   }),
 });

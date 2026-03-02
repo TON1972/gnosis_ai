@@ -12,6 +12,7 @@ import { AdminToolsManager } from "@/components/admin/AdminToolsManager";
 import { AdminPlansManager } from "@/components/admin/AdminPlansManager";
 import { AdminVideoManagement } from "@/components/admin/AdminVideoManagement";
 import { AdminMarketing } from "@/components/admin/AdminMarketing";
+import { AdminAutomations } from "@/components/admin/AdminAutomations";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Menu, X } from "lucide-react";
 import { useLocation } from "wouter";
@@ -47,7 +48,8 @@ export default function AdminDashboard() {
     'tools-manager': "Gerenciar Catálogo de Tools",
     'plans-manager': "Gerenciar Planos",
     video: "Gerenciar Vídeo Destaque",
-    marketing: "Email Marketing (Resend)"
+    marketing: "Email Marketing (Resend)",
+    automations: "Automações de Email"
   };
 
   return (
@@ -116,6 +118,9 @@ export default function AdminDashboard() {
 
               {/* ✅ ABA: EMAIL MARKETING */}
               {activeTab === 'marketing' && isSuperAdmin && <AdminMarketing />}
+
+              {/* ✅ ABA: AUTOMAÇÕES DE EMAIL */}
+              {activeTab === 'automations' && isSuperAdmin && <AdminAutomations />}
 
               {/* ✅ ABA: GERENCIAR CATÁLOGO */}
               {activeTab === 'tools-manager' && <AdminToolsManager />}

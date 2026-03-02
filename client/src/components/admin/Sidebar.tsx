@@ -22,6 +22,7 @@ export function Sidebar({ isOpen, activeTab, setActiveTab, role, logout, setLoca
     { id: 'user-list', label: 'Usuários', icon: Users },
     { id: 'support', label: 'Tickets Suporte', icon: Mail },
     { id: 'marketing', label: 'Email MKT', icon: Send, superOnly: true },
+    { id: 'automations', label: 'Automações', icon: Mail, superOnly: true },
     { id: 'tools-manager', label: 'Gerenciar Catálogo', icon: Wrench, superOnly: true },
     { id: 'plans-manager', label: 'Gerenciar Planos', icon: DollarSign, superOnly: true }, // ✅ Tab Interna
     { id: 'admins', label: 'Equipe Admin', icon: ShieldCheck, superOnly: true },

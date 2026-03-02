@@ -291,3 +291,26 @@ export const marketingGroups = pgTable("marketing_groups", {
   createdBy: integer("createdBy").references(() => users.id),
 });
 
+// --- EMAIL AUTOMATIONS ---
+export const emailAutomations = pgTable("email_automations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  triggerType: text("triggerType").notNull(), // 'bulk', 'subscription_expiring', 'low_credits', 'inactive_user', 'specific_date', 'periodic'
+  triggerValue: integer("triggerValue"), // Days before expiration, credit threshold, or interval count
+  triggerDate: timestamp("triggerDate"), // For 'specific_date'
+  triggerInterval: text("triggerInterval"), // For 'periodic': 'daily', 'weekly', 'monthly'
+  subject: text("subject").notNull(),
+  content: text("content").notNull(),
+  isActive: boolean("isActive").default(true),
+  targetPlans: text("targetPlans"), // Comma separated plan IDs
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const automationLogs = pgTable("automation_logs", {
+  id: serial("id").primaryKey(),
+  automationId: integer("automationId").references(() => emailAutomations.id),
+  userId: integer("userId").notNull(),
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+  status: text("status").default("sent"),
+});
