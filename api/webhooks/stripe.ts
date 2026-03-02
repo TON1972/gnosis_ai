@@ -52,10 +52,16 @@ export async function POST(req: Request) {
                 const metadata = session.metadata;
 
                 if (metadata?.type === 'subscription') {
+                    // Ignora pagamentos não finalizados no modo payment
+                    if (session.mode === 'payment' && session.payment_status !== 'paid') {
+                        break;
+                    }
+
                     const userId = Number(metadata.userId);
                     const planId = Number(metadata.planId);
                     const billingPeriod = metadata.billingPeriod as 'monthly' | 'yearly';
-                    const subscriptionId = session.subscription as string;
+                    // Para planos anuais (modo payment), a stripe não gera subscription; usamos o payment_intent
+                    const subscriptionId = (session.subscription as string) || (session.payment_intent as string) || session.id;
                     const customerId = session.customer as string;
 
                     console.log(`💰 Stripe Checkout: User ${userId} -> Plan ${planId} (${billingPeriod})`);

@@ -933,6 +933,8 @@ export const appRouter = router({
         planId: z.number(),
         creditsDaily: z.number().nonnegative(),
         creditsInitial: z.number().nonnegative(),
+        priceMonthly: z.number().nonnegative().optional(),
+        priceYearly: z.number().nonnegative().optional(),
         syncUsers: z.boolean().default(false),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -949,6 +951,8 @@ export const appRouter = router({
           .set({
             creditsDaily: input.creditsDaily,
             creditsInitial: input.creditsInitial,
+            ...(input.priceMonthly !== undefined ? { priceMonthly: Math.round(input.priceMonthly * 100) } : {}),
+            ...(input.priceYearly !== undefined ? { priceYearly: Math.round(input.priceYearly * 100) } : {}),
           })
           .where(eq(plans.id, input.planId));
 
@@ -1424,7 +1428,11 @@ export const appRouter = router({
             }
 
             // Delegate to Stripe helper
-            const planName = input.title.replace('Plano ', '').replace(' - Gnosis AI', '');
+            const [targetPlan] = await db.select().from(plans).where(eq(plans.id, Number(input.id))).limit(1);
+            if (!targetPlan) throw new Error("Plano não encontrado");
+
+            const planName = targetPlan.displayName;
+            const price = (input.billingPeriod === 'yearly' ? targetPlan.priceYearly : targetPlan.priceMonthly) / 100;
 
             // ✅ Extrair dados de rastreamento (Cookies Meta)
             let fbc = "";
@@ -1447,7 +1455,7 @@ export const appRouter = router({
             const stripeSession = await createStripeCheckout({
               planId: Number(input.id),
               planName: planName,
-              price: input.price, // Valor em reais
+              price: price, // Valor em reais buscado no banco
               billingPeriod: input.billingPeriod || 'monthly',
               userId: ctx.user.id,
               userEmail: user.email,

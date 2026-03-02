@@ -50,10 +50,11 @@ export async function createStripeCheckout(params: {
 
     try {
         const unitAmount = Math.round(price * 100);
+        const isYearly = billingPeriod === 'yearly';
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
-            mode: 'subscription',
+            mode: isYearly ? 'payment' : 'subscription',
             customer: customerId, // ✅ Usamos Customer ID em vez de email
             line_items: [
                 {
@@ -64,13 +65,22 @@ export async function createStripeCheckout(params: {
                             description: `Assinatura ${billingPeriod === 'yearly' ? 'Anual' : 'Mensal'}`,
                         },
                         unit_amount: unitAmount,
-                        recurring: {
-                            interval: billingPeriod === 'yearly' ? 'year' : 'month',
-                        },
+                        ...(isYearly ? {} : {
+                            recurring: {
+                                interval: 'month',
+                            }
+                        }),
                     },
                     quantity: 1,
                 },
             ],
+            payment_method_options: isYearly ? {
+                card: {
+                    installments: {
+                        enabled: true
+                    }
+                }
+            } : undefined,
             metadata: {
                 userId: userId.toString(),
                 planId: planId.toString(),
@@ -82,7 +92,7 @@ export async function createStripeCheckout(params: {
                 clientIp: clientIp || "",
                 clientUserAgent: clientUserAgent || ""
             },
-            subscription_data: trialDays ? {
+            subscription_data: (!isYearly && trialDays) ? {
                 trial_period_days: trialDays
             } : undefined,
             success_url: `${BASE_URL}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
