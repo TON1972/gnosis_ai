@@ -35,6 +35,14 @@ export interface DelinquentUser {
   subscriptionValue: number;
 }
 
+export interface ToolUsageStat {
+  toolId: number;
+  toolName: string;
+  studyCount: number;
+  messageCount: number;
+  userCount: number;
+}
+
 /**
  * Get user statistics
  */
@@ -241,5 +249,78 @@ export async function getDelinquentUsers(
       subscriptionValue,
     };
   });
+}
+
+/**
+ * Get tool usage statistics (studies, messages, speakers)
+ */
+export async function getToolUsageStats(
+  startDate?: Date,
+  endDate?: Date
+): Promise<ToolUsageStat[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Base query for studies and users
+  let query = sql`
+    WITH tool_metrics AS (
+      SELECT 
+        COALESCE(ss."toolId", 0) as tool_id,
+        "toolName" as tool_name,
+        COUNT(DISTINCT ss.id) as study_count,
+        COUNT(DISTINCT ss."userId") as user_count
+      FROM saved_studies ss
+      WHERE 1=1
+  `;
+
+  if (startDate) {
+    query = sql`${query} AND ss."createdAt" >= ${startDate}`;
+  }
+  if (endDate) {
+    query = sql`${query} AND ss."createdAt" <= ${endDate}`;
+  }
+
+  query = sql`${query}
+      GROUP BY COALESCE(ss."toolId", 0), "toolName"
+    ),
+    message_metrics AS (
+      SELECT 
+        COALESCE(ss."toolId", 0) as tool_id,
+        COUNT(DISTINCT sm.id) as message_count
+      FROM study_messages sm
+      JOIN saved_studies ss ON sm.study_id = ss.id
+      WHERE 1=1
+  `;
+
+  if (startDate) {
+    query = sql`${query} AND sm.created_at >= ${startDate}`;
+  }
+  if (endDate) {
+    query = sql`${query} AND sm.created_at <= ${endDate}`;
+  }
+
+  query = sql`${query}
+      GROUP BY COALESCE(ss."toolId", 0)
+    )
+    SELECT 
+      tm.tool_id,
+      tm.tool_name,
+      tm.study_count,
+      tm.user_count,
+      COALESCE(mm.message_count, 0) as message_count
+    FROM tool_metrics tm
+    LEFT JOIN message_metrics mm ON tm.tool_id = mm.tool_id
+    ORDER BY tm.study_count DESC
+  `;
+
+  const result = await db.execute(query);
+
+  return result.rows.map((row) => ({
+    toolId: Number(row.tool_id),
+    toolName: String(row.tool_name),
+    studyCount: Number(row.study_count),
+    messageCount: Number(row.message_count),
+    userCount: Number(row.user_count),
+  }));
 }
 

@@ -26,7 +26,7 @@ import { getDb } from "./db.js";
 import { eq, desc, sql, and, lt, gte, or, asc } from "drizzle-orm";
 import { getUserCredits, useCredits, getUserActivePlan } from "./credits.js";
 import { checkSubscriptionStatus, markSubscriptionPaid } from "./subscriptionStatus.js";
-import { getUserStats, getFinancialCalendar, getDelinquentUsers, getUsersByPlan } from "./admin.js";
+import { getUserStats, getFinancialCalendar, getDelinquentUsers, getUsersByPlan, getToolUsageStats } from "./admin.js";
 import { getStripeFinancialData } from "./stripeFinancial.js";
 import { listUsers, deleteUser, getUserDetails } from "./userManagement.js";
 import { createSubscriptionCheckout, createCreditsCheckout, createManualPaymentCheckout } from "./mercadopago.js";
@@ -693,6 +693,24 @@ export const appRouter = router({
         }
 
         return await getDelinquentUsers(startDate, endDate);
+      }),
+
+    toolUsageStats: protectedProcedure
+      .input(
+        z.object({
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+        }).optional()
+      )
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+          throw new Error('Acesso negado');
+        }
+
+        const startDate = input?.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input?.endDate ? new Date(input.endDate) : undefined;
+
+        return await getToolUsageStats(startDate, endDate);
       }),
 
     deleteSupportRequest: protectedProcedure

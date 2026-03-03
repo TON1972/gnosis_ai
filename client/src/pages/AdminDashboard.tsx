@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Sidebar } from "@/components/admin/Sidebar";
-import { StatsOverview } from "@/components/admin/StatsOverview";
+import { StatsOverview, StatsKPIs, StatsInsights } from "@/components/admin/StatsOverview";
 import { PlanDistributionChart } from "@/components/admin/PlanDistributionChart";
 import { FinancialDashboard } from "@/components/admin/FinancialDashboard";
 import { DelinquentList } from "@/components/admin/DelinquentList";
@@ -13,6 +13,7 @@ import { AdminPlansManager } from "@/components/admin/AdminPlansManager";
 import { AdminVideoManagement } from "@/components/admin/AdminVideoManagement";
 import { AdminMarketing } from "@/components/admin/AdminMarketing";
 import { AdminAutomations } from "@/components/admin/AdminAutomations";
+import { ToolUsageChart } from "@/components/admin/ToolUsageChart";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Menu, X } from "lucide-react";
 import { useLocation } from "wouter";
@@ -24,11 +25,28 @@ export default function AdminDashboard() {
 
   // ✅ Estados de Navegação
   const [activeTab, setActiveTab] = useState('overview');
+  const [period, setPeriod] = useState<'all' | '7d' | '30d' | '90d'>('all');
+
+  // Helper para calcular data inicial (estável para evitar loops de re-fetch)
+  const getStartDate = (p: string) => {
+    if (p === 'all') return undefined;
+    const date = new Date();
+    date.setMinutes(0, 0, 0); // Ground to the beginning of the hour for cache stability
+    if (p === '7d') date.setDate(date.getDate() - 7);
+    if (p === '30d') date.setDate(date.getDate() - 30);
+    if (p === '90d') date.setDate(date.getDate() - 90);
+    return date.toISOString();
+  };
 
   // Queries Globais
   const { data: stats, isLoading: ldStats } = trpc.admin.userStats.useQuery();
   const { data: planDistribution, isLoading: ldPlanDist } = trpc.admin.usersByPlan.useQuery();
   const { data: stripeFinancial, isLoading: ldStripe } = trpc.admin.stripeFinancialData.useQuery();
+  const { data: toolStats, isLoading: ldToolStats } = trpc.admin.toolUsageStats.useQuery({
+    startDate: getStartDate(period),
+  }, {
+    enabled: activeTab === 'overview'
+  });
 
   const handleLogout = () => {
     logout();
@@ -95,7 +113,7 @@ export default function AdminDashboard() {
 
         {/* ÁREA DE CONTEÚDO DINÂMICO */}
         <main className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-[#f8fafc]">
-          {ldStats || ldPlanDist || ldStripe ? (
+          {ldStats || ldPlanDist || ldStripe || ldToolStats ? (
             <div className="flex flex-col items-center justify-center py-20 text-[#d4af37]">
               <Loader2 className="animate-spin w-12 h-12 mb-4" />
               <p className="text-[#1e3a5f] font-bold animate-pulse">Sincronizando Dados...</p>
@@ -104,8 +122,49 @@ export default function AdminDashboard() {
             <div className="max-w-7xl mx-auto">
               {activeTab === 'overview' && (
                 <div className="space-y-8">
-                  <StatsOverview stats={stats} />
-                  <PlanDistributionChart data={planDistribution || []} />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-[#1e3a5f] font-black uppercase tracking-tighter text-2xl">Métricas de Uso</h3>
+                      <p className="text-gray-400 text-sm font-medium">Visualize a performance das ferramentas por período</p>
+                    </div>
+                  </div>
+
+                  <StatsInsights stats={stats} />
+
+                  <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+                    <div className="xl:col-span-3">
+                      <PlanDistributionChart data={planDistribution || []} />
+                    </div>
+                    <div className="xl:col-span-1">
+                      <StatsKPIs stats={stats} layout="stack" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+
+                      <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100">
+                        {[
+                          { id: 'all', label: 'Total' },
+                          { id: '7d', label: '7 Dias' },
+                          { id: '30d', label: '30 Dias' },
+                          { id: '90d', label: '90 Dias' },
+                        ].map((p) => (
+                          <button
+                            key={p.id}
+                            onClick={() => setPeriod(p.id as any)}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${period === p.id
+                              ? 'bg-[#1e3a5f] text-white shadow-md'
+                              : 'text-gray-400 hover:text-[#1e3a5f] hover:bg-gray-50'
+                              }`}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <ToolUsageChart data={toolStats || []} />
+                  </div>
                 </div>
               )}
               {activeTab === 'financial' && <FinancialDashboard data={stripeFinancial || null} />}
