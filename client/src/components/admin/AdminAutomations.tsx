@@ -38,16 +38,20 @@ export function AdminAutomations() {
     const [view, setView] = useState<'list' | 'form'>('list');
     const [editingAutomation, setEditingAutomation] = useState<any>(null);
     const [content, setContent] = useState("");
+    const [subject, setSubject] = useState("");
     const [showPreview, setShowPreview] = useState(false);
     const [isActive, setIsActive] = useState(true);
     const [triggerType, setTriggerType] = useState<string>("subscription_expiring");
     const [triggerInterval, setTriggerInterval] = useState<string>("daily");
     const [triggerDate, setTriggerDate] = useState<string>("");
+    const [triggerToolId, setTriggerToolId] = useState<string>("");
     const [selectedPlans, setSelectedPlans] = useState<string[]>([]);
+    const [automationToDelete, setAutomationToDelete] = useState<any>(null);
 
     const utils = trpc.useUtils();
     const { data: automations, isLoading } = trpc.automations.list.useQuery();
     const { data: plans } = trpc.plans.list.useQuery();
+    const { data: toolsList } = trpc.tools.list.useQuery();
 
     const createMutation = trpc.automations.create.useMutation({
         onSuccess: () => {
@@ -79,8 +83,8 @@ export function AdminAutomations() {
         const data = {
             name: formData.get("name") as string,
             triggerType: triggerType as any,
-            triggerValue: (triggerType !== 'bulk' && triggerType !== 'specific_date' && triggerType !== 'periodic') ? Number(formData.get("triggerValue")) : 0,
-            subject: formData.get("subject") as string,
+            triggerValue: triggerType === 'tool_usage' ? Number(triggerToolId) : ((triggerType !== 'bulk' && triggerType !== 'specific_date' && triggerType !== 'periodic') ? Number(formData.get("triggerValue")) : 0),
+            subject: subject,
             content: content,
             targetPlans: selectedPlans.join(","),
             isActive: isActive,
@@ -98,10 +102,12 @@ export function AdminAutomations() {
     const handleEdit = (auto: any) => {
         setEditingAutomation(auto);
         setContent(auto.content);
+        setSubject(auto.subject || "");
         setTriggerType(auto.triggerType);
         setIsActive(auto.isActive);
         setTriggerDate(auto.triggerDate ? new Date(auto.triggerDate).toISOString().slice(0, 16) : "");
         setTriggerInterval(auto.triggerInterval || "daily");
+        setTriggerToolId(auto.triggerType === 'tool_usage' ? String(auto.triggerValue) : "");
         setSelectedPlans(auto.targetPlans ? auto.targetPlans.split(",").filter(Boolean) : []);
         setView('form');
     };
@@ -109,10 +115,12 @@ export function AdminAutomations() {
     const handleNew = () => {
         setEditingAutomation(null);
         setContent("");
+        setSubject("");
         setTriggerType("subscription_expiring");
         setIsActive(true);
         setTriggerDate("");
         setTriggerInterval("daily");
+        setTriggerToolId("");
         setSelectedPlans([]);
         setView('form');
     };
@@ -179,6 +187,7 @@ export function AdminAutomations() {
                                         <SelectItem value="inactive_user">Usuário Inativo</SelectItem>
                                         <SelectItem value="specific_date">Data Específica</SelectItem>
                                         <SelectItem value="periodic">Recorrente (Período)</SelectItem>
+                                        <SelectItem value="tool_usage">Uso de Ferramenta</SelectItem>
                                         <SelectItem value="bulk">Envio em Massa (Bulk)</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -186,7 +195,7 @@ export function AdminAutomations() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {(triggerType !== 'bulk' && triggerType !== 'specific_date' && triggerType !== 'periodic') && (
+                            {(triggerType !== 'bulk' && triggerType !== 'specific_date' && triggerType !== 'periodic' && triggerType !== 'tool_usage') && (
                                 <div className="space-y-2 transition-all duration-300">
                                     <Label htmlFor="triggerValue" className="text-xs font-bold text-gray-600 uppercase">
                                         {triggerType === 'low_credits' ? "Limite de Créditos" : "Dias para disparo"}
@@ -240,6 +249,25 @@ export function AdminAutomations() {
                                 </div>
                             )}
 
+                            {triggerType === 'tool_usage' && (
+                                <div className="space-y-2 transition-all duration-300">
+                                    <Label htmlFor="triggerToolId" className="text-xs font-bold text-gray-600 uppercase">Selecione a Ferramenta</Label>
+                                    <Select value={triggerToolId} onValueChange={setTriggerToolId}>
+                                        <SelectTrigger className="p-3 bg-gray-50">
+                                            <SelectValue placeholder="Selecione a ferramenta" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white">
+                                            {toolsList?.map((tool: any) => (
+                                                <SelectItem key={tool.id} value={String(tool.id)}>
+                                                    {tool.displayName || tool.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-[10px] text-gray-400 italic">O e-mail será enviado uma vez por dia aos usuários que já utilizaram esta ferramenta.</p>
+                                </div>
+                            )}
+
                             {triggerType === 'bulk' && (
                                 <div className="space-y-2 transition-all duration-300 opacity-50">
                                     <Label className="text-xs font-bold text-gray-300 uppercase">Configuração do Gatilho</Label>
@@ -276,7 +304,7 @@ export function AdminAutomations() {
 
                         <div className="space-y-2">
                             <Label htmlFor="subject" className="text-xs font-bold text-gray-600 uppercase">Assunto do Email</Label>
-                            <Input id="subject" name="subject" defaultValue={editingAutomation?.subject} placeholder="Ex: Seu plano está vencendo!" required className="p-3 bg-gray-50" />
+                            <Input id="subject" name="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ex: Seu plano está vencendo!" required className="p-3 bg-gray-50" />
                         </div>
 
                         <div className="space-y-2">
@@ -332,7 +360,7 @@ export function AdminAutomations() {
                                 <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 min-h-[300px] prose prose-sm max-w-none break-words">
                                     <div className="text-gray-400 mb-6 border-b pb-3 flex justify-between items-center">
                                         <div>
-                                            <span className="font-bold text-[#1e3a5f]">ASSUNTO:</span> {editingAutomation?.subject || "Sem assunto..."}
+                                            <span className="font-bold text-[#1e3a5f]">ASSUNTO:</span> {subject || "Sem assunto..."}
                                         </div>
                                         <div className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg">
                                             MODO PREVIEW
@@ -395,8 +423,11 @@ export function AdminAutomations() {
                                     </div>
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400 font-bold uppercase tracking-wider">
                                         <span className="flex items-center gap-1"><Calendar size={12} /> {auto.triggerType}</span>
-                                        {(auto.triggerType !== 'bulk' && auto.triggerType !== 'specific_date' && auto.triggerType !== 'periodic') && (
+                                        {(auto.triggerType !== 'bulk' && auto.triggerType !== 'specific_date' && auto.triggerType !== 'periodic' && auto.triggerType !== 'tool_usage') && (
                                             <span className="flex items-center gap-1 underline decoration-[#d4af37]/40 underline-offset-4">Valor: {auto.triggerValue}</span>
+                                        )}
+                                        {auto.triggerType === 'tool_usage' && auto.triggerValue && (
+                                            <span className="flex items-center gap-1 underline decoration-[#d4af37]/40 underline-offset-4">Ferramenta: {toolsList?.find((t: any) => t.id === auto.triggerValue)?.displayName || toolsList?.find((t: any) => t.id === auto.triggerValue)?.name || auto.triggerValue}</span>
                                         )}
                                         {auto.triggerType === 'specific_date' && auto.triggerDate && (
                                             <span className="flex items-center gap-1 underline decoration-[#d4af37]/40 underline-offset-4">Data: {new Date(auto.triggerDate).toLocaleString()}</span>
@@ -429,7 +460,7 @@ export function AdminAutomations() {
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => { if (confirm("Excluir automação?")) deleteMutation.mutate({ id: auto.id }); }}
+                                    onClick={() => setAutomationToDelete(auto)}
                                     className="text-red-400 hover:text-red-500 hover:bg-red-50 rounded-xl"
                                 >
                                     <Trash2 size={18} />
@@ -439,6 +470,42 @@ export function AdminAutomations() {
                     ))
                 )}
             </div>
+
+            {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+            {automationToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 w-full max-w-md mx-4 transform transition-all scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-2">
+                                <Trash2 className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-black text-[#1e3a5f]">Excluir Automação?</h3>
+                            <p className="text-gray-500 text-sm">
+                                Tem certeza que deseja excluir a automação <strong>{automationToDelete.name}</strong>? Esta ação não pode ser desfeita.
+                            </p>
+                        </div>
+                        <div className="flex gap-3 mt-8">
+                            <button
+                                onClick={() => setAutomationToDelete(null)}
+                                className="flex-1 py-3 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    deleteMutation.mutate({ id: automationToDelete.id });
+                                    setAutomationToDelete(null);
+                                }}
+                                disabled={deleteMutation.isPending}
+                                className="flex-1 py-3 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
+                            >
+                                {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                Sim, Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

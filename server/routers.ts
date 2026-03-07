@@ -1648,6 +1648,12 @@ export const appRouter = router({
       .query(async ({ ctx }) => {
         return await getMarketingGroups(ctx);
       }),
+
+    deleteGroup: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return await deleteMarketingGroup(ctx, input);
+      }),
   }),
 
   /**

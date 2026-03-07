@@ -81,6 +81,19 @@ async function processSingleAutomation(db: any, automation: any) {
 
     } else if (automation.triggerType === 'periodic' || automation.triggerType === 'bulk') {
         targetUsers = await getBaseQuery();
+    } else if (automation.triggerType === 'tool_usage') {
+        const { savedStudies } = await import("../drizzle/schema.js");
+        const rawUsers = await getBaseQuery()
+            .innerJoin(savedStudies, eq(users.id, savedStudies.userId))
+            .where(eq(savedStudies.toolId, triggerValue));
+
+        // Remove duplicados causados pelo join (caso o uso da ferramenta tenha múltiplos registros)
+        const uniqueSet = new Set();
+        targetUsers = rawUsers.filter((u: any) => {
+            if (uniqueSet.has(u.id)) return false;
+            uniqueSet.add(u.id);
+            return true;
+        });
     }
 
     for (const user of targetUsers) {

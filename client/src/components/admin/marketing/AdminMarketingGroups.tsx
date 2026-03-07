@@ -9,6 +9,7 @@ export function AdminMarketingGroups() {
     const [targetRoles, setTargetRoles] = useState<string>("");
     const [targetSubscriptions, setTargetSubscriptions] = useState<string>("");
     const [targetEmails, setTargetEmails] = useState<string>("");
+    const [groupToDelete, setGroupToDelete] = useState<any>(null);
 
     const utils = trpc.useUtils();
     const { data: groups, isLoading: ldGroups } = trpc.marketing.getGroups.useQuery();
@@ -215,11 +216,7 @@ export function AdminMarketingGroups() {
                                         </div>
                                         <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end">
                                             <button
-                                                onClick={() => {
-                                                    if (confirm("Excluir este grupo? Isso não afetará emails já enviados.")) {
-                                                        deleteGroup.mutate({ id: g.id });
-                                                    }
-                                                }}
+                                                onClick={() => setGroupToDelete(g)}
                                                 className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors flex items-center justify-center"
                                                 title="Excluir"
                                             >
@@ -237,6 +234,42 @@ export function AdminMarketingGroups() {
                     </div>
                 </div>
             </div>
+
+            {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+            {groupToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 w-full max-w-md mx-4 transform transition-all scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-2">
+                                <Trash2 className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-black text-[#1e3a5f]">Excluir Grupo?</h3>
+                            <p className="text-gray-500 text-sm">
+                                Tem certeza que deseja excluir o grupo <strong>{groupToDelete.name}</strong>? Esta ação não pode ser desfeita, mas não afetará emails já enviados.
+                            </p>
+                        </div>
+                        <div className="flex gap-3 mt-8">
+                            <button
+                                onClick={() => setGroupToDelete(null)}
+                                className="flex-1 py-3 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    deleteGroup.mutate({ id: groupToDelete.id });
+                                    setGroupToDelete(null);
+                                }}
+                                disabled={deleteGroup.isPending}
+                                className="flex-1 py-3 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
+                            >
+                                {deleteGroup.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                Sim, Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

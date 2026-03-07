@@ -5,7 +5,7 @@ import { eq, desc } from "drizzle-orm";
 
 export const automationSchema = z.object({
     name: z.string().min(1, "Nome obrigatório"),
-    triggerType: z.enum(['bulk', 'subscription_expiring', 'low_credits', 'inactive_user', 'specific_date', 'periodic']),
+    triggerType: z.enum(['bulk', 'subscription_expiring', 'low_credits', 'inactive_user', 'specific_date', 'periodic', 'tool_usage']),
     triggerValue: z.number().optional(),
     triggerDate: z.string().datetime().optional().nullable().transform(val => val ? new Date(val) : null),
     triggerInterval: z.enum(['daily', 'weekly', 'monthly']).optional().nullable(),
