@@ -40,7 +40,7 @@ import {
 } from "./marketing.js";
 import {
   createAutomation, updateAutomation, deleteAutomation, listAutomations,
-  automationSchema
+  automationSchema, getAutomationStats
 } from "./automation.js";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -1663,6 +1663,11 @@ export const appRouter = router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return await listAutomations(ctx);
     }),
+    getStats: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return await getAutomationStats(ctx, input);
+      }),
     create: protectedProcedure
       .input(automationSchema)
       .mutation(async ({ ctx, input }) => {

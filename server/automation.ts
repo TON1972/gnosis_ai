@@ -58,3 +58,26 @@ export async function listAutomations(ctx: { user: { role: string } }) {
 
     return db.select().from(emailAutomations).orderBy(desc(emailAutomations.createdAt));
 }
+
+export async function getAutomationStats(ctx: { user: { role: string } }, input: { id: number }) {
+    if (ctx.user.role !== 'super_admin') throw new Error("Acesso negado");
+    const db = await getDb();
+    if (!db) return [];
+
+    const { sql } = await import("drizzle-orm");
+
+    // Agrupar por dia, contanto sucesso, falhas e o total
+    const stats = await db.execute(sql`
+        SELECT 
+            DATE("sentAt") as date,
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as success,
+            SUM(CASE WHEN status != 'sent' THEN 1 ELSE 0 END) as failed
+        FROM automation_logs
+        WHERE "automationId" = ${input.id}
+        GROUP BY DATE("sentAt")
+        ORDER BY DATE("sentAt") DESC
+    `);
+
+    return stats.rows || [];
+}

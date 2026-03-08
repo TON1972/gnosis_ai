@@ -16,7 +16,8 @@ import {
     Eye,
     Save,
     Check,
-    RefreshCw
+    RefreshCw,
+    History
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -47,9 +48,14 @@ export function AdminAutomations() {
     const [triggerToolId, setTriggerToolId] = useState<string>("");
     const [selectedPlans, setSelectedPlans] = useState<string[]>([]);
     const [automationToDelete, setAutomationToDelete] = useState<any>(null);
+    const [historyAutomation, setHistoryAutomation] = useState<any>(null);
 
     const utils = trpc.useUtils();
     const { data: automations, isLoading } = trpc.automations.list.useQuery();
+    const { data: statsData, isLoading: isLoadingStats } = trpc.automations.getStats.useQuery(
+        { id: historyAutomation?.id },
+        { enabled: !!historyAutomation }
+    );
     const { data: plans } = trpc.plans.list.useQuery();
     const { data: toolsList } = trpc.tools.list.useQuery();
 
@@ -453,6 +459,15 @@ export function AdminAutomations() {
                                     variant="outline"
                                     size="sm"
                                     className="border-[#1e3a5f]/10 text-[#1e3a5f] font-bold hover:bg-[#1e3a5f] hover:text-white rounded-xl"
+                                    onClick={() => setHistoryAutomation(auto)}
+                                >
+                                    <History size={16} className="mr-1" />
+                                    HISTÓRICO
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-[#1e3a5f]/10 text-[#1e3a5f] font-bold hover:bg-[#1e3a5f] hover:text-white rounded-xl"
                                     onClick={() => handleEdit(auto)}
                                 >
                                     EDITAR
@@ -502,6 +517,83 @@ export function AdminAutomations() {
                                 {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                 Sim, Excluir
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL DE HISTÓRICO DE AUTOMAÇÃO */}
+            {historyAutomation && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 w-full max-w-3xl mx-4 max-h-[85vh] flex flex-col transform transition-all scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between mb-6 pb-4 border-b">
+                            <div>
+                                <h3 className="text-xl font-black text-[#1e3a5f] uppercase">Histórico de Disparos</h3>
+                                <p className="text-sm text-gray-500">{historyAutomation.name}</p>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => setHistoryAutomation(null)} className="text-gray-400 hover:text-gray-600">
+                                <PowerOff size={18} />
+                            </Button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto pr-2">
+                            {isLoadingStats ? (
+                                <div className="flex justify-center items-center py-20">
+                                    <Loader2 className="animate-spin text-[#d4af37] w-8 h-8" />
+                                </div>
+                            ) : statsData && statsData.length > 0 ? (
+                                <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-xs text-gray-500 bg-gray-50 uppercase font-black border-b border-gray-200">
+                                            <tr>
+                                                <th className="px-6 py-4">Data do Disparo</th>
+                                                <th className="px-6 py-4 text-center">Total Enviado</th>
+                                                <th className="px-6 py-4 text-center">Sucesso</th>
+                                                <th className="px-6 py-4 text-center">Falha</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {statsData.map((stat: any, i: number) => (
+                                                <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                                    <td className="px-6 py-4 font-bold text-[#1e3a5f]">
+                                                        {new Date(stat.date).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center font-bold text-gray-500">
+                                                        {stat.total}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className="inline-flex items-center justify-center px-2 py-1 rounded-md text-green-700 bg-green-50 font-black min-w-[40px]">
+                                                            {stat.success}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className={cn(
+                                                            "inline-flex items-center justify-center px-2 py-1 rounded-md font-black min-w-[40px]",
+                                                            Number(stat.failed) > 0 ? "text-red-700 bg-red-50" : "text-gray-400 bg-gray-100"
+                                                        )}>
+                                                            {stat.failed}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-16 text-center">
+                                    <div className="w-16 h-16 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center mb-4">
+                                        <History size={32} />
+                                    </div>
+                                    <h4 className="text-lg font-bold text-gray-500">Sem histórico</h4>
+                                    <p className="text-gray-400 text-sm max-w-sm">Esta automação ainda não realizou nenhum disparo registrado.</p>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="pt-6 mt-4 border-t flex justify-end">
+                            <Button onClick={() => setHistoryAutomation(null)} className="px-8 font-bold bg-[#1e3a5f] hover:bg-[#162a45] text-white">
+                                Fechar Histórico
+                            </Button>
                         </div>
                     </div>
                 </div>
