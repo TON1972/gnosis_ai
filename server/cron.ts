@@ -96,59 +96,88 @@ async function processSingleAutomation(db: any, automation: any) {
         });
     }
 
-    for (const user of targetUsers) {
-        if (!user.email) continue;
+    const usersToSend: any[] = [];
+    const CHUNK_SIZE = 500;
 
-        // Check last time this automation was sent to this user
-        const [lastLog] = await db.select()
+    for (let i = 0; i < targetUsers.length; i += CHUNK_SIZE) {
+        const userChunk = targetUsers.slice(i, i + CHUNK_SIZE);
+        const validUsers = userChunk.filter((u: any) => u.email);
+        if (validUsers.length === 0) continue;
+
+        const userIds = validUsers.map((u: any) => u.id);
+
+        // Check last time this automation was sent to this chunk of users
+        const logs = await db.select()
             .from(automationLogs)
             .where(and(
                 eq(automationLogs.automationId, automation.id),
-                eq(automationLogs.userId, user.id)
+                inArray(automationLogs.userId, userIds)
             ))
-            .orderBy(desc(automationLogs.sentAt))
-            .limit(1);
+            .orderBy(desc(automationLogs.sentAt));
 
-        // Logic to decide if we should send
-        let shouldSend = false;
-
-        if (!lastLog) {
-            // Never sent before
-            shouldSend = true;
-        } else if (automation.triggerType === 'periodic') {
-            // Check interval
-            const lastSent = new Date(lastLog.sentAt);
-            const hoursSinceLast = (now.getTime() - lastSent.getTime()) / (1000 * 60 * 60);
-
-            if (automation.triggerInterval === 'daily' && hoursSinceLast >= 23) {
-                shouldSend = true;
-            } else if (automation.triggerInterval === 'weekly' && hoursSinceLast >= 24 * 7 - 1) {
-                shouldSend = true;
-            } else if (automation.triggerInterval === 'monthly' && hoursSinceLast >= 24 * 30 - 1) {
-                shouldSend = true;
+        const latestLogMap = new Map();
+        for (const log of logs) {
+            if (!latestLogMap.has(log.userId)) {
+                latestLogMap.set(log.userId, log);
             }
         }
 
-        if (!shouldSend) continue;
+        for (const user of validUsers) {
+            const lastLog = latestLogMap.get(user.id);
+            let shouldSend = false;
 
-        try {
-            await resend.emails.send({
-                from: process.env.EMAIL_FROM || "Gnosis AI <contato@gnosisai.global>",
-                to: user.email,
-                subject: automation.subject,
-                html: generateBaseEmailHtml(automation.content.replace(/{{name}}/g, user.name || "Usuário")),
-            });
+            if (!lastLog) {
+                shouldSend = true;
+            } else if (automation.triggerType === 'periodic') {
+                const lastSent = new Date(lastLog.sentAt);
+                const hoursSinceLast = (now.getTime() - lastSent.getTime()) / (1000 * 60 * 60);
 
-            await db.insert(automationLogs).values({
-                automationId: automation.id,
-                userId: user.id,
-                status: 'sent',
-                sentAt: new Date(),
-            });
+                if (automation.triggerInterval === 'daily' && hoursSinceLast >= 23) {
+                    shouldSend = true;
+                } else if (automation.triggerInterval === 'weekly' && hoursSinceLast >= 24 * 7 - 1) {
+                    shouldSend = true;
+                } else if (automation.triggerInterval === 'monthly' && hoursSinceLast >= 24 * 30 - 1) {
+                    shouldSend = true;
+                }
+            }
 
-            console.log(`[Cron] Sent email for automation ${automation.id} to ${user.email}`);
-        } catch (err) {
-            console.error(`[Cron] Failed to send email to ${user.email}:`, err);
+            if (shouldSend) {
+                usersToSend.push(user);
+            }
+        }
+    }
+
+    console.log(`[Cron] Automation ${automation.id}: ${usersToSend.length} users queued for sending.`);
+
+    const BATCH_SIZE = 25; // Send 25 emails concurrently to avoid rate limits and Vercel timeouts
+    for (let i = 0; i < usersToSend.length; i += BATCH_SIZE) {
+        const batch = usersToSend.slice(i, i + BATCH_SIZE);
+        
+        await Promise.all(batch.map(async (user) => {
+            try {
+                await resend.emails.send({
+                    from: process.env.EMAIL_FROM || "Gnosis AI <contato@gnosisai.global>",
+                    to: user.email,
+                    subject: automation.subject,
+                    html: generateBaseEmailHtml(automation.content.replace(/{{name}}/g, user.name || "Usuário")),
+                });
+
+                await db.insert(automationLogs).values({
+                    automationId: automation.id,
+                    userId: user.id,
+                    status: 'sent',
+                    sentAt: new Date(),
+                });
+
+                console.log(`[Cron] Sent email for automation ${automation.id} to ${user.email}`);
+            } catch (err) {
+                console.error(`[Cron] Failed to send email to ${user.email}:`, err);
+            }
+        }));
+        
+        // Small delay to prevent hitting API rate limits instantly
+        if (i + BATCH_SIZE < usersToSend.length) {
+            await new Promise(res => setTimeout(res, 500));
         }
     }
 }
