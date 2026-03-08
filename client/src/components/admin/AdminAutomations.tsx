@@ -35,6 +35,20 @@ import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { cn } from "@/lib/utils";
 
+// Helpers for BRT timezone handling
+const formatToBRTInput = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const brtDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${brtDate.getFullYear()}-${pad(brtDate.getMonth() + 1)}-${pad(brtDate.getDate())}T${pad(brtDate.getHours())}:${pad(brtDate.getMinutes())}`;
+};
+
+const formatToBRTDisplay = (dateString: string) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+};
+
 export function AdminAutomations() {
     const [view, setView] = useState<'list' | 'form'>('list');
     const [editingAutomation, setEditingAutomation] = useState<any>(null);
@@ -94,7 +108,9 @@ export function AdminAutomations() {
             content: content,
             targetPlans: selectedPlans.join(","),
             isActive: isActive,
-            triggerDate: triggerType === 'specific_date' && triggerDate ? triggerDate : null,
+            triggerDate: triggerType === 'specific_date' && triggerDate ? (
+                new Date(triggerDate.includes(':') && triggerDate.split(':').length === 2 ? triggerDate + ':00-03:00' : triggerDate + '-03:00').toISOString()
+            ) : null,
             triggerInterval: triggerType === 'periodic' ? (triggerInterval as "daily" | "weekly" | "monthly") : null,
         };
 
@@ -111,7 +127,7 @@ export function AdminAutomations() {
         setSubject(auto.subject || "");
         setTriggerType(auto.triggerType);
         setIsActive(auto.isActive);
-        setTriggerDate(auto.triggerDate ? new Date(auto.triggerDate).toISOString().slice(0, 16) : "");
+        setTriggerDate(auto.triggerDate ? formatToBRTInput(auto.triggerDate) : "");
         setTriggerInterval(auto.triggerInterval || "daily");
         setTriggerToolId(auto.triggerType === 'tool_usage' ? String(auto.triggerValue) : "");
         setSelectedPlans(auto.targetPlans ? auto.targetPlans.split(",").filter(Boolean) : []);
@@ -436,7 +452,7 @@ export function AdminAutomations() {
                                             <span className="flex items-center gap-1 underline decoration-[#d4af37]/40 underline-offset-4">Ferramenta: {toolsList?.find((t: any) => t.id === auto.triggerValue)?.displayName || toolsList?.find((t: any) => t.id === auto.triggerValue)?.name || auto.triggerValue}</span>
                                         )}
                                         {auto.triggerType === 'specific_date' && auto.triggerDate && (
-                                            <span className="flex items-center gap-1 underline decoration-[#d4af37]/40 underline-offset-4">Data: {new Date(auto.triggerDate).toLocaleString()}</span>
+                                            <span className="flex items-center gap-1 underline decoration-[#d4af37]/40 underline-offset-4">Data: {formatToBRTDisplay(auto.triggerDate)}</span>
                                         )}
                                         {auto.triggerType === 'periodic' && auto.triggerInterval && (
                                             <span className="flex items-center gap-1 underline decoration-[#d4af37]/40 underline-offset-4">Intervalo: {auto.triggerInterval}</span>
@@ -556,7 +572,7 @@ export function AdminAutomations() {
                                             {statsData.map((stat: any, i: number) => (
                                                 <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                                                     <td className="px-6 py-4 font-bold text-[#1e3a5f]">
-                                                        {new Date(stat.date).toLocaleDateString()}
+                                                        {new Date(stat.date).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                                                     </td>
                                                     <td className="px-6 py-4 text-center font-bold text-gray-500">
                                                         {stat.total}
