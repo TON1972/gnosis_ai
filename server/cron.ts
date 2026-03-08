@@ -149,35 +149,35 @@ async function processSingleAutomation(db: any, automation: any) {
 
     console.log(`[Cron] Automation ${automation.id}: ${usersToSend.length} users queued for sending.`);
 
-    const BATCH_SIZE = 25; // Send 25 emails concurrently to avoid rate limits and Vercel timeouts
+    const BATCH_SIZE = 100; // Resend batch API limit is 100 per request
     for (let i = 0; i < usersToSend.length; i += BATCH_SIZE) {
         const batch = usersToSend.slice(i, i + BATCH_SIZE);
         
-        await Promise.all(batch.map(async (user) => {
-            try {
-                await resend.emails.send({
-                    from: process.env.EMAIL_FROM || "Gnosis AI <contato@gnosisai.global>",
-                    to: user.email,
-                    subject: automation.subject,
-                    html: generateBaseEmailHtml(automation.content.replace(/{{name}}/g, user.name || "Usuário")),
-                });
+        try {
+            const emailData = batch.map(user => ({
+                from: process.env.EMAIL_FROM || "Gnosis AI <contato@gnosisai.global>",
+                to: user.email,
+                subject: automation.subject,
+                html: generateBaseEmailHtml(automation.content.replace(/{{name}}/g, user.name || "Usuário")),
+            }));
 
-                await db.insert(automationLogs).values({
-                    automationId: automation.id,
-                    userId: user.id,
-                    status: 'sent',
-                    sentAt: new Date(),
-                });
+            await resend.batch.send(emailData);
 
-                console.log(`[Cron] Sent email for automation ${automation.id} to ${user.email}`);
-            } catch (err) {
-                console.error(`[Cron] Failed to send email to ${user.email}:`, err);
-            }
-        }));
+            await db.insert(automationLogs).values(batch.map(user => ({
+                automationId: automation.id,
+                userId: user.id,
+                status: 'sent',
+                sentAt: new Date(),
+            })));
+
+            console.log(`[Cron] Sent batch of ${batch.length} emails for automation ${automation.id}`);
+        } catch (err) {
+            console.error(`[Cron] Failed to send email batch for automation ${automation.id}:`, err);
+        }
         
-        // Small delay to prevent hitting API rate limits instantly
+        // Small delay to prevent hitting API rate limits instantly (2 requests per second)
         if (i + BATCH_SIZE < usersToSend.length) {
-            await new Promise(res => setTimeout(res, 500));
+            await new Promise(res => setTimeout(res, 1000));
         }
     }
 }
