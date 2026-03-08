@@ -7,11 +7,11 @@ export const automationSchema = z.object({
     name: z.string().min(1, "Nome obrigatório"),
     triggerType: z.enum(['bulk', 'subscription_expiring', 'low_credits', 'inactive_user', 'specific_date', 'periodic', 'tool_usage']),
     triggerValue: z.number().optional(),
-    triggerDate: z.string().datetime().optional().nullable().transform(val => val ? new Date(val) : null),
+    triggerDate: z.string().optional().nullable().transform(val => val ? new Date(val) : null),
     triggerInterval: z.enum(['daily', 'weekly', 'monthly']).optional().nullable(),
     subject: z.string().min(1, "Assunto obrigatório"),
     content: z.string().min(1, "Conteúdo obrigatório"),
-    targetPlans: z.string().optional(),
+    targetPlans: z.string().optional().nullable(),
     isActive: z.boolean().default(true),
 });
 
