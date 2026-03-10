@@ -563,16 +563,32 @@ export function AdminAutomations() {
                                         <thead className="text-xs text-gray-500 bg-gray-50 uppercase font-black border-b border-gray-200">
                                             <tr>
                                                 <th className="px-6 py-4">Data do Disparo</th>
-                                                <th className="px-6 py-4 text-center">Total Enviado</th>
-                                                <th className="px-6 py-4 text-center">Sucesso</th>
-                                                <th className="px-6 py-4 text-center">Falha</th>
+                                                <th className="px-6 py-4">Assunto</th>
+                                                <th className="px-6 py-4">Gatilho</th>
+                                                <th className="px-6 py-4 text-center">Total</th>
+                                                <th className="px-6 py-4 text-center text-green-600">Sucesso</th>
+                                                <th className="px-6 py-4 text-center text-red-600">Falha</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {statsData.map((stat: any, i: number) => (
                                                 <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                                                     <td className="px-6 py-4 font-bold text-[#1e3a5f]">
-                                                        {new Date(stat.date).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                                                        {stat.date?.split('-').reverse().join('/')}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-xs font-medium text-gray-600 max-w-[200px] truncate" title={stat.subject}>
+                                                        {stat.subject}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-[10px] text-gray-400 font-bold uppercase">
+                                                        <div className="flex flex-col">
+                                                            <span>{stat.triggerType}</span>
+                                                            {(stat.triggerType !== 'bulk' && stat.triggerType !== 'specific_date' && stat.triggerType !== 'periodic' && stat.triggerType !== 'tool_usage') && (
+                                                                <span className="text-[#d4af37]">V: {stat.triggerValue}</span>
+                                                            )}
+                                                            {stat.triggerType === 'tool_usage' && (
+                                                                <span className="text-[#d4af37]">ID: {stat.triggerValue}</span>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-center font-bold text-gray-500">
                                                         {stat.total}

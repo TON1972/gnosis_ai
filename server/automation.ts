@@ -66,17 +66,21 @@ export async function getAutomationStats(ctx: { user: { role: string } }, input:
 
     const { sql } = await import("drizzle-orm");
 
-    // Agrupar por dia, contanto sucesso, falhas e o total
+    // Agrupar por dia (fuso Brasília) e detalhes da automação, contanto sucesso, falhas e o total
     const stats = await db.execute(sql`
         SELECT 
-            DATE("sentAt") as date,
-            COUNT(*) as total,
-            SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as success,
-            SUM(CASE WHEN status != 'sent' THEN 1 ELSE 0 END) as failed
-        FROM automation_logs
-        WHERE "automationId" = ${input.id}
-        GROUP BY DATE("sentAt")
-        ORDER BY DATE("sentAt") DESC
+            DATE(l."sentAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::text as date,
+            a.subject,
+            a."triggerType",
+            a."triggerValue",
+            COUNT(l.id) as total,
+            SUM(CASE WHEN l.status = 'sent' THEN 1 ELSE 0 END) as success,
+            SUM(CASE WHEN l.status != 'sent' THEN 1 ELSE 0 END) as failed
+        FROM automation_logs l
+        JOIN email_automations a ON l."automationId" = a.id
+        WHERE l."automationId" = ${input.id}
+        GROUP BY DATE(l."sentAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo'), a.subject, a."triggerType", a."triggerValue"
+        ORDER BY date DESC
     `);
 
     return stats.rows || [];
