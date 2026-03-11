@@ -62,9 +62,17 @@ export default function Dashboard() {
   // ✅ Categorias dinâmicas baseadas na coluna 'category' do banco
   const categories = ["Todos", ...Array.from(new Set(allTools.map(t => t.category).filter(Boolean)))];
 
-  const filteredTools = allTools.filter(tool =>
-    selectedCategory === "Todos" || tool.category === selectedCategory
-  );
+  const filteredTools = allTools
+    .filter(tool => selectedCategory === "Todos" || tool.category === selectedCategory)
+    .sort((a, b) => {
+      const aAllowed = allowedToolIds.has(a.id);
+      const bAllowed = allowedToolIds.has(b.id);
+      
+      if (aAllowed && !bAllowed) return -1;
+      if (!aAllowed && bAllowed) return 1;
+      
+      return (a.displayName || "").localeCompare(b.displayName || "");
+    });
 
   const handleToolClick = (toolId: number) => {
     if (!allowedToolIds.has(toolId)) {
