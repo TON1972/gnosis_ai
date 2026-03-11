@@ -18,11 +18,7 @@ export default function UpgradeReminderModal({ open, onClose }: UpgradeReminderM
 
     const handleUpgrade = () => {
         onClose();
-        setLocation("/dashboard");
-        setTimeout(() => {
-            const plansSection = document.getElementById("planos");
-            plansSection?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
+        setLocation("/planos");
     };
 
     return (
@@ -40,35 +36,23 @@ export default function UpgradeReminderModal({ open, onClose }: UpgradeReminderM
                     <DialogHeader className="pt-2 sm:pt-0">
                         <DialogTitle className="text-center">
                             <span className="block text-xs sm:text-2xl font-bold text-white mb-1 sm:mb-2 uppercase tracking-wide">
-                                Oferta estendida excepcionalmente
+                                OFERTA ESTENDIDA!!!
                             </span>
                             <span className="block text-lg sm:text-4xl font-extrabold text-[#d4af37] bg-white/10 py-1 sm:py-2 px-3 sm:px-4 rounded-lg inline-block transform -rotate-1 shadow-lg backdrop-blur-sm">
-                                "até 10/03"
+                                "ATÉ 15/03"
                             </span>
                         </DialogTitle>
                     </DialogHeader>
 
-                    <div className="space-y-4 sm:space-y-6 bg-white/10 rounded-xl p-4 sm:p-6">
-                        <div className="space-y-3 sm:space-y-4">
-                            <div className="flex items-start gap-3 sm:gap-4">
-                                <CheckCircle2 className="w-5 h-5 sm:w-8 sm:h-8 text-[#d4af37] flex-shrink-0 mt-0.5 sm:mt-1" />
-                                <div>
-                                    <h3 className="font-bold text-sm sm:text-xl text-[#d4af37] mb-0.5 sm:mb-1">FREE</h3>
-                                    <p className="text-xs sm:text-lg text-gray-200 leading-tight">
-                                        De 6 para <span className="font-bold text-white">todas as 20 ferramentas liberadas!</span>
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 sm:gap-4">
-                                <CheckCircle2 className="w-5 h-5 sm:w-8 sm:h-8 text-[#d4af37] flex-shrink-0 mt-0.5 sm:mt-1" />
-                                <div>
-                                    <h3 className="font-bold text-sm sm:text-xl text-[#d4af37] mb-0.5 sm:mb-1">Bônus de Créditos</h3>
-                                    <p className="text-xs sm:text-lg text-gray-200 leading-tight">
-                                        Créditos Iniciais aumentados de 1.000 para <span className="font-bold text-white">1.500</span> e diários de 50 para <span className="font-bold text-white">100</span>
-                                    </p>
-                                </div>
-                            </div>
+                    <div className="space-y-4 sm:space-y-6 bg-white/10 rounded-xl p-4 sm:p-6 text-center">
+                        <p className="text-lg sm:text-2xl font-bold text-white leading-relaxed">
+                            Valores e condições de Pagamento Incríveis por tempo limitado!!
+                        </p>
+                        <div className="flex items-start justify-center gap-3 sm:gap-4 mt-4 text-left">
+                            <CheckCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-[#d4af37] flex-shrink-0 mt-0.5" />
+                            <p className="text-base sm:text-xl text-gray-200 leading-tight">
+                                Quase <span className="font-bold text-[#d4af37] text-lg sm:text-2xl">50% de desconto</span> nos Planos Anuais e ainda podendo pagar em <span className="font-bold text-white">12x sem Juros!</span>
+                            </p>
                         </div>
                     </div>
 
@@ -86,7 +70,7 @@ export default function UpgradeReminderModal({ open, onClose }: UpgradeReminderM
                             onClick={handleUpgrade}
                             className="w-full bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B] font-bold py-3 sm:py-6 text-base sm:text-xl rounded-xl shadow-lg transform transition hover:scale-[1.02]"
                         >
-                            APROVEITAR AGORA
+                            VER PLANOS E APROVEITAR
                         </Button>
                         <p className="text-center mt-3 sm:mt-4">
                             <button
