@@ -75,7 +75,8 @@ export async function getAutomationStats(ctx: { user: { role: string } }, input:
             a."triggerValue",
             COUNT(l.id) as total,
             SUM(CASE WHEN l.status = 'sent' THEN 1 ELSE 0 END) as success,
-            SUM(CASE WHEN l.status != 'sent' THEN 1 ELSE 0 END) as failed
+            SUM(CASE WHEN l.status != 'sent' THEN 1 ELSE 0 END) as failed,
+            SUM(CASE WHEN l."isOpened" THEN 1 ELSE 0 END) as opened
         FROM automation_logs l
         JOIN email_automations a ON l."automationId" = a.id
         WHERE l."automationId" = ${input.id}

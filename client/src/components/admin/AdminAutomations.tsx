@@ -566,6 +566,7 @@ export function AdminAutomations() {
                                                 <th className="px-6 py-4">Assunto</th>
                                                 <th className="px-6 py-4">Gatilho</th>
                                                 <th className="px-6 py-4 text-center">Total</th>
+                                                <th className="px-6 py-4 text-center text-blue-600">Abertos</th>
                                                 <th className="px-6 py-4 text-center text-green-600">Sucesso</th>
                                                 <th className="px-6 py-4 text-center text-red-600">Falha</th>
                                             </tr>
@@ -592,6 +593,11 @@ export function AdminAutomations() {
                                                     </td>
                                                     <td className="px-6 py-4 text-center font-bold text-gray-500">
                                                         {stat.total}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className="inline-flex items-center justify-center px-2 py-1 rounded-md text-blue-700 bg-blue-50 font-black min-w-[40px]">
+                                                            {stat.opened || 0}
+                                                        </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-center">
                                                         <span className="inline-flex items-center justify-center px-2 py-1 rounded-md text-green-700 bg-green-50 font-black min-w-[40px]">

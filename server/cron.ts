@@ -154,21 +154,32 @@ async function processSingleAutomation(db: any, automation: any) {
         const batch = usersToSend.slice(i, i + BATCH_SIZE);
         
         try {
+            // 1. Insert logs first to get IDs for tagging
+            const insertedLogs = await db.insert(automationLogs).values(batch.map(user => ({
+                automationId: automation.id,
+                userId: user.id,
+                status: 'sending',
+                sentAt: new Date(),
+            }))).returning();
+
+            // Create a map of userId -> logId
+            const userLogMap = new Map();
+            insertedLogs.forEach((log: any) => userLogMap.set(log.userId, log.id));
+
             const emailData = batch.map(user => ({
                 from: process.env.EMAIL_FROM || "Gnosis AI <contato@gnosisai.global>",
                 to: user.email,
                 subject: automation.subject,
                 html: generateBaseEmailHtml(automation.content.replace(/{{name}}/g, user.name || "Usuário")),
+                tags: [{ name: 'log_id', value: String(userLogMap.get(user.id)) }],
             }));
 
             await resend.batch.send(emailData);
 
-            await db.insert(automationLogs).values(batch.map(user => ({
-                automationId: automation.id,
-                userId: user.id,
-                status: 'sent',
-                sentAt: new Date(),
-            })));
+            // 2. Update status to sent
+            await db.update(automationLogs)
+                .set({ status: 'sent' })
+                .where(inArray(automationLogs.id, insertedLogs.map((l: any) => l.id)));
 
             console.log(`[Cron] Sent batch of ${batch.length} emails for automation ${automation.id}`);
         } catch (err) {

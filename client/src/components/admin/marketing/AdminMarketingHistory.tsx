@@ -29,6 +29,8 @@ export function AdminMarketingHistory() {
                                 <th className="p-3 font-bold">Público Atingido</th>
                                 <th className="p-3 font-bold">Grupo / Filtros Usados</th>
                                 <th className="p-3 font-bold">Data de Envio</th>
+                                <th className="p-3 font-bold text-center">Abertos</th>
+                                <th className="p-3 font-bold text-center">Taxa</th>
                                 <th className="p-3 rounded-tr-lg font-bold">Status</th>
                             </tr>
                         </thead>
@@ -48,6 +50,14 @@ export function AdminMarketingHistory() {
                                     </td>
                                     <td className="p-3">
                                         {new Date(log.sentAt).toLocaleString('pt-BR')}
+                                    </td>
+                                    <td className="p-3 text-center font-bold text-blue-600">
+                                        {(log as any).openedCount || 0}
+                                    </td>
+                                    <td className="p-3 text-center font-medium">
+                                        {log.audienceSize > 0 
+                                            ? `${Math.round(((log as any).openedCount || 0) / log.audienceSize * 100)}%`
+                                            : '0%'}
                                     </td>
                                     <td className="p-3">
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${log.status === 'sent' ? 'bg-green-100 text-green-700' :

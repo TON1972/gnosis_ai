@@ -278,6 +278,7 @@ export const sentEmails = pgTable("sent_emails", {
   sentAt: timestamp("sentAt").defaultNow().notNull(),
   sentBy: integer("sentBy").references(() => users.id),
   groupName: text("groupName"), // Nome do grupo usado, se houver
+  openedCount: integer("openedCount").default(0),
 });
 
 export const marketingGroups = pgTable("marketing_groups", {
@@ -313,4 +314,5 @@ export const automationLogs = pgTable("automation_logs", {
   userId: integer("userId").notNull(),
   sentAt: timestamp("sentAt").defaultNow().notNull(),
   status: text("status").default("sent"),
+  isOpened: boolean("isOpened").default(false),
 });

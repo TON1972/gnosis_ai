@@ -124,6 +124,20 @@ export async function sendMarketingEmail(ctx: { user: { id: number, role: string
         throw new Error("Nenhum usuário encontrado para estes filtros.");
     }
 
+    // 3. Log into database first to get an ID for tagging
+    const [sentLog] = await db.insert(sentEmails).values({
+        subject: input.subject,
+        content: input.content,
+        audienceSize: 0, // Will update after sending
+        targetPlans: input.targetPlans,
+        targetRoles: input.targetRoles,
+        targetSubscriptions: input.targetSubscriptions,
+        targetEmails: input.targetEmails,
+        status: "sending",
+        sentBy: ctx.user.id,
+        groupName: input.groupName,
+    }).returning();
+
     // 2. Send emails using Resend batches (max 100 per batch usually)
     const batchSize = 100;
     let sentCount = 0;
@@ -139,6 +153,7 @@ export async function sendMarketingEmail(ctx: { user: { id: number, role: string
             to: user.email,
             subject: input.subject,
             html: generateBaseEmailHtml(input.content.replace(/{{name}}/g, user.name || "Usuário")),
+            tags: [{ name: 'campaign_id', value: String(sentLog.id) }],
         }));
 
         try {
@@ -155,19 +170,13 @@ export async function sendMarketingEmail(ctx: { user: { id: number, role: string
         }
     }
 
-    // 3. Log into database
-    await db.insert(sentEmails).values({
-        subject: input.subject,
-        content: input.content,
-        audienceSize: sentCount,
-        targetPlans: input.targetPlans,
-        targetRoles: input.targetRoles,
-        targetSubscriptions: input.targetSubscriptions,
-        targetEmails: input.targetEmails,
-        status: errorCount > 0 ? (sentCount > 0 ? "partial" : "failed") : "sent",
-        sentBy: ctx.user.id,
-        groupName: input.groupName,
-    });
+    // 4. Update status in database
+    await db.update(sentEmails)
+        .set({
+            audienceSize: sentCount,
+            status: errorCount > 0 ? (sentCount > 0 ? "partial" : "failed") : "sent",
+        })
+        .where(eq(sentEmails.id, sentLog.id));
 
     return {
         success: true,
@@ -196,6 +205,7 @@ export async function getSentEmailsList(ctx: { user: { role: string } }) {
             status: sentEmails.status,
             sentAt: sentEmails.sentAt,
             groupName: sentEmails.groupName,
+            openedCount: sentEmails.openedCount,
         })
         .from(sentEmails)
         .orderBy(desc(sentEmails.sentAt));

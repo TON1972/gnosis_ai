@@ -16,6 +16,7 @@ import { createContext } from "./context.js";
 import { serveStatic, setupVite } from "./vite.js";
 import { handleMercadoPagoWebhook } from "./webhookHandler.js";
 import { handleStripeWebhook } from "../stripeWebhook.js";
+import { handleResendWebhook } from "../resendWebhook.js";
 import { COOKIE_NAME } from "../../shared/const.js";
 import { getSessionCookieOptions } from "./cookies.js";
 
@@ -233,6 +234,7 @@ app.post("/api/login", async (req, res) => {
 
 
 app.post("/api/webhooks/mercadopago", handleMercadoPagoWebhook);
+app.post("/api/webhooks/resend", handleResendWebhook);
 
 app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
 
