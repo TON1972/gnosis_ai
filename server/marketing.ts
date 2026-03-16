@@ -101,7 +101,7 @@ export async function getTargetAudience(input: z.infer<typeof audienceFilterSche
 }
 
 export async function sendMarketingEmail(ctx: { user: { id: number, role: string } }, input: z.infer<typeof marketingEmailSchema>) {
-    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin' && ctx.user.role !== 'editor') {
         throw new Error('Acesso negado');
     }
 
@@ -186,15 +186,15 @@ export async function sendMarketingEmail(ctx: { user: { id: number, role: string
     };
 }
 
-export async function getSentEmailsList(ctx: { user: { role: string } }) {
-    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+export async function getSentEmailsList(ctx: { user: { id: number, role: string } }) {
+    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin' && ctx.user.role !== 'editor') {
         throw new Error('Acesso negado');
     }
 
     const db = await getDb();
     if (!db) return [];
 
-    const result = await db
+    let queryBuilder = db
         .select({
             id: sentEmails.id,
             subject: sentEmails.subject,
@@ -208,10 +208,13 @@ export async function getSentEmailsList(ctx: { user: { role: string } }) {
             groupName: sentEmails.groupName,
             openedCount: sentEmails.openedCount,
         })
-        .from(sentEmails)
-        .orderBy(desc(sentEmails.sentAt));
+        .from(sentEmails);
 
-    return result;
+    if (ctx.user.role === 'editor') {
+        queryBuilder = queryBuilder.where(eq(sentEmails.sentBy, ctx.user.id)) as any;
+    }
+
+    return queryBuilder.orderBy(desc(sentEmails.sentAt));
 }
 
 export const marketingGroupSchema = z.object({
@@ -223,7 +226,7 @@ export const marketingGroupSchema = z.object({
 });
 
 export async function createMarketingGroup(ctx: { user: { id: number, role: string } }, input: z.infer<typeof marketingGroupSchema>) {
-    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin' && ctx.user.role !== 'editor') {
         throw new Error('Acesso negado');
     }
     const db = await getDb();
@@ -241,22 +244,33 @@ export async function createMarketingGroup(ctx: { user: { id: number, role: stri
     return { success: true, group };
 }
 
-export async function getMarketingGroups(ctx: { user: { role: string } }) {
-    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+export async function getMarketingGroups(ctx: { user: { id: number, role: string } }) {
+    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin' && ctx.user.role !== 'editor') {
         throw new Error('Acesso negado');
     }
     const db = await getDb();
     if (!db) return [];
 
-    return db.select().from(marketingGroups).orderBy(desc(marketingGroups.createdAt));
+    let queryBuilder = db.select().from(marketingGroups);
+
+    if (ctx.user.role === 'editor') {
+        queryBuilder = queryBuilder.where(eq(marketingGroups.createdBy, ctx.user.id)) as any;
+    }
+
+    return queryBuilder.orderBy(desc(marketingGroups.createdAt));
 }
 
-export async function deleteMarketingGroup(ctx: { user: { role: string } }, input: { id: number }) {
-    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+export async function deleteMarketingGroup(ctx: { user: { id: number, role: string } }, input: { id: number }) {
+    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin' && ctx.user.role !== 'editor') {
         throw new Error('Acesso negado');
     }
     const db = await getDb();
     if (!db) throw new Error("Banco indisponível");
+
+    if (ctx.user.role === 'editor') {
+        const [group] = await db.select().from(marketingGroups).where(eq(marketingGroups.id, input.id));
+        if (group && group.createdBy !== ctx.user.id) throw new Error("Acesso negado - Não é o dono");
+    }
 
     await db.delete(marketingGroups).where(eq(marketingGroups.id, input.id));
     return { success: true };

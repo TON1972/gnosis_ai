@@ -109,7 +109,7 @@ export default function Dashboard() {
                 </Button>
               </div>
 
-              {user && (user.role === 'admin' || user.role === 'super_admin') && (
+              {user && (user.role === 'admin' || user.role === 'super_admin' || user.role === 'editor') && (
                 <Link href="/admin">
                   <span className="hidden md:block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
                     Painel Admin

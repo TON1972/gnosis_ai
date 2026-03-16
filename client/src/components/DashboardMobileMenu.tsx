@@ -13,7 +13,7 @@ export default function DashboardMobileMenu({ user, onLogout }: DashboardMobileM
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
 
-  const isAdmin = user && (user.role === 'admin' || user.role === 'super_admin');
+  const isAdmin = user && (user.role === 'admin' || user.role === 'super_admin' || user.role === 'editor');
 
   return (
     <>

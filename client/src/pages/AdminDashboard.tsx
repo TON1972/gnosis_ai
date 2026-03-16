@@ -23,8 +23,12 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin' || isSuperAdmin;
+  const isEditor = user?.role === 'editor';
+
   // ✅ Estados de Navegação
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(isEditor ? 'marketing' : 'overview');
   const [period, setPeriod] = useState<'all' | '7d' | '30d' | '90d'>('all');
 
   // Helper para calcular data inicial (estável para evitar loops de re-fetch)
@@ -39,21 +43,25 @@ export default function AdminDashboard() {
   };
 
   // Queries Globais
-  const { data: stats, isLoading: ldStats } = trpc.admin.userStats.useQuery();
-  const { data: planDistribution, isLoading: ldPlanDist } = trpc.admin.usersByPlan.useQuery();
-  const { data: stripeFinancial, isLoading: ldStripe } = trpc.admin.stripeFinancialData.useQuery();
+  const { data: stats, isLoading: ldStats } = trpc.admin.userStats.useQuery(undefined, {
+    enabled: isAdmin
+  });
+  const { data: planDistribution, isLoading: ldPlanDist } = trpc.admin.usersByPlan.useQuery(undefined, {
+    enabled: isAdmin
+  });
+  const { data: stripeFinancial, isLoading: ldStripe } = trpc.admin.stripeFinancialData.useQuery(undefined, {
+    enabled: isAdmin
+  });
   const { data: toolStats, isLoading: ldToolStats } = trpc.admin.toolUsageStats.useQuery({
     startDate: getStartDate(period),
   }, {
-    enabled: activeTab === 'overview'
+    enabled: activeTab === 'overview' && isAdmin
   });
 
   const handleLogout = () => {
     logout();
     setLocation("/");
   };
-
-  const isSuperAdmin = user?.role === 'super_admin';
 
   // ✅ Títulos amigáveis para o Header
   const tabTitles: Record<string, string> = {
@@ -113,7 +121,7 @@ export default function AdminDashboard() {
 
         {/* ÁREA DE CONTEÚDO DINÂMICO */}
         <main className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-[#f8fafc]">
-          {ldStats || ldPlanDist || ldStripe || ldToolStats ? (
+          {(isAdmin && (ldStats || ldPlanDist || ldStripe || ldToolStats)) ? (
             <div className="flex flex-col items-center justify-center py-20 text-[#d4af37]">
               <Loader2 className="animate-spin w-12 h-12 mb-4" />
               <p className="text-[#1e3a5f] font-bold animate-pulse">Sincronizando Dados...</p>
@@ -176,10 +184,10 @@ export default function AdminDashboard() {
               {activeTab === 'admins' && isSuperAdmin && <AdminManagement />}
 
               {/* ✅ ABA: EMAIL MARKETING */}
-              {activeTab === 'marketing' && isSuperAdmin && <AdminMarketing />}
+              {activeTab === 'marketing' && (isAdmin || isEditor) && <AdminMarketing />}
 
               {/* ✅ ABA: AUTOMAÇÕES DE EMAIL */}
-              {activeTab === 'automations' && isSuperAdmin && <AdminAutomations />}
+              {activeTab === 'automations' && (isAdmin || isEditor) && <AdminAutomations />}
 
               {/* ✅ ABA: GERENCIAR CATÁLOGO */}
               {activeTab === 'tools-manager' && <AdminToolsManager />}

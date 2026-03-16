@@ -15,16 +15,18 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, activeTab, setActiveTab, role, logout, setLocation }: SidebarProps) {
   const isSuperAdmin = role === 'super_admin';
+  const isAdmin = role === 'admin' || isSuperAdmin;
+  const isEditor = role === 'editor';
 
   const menuItems = [
-    { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
-    { id: 'financial', label: 'Financeiro', icon: DollarSign },
-    { id: 'user-list', label: 'Usuários', icon: Users },
-    { id: 'support', label: 'Tickets Suporte', icon: Mail },
-    { id: 'marketing', label: 'Email MKT', icon: Send, superOnly: true },
-    { id: 'automations', label: 'Automações', icon: Zap, superOnly: true },
+    { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard, adminOnly: true },
+    { id: 'financial', label: 'Financeiro', icon: DollarSign, adminOnly: true },
+    { id: 'user-list', label: 'Usuários', icon: Users, adminOnly: true },
+    { id: 'support', label: 'Tickets Suporte', icon: Mail, adminOnly: true },
+    { id: 'marketing', label: 'Email MKT', icon: Send, roles: ['super_admin', 'admin', 'editor'] },
+    { id: 'automations', label: 'Automações', icon: Zap, roles: ['super_admin', 'admin', 'editor'] },
     { id: 'tools-manager', label: 'Gerenciar Catálogo', icon: Wrench, superOnly: true },
-    { id: 'plans-manager', label: 'Gerenciar Planos', icon: DollarSign, superOnly: true }, // ✅ Tab Interna
+    { id: 'plans-manager', label: 'Gerenciar Planos', icon: DollarSign, superOnly: true }, 
     { id: 'admins', label: 'Equipe Admin', icon: ShieldCheck, superOnly: true },
     { id: 'video', label: 'Vídeo Destaque', icon: Video, superOnly: true },
   ];
@@ -39,8 +41,10 @@ export function Sidebar({ isOpen, activeTab, setActiveTab, role, logout, setLoca
 
       {/* NAV PRINCIPAL */}
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto custom-scrollbar">
-        {menuItems.map((item) => {
+        {menuItems.map((item: any) => {
           if (item.superOnly && !isSuperAdmin) return null;
+          if (item.adminOnly && !isAdmin) return null;
+          if (item.roles && !item.roles.includes(role)) return null;
           return (
             <button
               key={item.id}

@@ -13,7 +13,7 @@ import {
 /**
  * Enums para PostgreSQL
  */
-export const roleEnum = pgEnum("role", ["user", "admin", "super_admin"]);
+export const roleEnum = pgEnum("role", ["user", "admin", "super_admin", "editor"]);
 export const subStatusEnum = pgEnum("status", ["active", "cancelled", "expired", "grace_period", "blocked"]);
 export const billingPeriodEnum = pgEnum("billingPeriod", ["monthly", "yearly"]);
 export const transactionTypeEnum = pgEnum("type", ["initial", "daily", "bonus", "usage"]);
@@ -304,6 +304,7 @@ export const emailAutomations = pgTable("email_automations", {
   content: text("content").notNull(),
   isActive: boolean("isActive").default(true),
   targetPlans: text("targetPlans"), // Comma separated plan IDs
+  createdBy: integer("createdBy").references(() => users.id),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });

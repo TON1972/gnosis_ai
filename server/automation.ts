@@ -16,12 +16,13 @@ export const automationSchema = z.object({
 });
 
 export async function createAutomation(ctx: { user: { id: number, role: string } }, input: z.infer<typeof automationSchema>) {
-    if (ctx.user.role !== 'super_admin') throw new Error("Acesso negado");
+    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin' && ctx.user.role !== 'editor') throw new Error("Acesso negado");
     const db = await getDb();
     if (!db) throw new Error("Banco indisponível");
 
     const [automation] = await db.insert(emailAutomations).values({
         ...input,
+        createdBy: ctx.user.id,
         updatedAt: new Date(),
     }).returning();
 
@@ -29,11 +30,17 @@ export async function createAutomation(ctx: { user: { id: number, role: string }
 }
 
 export async function updateAutomation(ctx: { user: { id: number, role: string } }, input: z.infer<typeof automationSchema> & { id: number }) {
-    if (ctx.user.role !== 'super_admin') throw new Error("Acesso negado");
+    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin' && ctx.user.role !== 'editor') throw new Error("Acesso negado");
     const db = await getDb();
     if (!db) throw new Error("Banco indisponível");
 
     const { id, ...data } = input;
+
+    if (ctx.user.role === 'editor') {
+        const [existing] = await db.select().from(emailAutomations).where(eq(emailAutomations.id, id));
+        if (existing && existing.createdBy !== ctx.user.id) throw new Error("Acesso negado - Não é o dono");
+    }
+
     const [automation] = await db.update(emailAutomations)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(emailAutomations.id, id))
@@ -43,26 +50,42 @@ export async function updateAutomation(ctx: { user: { id: number, role: string }
 }
 
 export async function deleteAutomation(ctx: { user: { id: number, role: string } }, input: { id: number }) {
-    if (ctx.user.role !== 'super_admin') throw new Error("Acesso negado");
+    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin' && ctx.user.role !== 'editor') throw new Error("Acesso negado");
     const db = await getDb();
     if (!db) throw new Error("Banco indisponível");
+
+    if (ctx.user.role === 'editor') {
+        const [existing] = await db.select().from(emailAutomations).where(eq(emailAutomations.id, input.id));
+        if (existing && existing.createdBy !== ctx.user.id) throw new Error("Acesso negado - Não é o dono");
+    }
 
     await db.delete(emailAutomations).where(eq(emailAutomations.id, input.id));
     return { success: true };
 }
 
-export async function listAutomations(ctx: { user: { role: string } }) {
-    if (ctx.user.role !== 'super_admin') throw new Error("Acesso negado");
+export async function listAutomations(ctx: { user: { id: number, role: string } }) {
+    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin' && ctx.user.role !== 'editor') throw new Error("Acesso negado");
     const db = await getDb();
     if (!db) return [];
 
-    return db.select().from(emailAutomations).orderBy(desc(emailAutomations.createdAt));
+    let queryBuilder = db.select().from(emailAutomations);
+
+    if (ctx.user.role === 'editor') {
+        queryBuilder = queryBuilder.where(eq(emailAutomations.createdBy, ctx.user.id)) as any;
+    }
+
+    return queryBuilder.orderBy(desc(emailAutomations.createdAt));
 }
 
-export async function getAutomationStats(ctx: { user: { role: string } }, input: { id: number }) {
-    if (ctx.user.role !== 'super_admin') throw new Error("Acesso negado");
+export async function getAutomationStats(ctx: { user: { id: number, role: string } }, input: { id: number }) {
+    if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin' && ctx.user.role !== 'editor') throw new Error("Acesso negado");
     const db = await getDb();
     if (!db) return [];
+
+    if (ctx.user.role === 'editor') {
+        const [existing] = await db.select().from(emailAutomations).where(eq(emailAutomations.id, input.id));
+        if (existing && existing.createdBy !== ctx.user.id) throw new Error("Acesso negado - Não é o dono");
+    }
 
     const { sql } = await import("drizzle-orm");
 
