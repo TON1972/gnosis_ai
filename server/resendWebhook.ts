@@ -14,8 +14,18 @@ export async function handleResendWebhook(req: ExpressRequest, res: ExpressRespo
             const db = await getDb();
             if (!db) return res.status(500).send("Database unavailable");
 
-            const tags = body.data.tags || {};
+            const rawTags = body.data?.tags;
+            const tags: Record<string, string> = {};
             
+            if (Array.isArray(rawTags)) {
+                rawTags.forEach(tag => {
+                    if (tag.name && tag.value) {
+                        tags[tag.name] = tag.value;
+                    }
+                });
+            } else if (typeof rawTags === 'object' && rawTags !== null) {
+                Object.assign(tags, rawTags);
+            }
             // Handle bulk/marketing emails
             if (tags.campaign_id) {
                 const campaignId = Number(tags.campaign_id);

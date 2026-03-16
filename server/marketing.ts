@@ -153,6 +153,7 @@ export async function sendMarketingEmail(ctx: { user: { id: number, role: string
             to: user.email,
             subject: input.subject,
             html: generateBaseEmailHtml(input.content.replace(/{{name}}/g, user.name || "Usuário")),
+            track_opens: true,
             tags: [{ name: 'campaign_id', value: String(sentLog.id) }],
         }));
 

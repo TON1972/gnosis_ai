@@ -171,6 +171,7 @@ async function processSingleAutomation(db: any, automation: any) {
                 to: user.email,
                 subject: automation.subject,
                 html: generateBaseEmailHtml(automation.content.replace(/{{name}}/g, user.name || "Usuário")),
+                track_opens: true,
                 tags: [{ name: 'log_id', value: String(userLogMap.get(user.id)) }],
             }));
 
