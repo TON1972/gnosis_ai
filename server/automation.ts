@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getDb } from "./db.js";
-import { emailAutomations, automationLogs } from "../drizzle/schema.js";
+import { emailAutomations, automationLogs, users } from "../drizzle/schema.js";
 import { eq, desc } from "drizzle-orm";
 
 export const automationSchema = z.object({
@@ -68,7 +68,24 @@ export async function listAutomations(ctx: { user: { id: number, role: string } 
     const db = await getDb();
     if (!db) return [];
 
-    let queryBuilder = db.select().from(emailAutomations);
+    let queryBuilder = db
+        .select({
+            id: emailAutomations.id,
+            name: emailAutomations.name,
+            triggerType: emailAutomations.triggerType,
+            triggerValue: emailAutomations.triggerValue,
+            triggerDate: emailAutomations.triggerDate,
+            triggerInterval: emailAutomations.triggerInterval,
+            subject: emailAutomations.subject,
+            content: emailAutomations.content,
+            targetPlans: emailAutomations.targetPlans,
+            isActive: emailAutomations.isActive,
+            createdBy: emailAutomations.createdBy,
+            createdAt: emailAutomations.createdAt,
+            creatorRole: users.role,
+        })
+        .from(emailAutomations)
+        .leftJoin(users, eq(emailAutomations.createdBy, users.id));
 
     if (ctx.user.role === 'editor') {
         queryBuilder = queryBuilder.where(eq(emailAutomations.createdBy, ctx.user.id)) as any;

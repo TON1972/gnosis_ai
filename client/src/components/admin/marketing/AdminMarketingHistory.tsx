@@ -37,7 +37,16 @@ export function AdminMarketingHistory() {
                         <tbody>
                             {logs.map((log) => (
                                 <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                    <td className="p-3 font-medium text-[#1e3a5f]">{log.subject}</td>
+                                    <td className="p-3 font-medium text-[#1e3a5f]">
+                                        <div className="flex flex-col gap-1">
+                                            {log.subject}
+                                            {log.creatorRole === 'editor' && (
+                                                <span className="w-max px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black uppercase rounded shadow-sm border border-amber-200">
+                                                    Criado por Editor
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="p-3 font-bold text-center">{log.audienceSize}</td>
                                     <td className="p-3 text-xs text-gray-400">
                                         {log.groupName ? (

@@ -207,8 +207,10 @@ export async function getSentEmailsList(ctx: { user: { id: number, role: string 
             sentAt: sentEmails.sentAt,
             groupName: sentEmails.groupName,
             openedCount: sentEmails.openedCount,
+            creatorRole: users.role,
         })
-        .from(sentEmails);
+        .from(sentEmails)
+        .leftJoin(users, eq(sentEmails.sentBy, users.id));
 
     if (ctx.user.role === 'editor') {
         queryBuilder = queryBuilder.where(eq(sentEmails.sentBy, ctx.user.id)) as any;
@@ -251,7 +253,20 @@ export async function getMarketingGroups(ctx: { user: { id: number, role: string
     const db = await getDb();
     if (!db) return [];
 
-    let queryBuilder = db.select().from(marketingGroups);
+    let queryBuilder = db
+        .select({
+            id: marketingGroups.id,
+            name: marketingGroups.name,
+            targetPlans: marketingGroups.targetPlans,
+            targetRoles: marketingGroups.targetRoles,
+            targetSubscriptions: marketingGroups.targetSubscriptions,
+            targetEmails: marketingGroups.targetEmails,
+            createdBy: marketingGroups.createdBy,
+            createdAt: marketingGroups.createdAt,
+            creatorRole: users.role,
+        })
+        .from(marketingGroups)
+        .leftJoin(users, eq(marketingGroups.createdBy, users.id));
 
     if (ctx.user.role === 'editor') {
         queryBuilder = queryBuilder.where(eq(marketingGroups.createdBy, ctx.user.id)) as any;

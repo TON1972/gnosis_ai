@@ -206,7 +206,14 @@ export function AdminMarketingGroups() {
                                 {groups.map(g => (
                                     <div key={g.id} className="border border-gray-200 p-4 rounded-xl flex flex-col justify-between hover:shadow-md transition-shadow bg-white">
                                         <div>
-                                            <h4 className="font-bold text-lg text-[#1e3a5f] mb-2">{g.name}</h4>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <h4 className="font-bold text-lg text-[#1e3a5f]">{g.name}</h4>
+                                                {(g as any).creatorRole === 'editor' && (
+                                                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black uppercase rounded shadow-sm border border-amber-200">
+                                                        Editor
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="text-xs text-gray-500 space-y-1">
                                                 <p><strong className="text-gray-700">Planos:</strong> {g.targetPlans || 'Todos'}</p>
                                                 <p><strong className="text-gray-700">Status:</strong> {g.targetSubscriptions || 'Todos'}</p>

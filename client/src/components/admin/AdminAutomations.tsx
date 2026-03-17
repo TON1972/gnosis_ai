@@ -441,6 +441,11 @@ export function AdminAutomations() {
                                 <div className="space-y-1">
                                     <div className="flex items-center gap-2">
                                         <h3 className="font-black text-[#1e3a5f] uppercase tracking-tight">{auto.name}</h3>
+                                        {auto.creatorRole === 'editor' && (
+                                            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black uppercase rounded shadow-sm border border-amber-200">
+                                                Editor
+                                            </span>
+                                        )}
                                         {!auto.isActive && <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Pausada</span>}
                                     </div>
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400 font-bold uppercase tracking-wider">
