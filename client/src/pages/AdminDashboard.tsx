@@ -13,6 +13,8 @@ import { AdminPlansManager } from "@/components/admin/AdminPlansManager";
 import { AdminVideoManagement } from "@/components/admin/AdminVideoManagement";
 import { AdminMarketing } from "@/components/admin/AdminMarketing";
 import { AdminAutomations } from "@/components/admin/AdminAutomations";
+import { AdminAffiliateManager } from "@/components/admin/AdminAffiliateManager";
+import { AdminCouponManager } from "@/components/admin/AdminCouponManager";
 import { ToolUsageChart } from "@/components/admin/ToolUsageChart";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Menu, X } from "lucide-react";
@@ -75,7 +77,9 @@ export default function AdminDashboard() {
     'plans-manager': "Gerenciar Planos",
     video: "Gerenciar Vídeo Destaque",
     marketing: "Email Marketing (Resend)",
-    automations: "Automações de Email"
+    automations: "Automações de Email",
+    affiliates: "Gerenciamento de Afiliados",
+    coupons: "Gestão de Cupons Promocionais"
   };
 
   return (
@@ -197,6 +201,12 @@ export default function AdminDashboard() {
 
               {/* ✅ ABA: GERENCIAR VIDEO */}
               {activeTab === 'video' && isSuperAdmin && <AdminVideoManagement />}
+
+              {/* ✅ ABA: GERENCIAR AFILIADOS */}
+              {activeTab === 'affiliates' && isSuperAdmin && <AdminAffiliateManager />}
+
+              {/* ✅ ABA: GERENCIAR CUPONS */}
+              {activeTab === 'coupons' && isSuperAdmin && <AdminCouponManager />}
             </div>
           )}
         </main>

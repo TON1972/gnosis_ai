@@ -1,7 +1,7 @@
 import { APP_LOGO, APP_TITLE } from "@/const";
 import {
   LayoutDashboard, DollarSign,
-  Mail, ShieldCheck, Wrench, Home, LogOut, Users, Video, Send, Zap
+  Mail, ShieldCheck, Wrench, Home, LogOut, Users, Video, Send, Zap, Percent, Ticket
 } from "lucide-react";
 
 interface SidebarProps {
@@ -29,6 +29,8 @@ export function Sidebar({ isOpen, activeTab, setActiveTab, role, logout, setLoca
     { id: 'plans-manager', label: 'Gerenciar Planos', icon: DollarSign, superOnly: true }, 
     { id: 'admins', label: 'Equipe Admin', icon: ShieldCheck, superOnly: true },
     { id: 'video', label: 'Vídeo Destaque', icon: Video, superOnly: true },
+    { id: 'affiliates', label: 'Afiliados', icon: Percent, superOnly: true },
+    { id: 'coupons', label: 'Cupons', icon: Ticket, superOnly: true },
   ];
 
   return (

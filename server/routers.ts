@@ -42,6 +42,7 @@ import {
   createAutomation, updateAutomation, deleteAutomation, listAutomations,
   automationSchema, getAutomationStats
 } from "./automation.js";
+import { affiliateRouter } from "./affiliate.js";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 //import {  userCredits } from "@shared/schema";
@@ -84,6 +85,7 @@ function calculateDynamicCost(text: string): { words: number; cost: number } {
 
 export const appRouter = router({
   system: systemRouter,
+  affiliate: affiliateRouter,
 
 
   settings: router({
@@ -1350,6 +1352,65 @@ export const appRouter = router({
         // Remove vínculos em planos antes de deletar a ferramenta
         await db.delete(planTools).where(eq(planTools.toolId, input.id));
         return await db.delete(tools).where(eq(tools.id, input.id));
+      }),
+
+    // ✅ NOVO: Gerenciar Cupons (Super Admin)
+    listCoupons: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { coupons } = await import("../drizzle/schema.js");
+      return await db.select().from(coupons).orderBy(desc(coupons.createdAt));
+    }),
+
+    createCoupon: protectedProcedure
+      .input(z.object({
+        code: z.string().min(1).toUpperCase(),
+        description: z.string().optional(),
+        discountDays: z.number().int().positive(),
+        expirationDate: z.string().optional().nullable(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+        const db = await getValidatedDb();
+        const { coupons } = await import("../drizzle/schema.js");
+        
+        await db.insert(coupons).values({
+          code: input.code,
+          description: input.description,
+          discountDays: input.discountDays,
+          expirationDate: input.expirationDate ? new Date(input.expirationDate) : null,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        
+        return { success: true };
+      }),
+
+    toggleCouponStatus: protectedProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+        const db = await getValidatedDb();
+        const { coupons } = await import("../drizzle/schema.js");
+        
+        await db.update(coupons)
+          .set({ isActive: input.isActive, updatedAt: new Date() })
+          .where(eq(coupons.id, input.id));
+        
+        return { success: true };
+      }),
+
+    deleteCoupon: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+        const db = await getValidatedDb();
+        const { coupons } = await import("../drizzle/schema.js");
+        
+        await db.delete(coupons).where(eq(coupons.id, input.id));
+        return { success: true };
       }),
 
     // ✅ 5. Listar quais planos estão vinculados a uma ferramenta específica

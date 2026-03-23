@@ -4,7 +4,7 @@ import { users, subscriptions, plans, creditTransactions, savedStudies, studyMes
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-12-15.clover",
+    apiVersion: "2026-01-28.clover",
 });
 
 export interface UserListItem {
@@ -18,6 +18,7 @@ export interface UserListItem {
     createdAt: Date;
     stripeCustomerId: string | null;
     creditsSpent: number;
+    isAffiliate: boolean;
 }
 
 export interface PaginatedUsers {
@@ -117,13 +118,14 @@ export async function listUsers(
             p."displayName" as plan_display_name,
             s.status as subscription_status,
             s."stripeStatus" as stripe_status,
+            u."isAffiliate",
             COALESCE(ABS(SUM(ct.amount)), 0) as credits_spent
         FROM users u
         LEFT JOIN subscriptions s ON u.id = s."userId" AND s.status = 'active'
         LEFT JOIN plans p ON s."planId" = p.id
         LEFT JOIN credit_transactions ct ON u.id = ct."userId" AND ct.amount < 0
         ${whereClause}
-        GROUP BY u.id, p.name, p."displayName", s.status, s."stripeStatus"
+        GROUP BY u.id, p.name, p."displayName", s.status, s."stripeStatus", u."isAffiliate"
         ${orderByClause} 
         LIMIT ${limit} 
         OFFSET ${offset}
@@ -142,6 +144,7 @@ export async function listUsers(
         createdAt: new Date(row.createdAt as string),
         stripeCustomerId: row.stripeCustomerId as string | null,
         creditsSpent: Number(row.credits_spent || 0),
+        isAffiliate: Boolean(row.isAffiliate),
     }));
 
     return {
@@ -212,13 +215,14 @@ export async function listAllUsersForExport(
             p."displayName" as plan_display_name,
             s.status as subscription_status,
             s."stripeStatus" as stripe_status,
+            u."isAffiliate",
             COALESCE(ABS(SUM(ct.amount)), 0) as credits_spent
         FROM users u
         LEFT JOIN subscriptions s ON u.id = s."userId" AND s.status = 'active'
         LEFT JOIN plans p ON s."planId" = p.id
         LEFT JOIN credit_transactions ct ON u.id = ct."userId" AND ct.amount < 0
         ${whereClause}
-        GROUP BY u.id, p.name, p."displayName", s.status, s."stripeStatus"
+        GROUP BY u.id, p.name, p."displayName", s.status, s."stripeStatus", u."isAffiliate"
         ${orderByClause}
     `);
 
@@ -235,6 +239,7 @@ export async function listAllUsersForExport(
         createdAt: new Date(row.createdAt as string),
         stripeCustomerId: row.stripeCustomerId as string | null,
         creditsSpent: Number(row.credits_spent || 0),
+        isAffiliate: Boolean(row.isAffiliate),
     }));
 }
 

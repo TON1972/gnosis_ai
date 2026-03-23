@@ -31,6 +31,7 @@ export default function Auth() {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
+  const [registerCoupon, setRegisterCoupon] = useState("");
   //   const [selectedPlan, setSelectedPlan] = useState<string>("1"); // Removed
   //   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly"); // Removed
 
@@ -44,6 +45,13 @@ export default function Auth() {
     const tabParam = params.get("tab");
 
     if (tabParam === "register") setActiveTab("register");
+
+    // ✅ Capturar Código de Afiliado da URL
+    const affiliateParam = params.get("ref") || params.get("aff");
+    if (affiliateParam) {
+      sessionStorage.setItem("affiliate_code", affiliateParam);
+      console.log("Afiliado detectado:", affiliateParam);
+    }
   }, []);
 
   // ✅ NOVO: Lógica de Login Social (Simplificada)
@@ -110,6 +118,8 @@ export default function Auth() {
           name: registerName,
           email: registerEmail,
           password: registerPassword,
+          affiliateCode: sessionStorage.getItem("affiliate_code") || undefined,
+          coupon: registerCoupon || undefined,
           // planId ignorado pelo backend agora
         }),
       });
@@ -222,6 +232,16 @@ export default function Auth() {
                     <Label className="text-[#1e3a5f] font-bold">Confirmar</Label>
                     <Input type="password" value={registerConfirmPassword} onChange={(e) => setRegisterConfirmPassword(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[#1e3a5f] font-bold">Cupom de Desconto (Opcional)</Label>
+                  <Input
+                    placeholder="Ex: GANHE30"
+                    value={registerCoupon}
+                    onChange={(e) => setRegisterCoupon(e.target.value.toUpperCase())}
+                    className="border-[#d4af37]/40 bg-white h-10 uppercase font-bold text-[#1e3a5f]"
+                  />
                 </div>
                 <Button type="submit" disabled={loading} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold mt-2 shadow-lg transition-all active:scale-95">
                   {loading ? <Loader2 className="animate-spin" /> : "Criar Conta e Começar"}

@@ -4,6 +4,7 @@ import { subscriptions, creditTransactions, payments, credits, plans, users } fr
 import { eq, sql, desc, and } from 'drizzle-orm';
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { sendMetaEvent } from '../meta-capi.js';
+import { processAffiliateCommission } from '../affiliate_utils.js';
 
 console.log(">>> LOADING webhookHandler.ts");
 
@@ -214,6 +215,11 @@ export async function processPaymentLogic(body: any, expressReq?: ExpressRequest
                     .where(eq(credits.userId, userId));
 
                 console.log(`✅ Plano ${plan.displayName} ativado para User ${userId}.`);
+
+                // ✅ NOVO: Processar comissão de afiliado
+                if (subscriptionId && amountTotal > 0) {
+                    await processAffiliateCommission(userId, subscriptionId, amountTotal);
+                }
             }
         }
 

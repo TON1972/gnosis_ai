@@ -20,6 +20,7 @@ import Chatbot from "./components/Chatbot";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import AdminTools from "./pages/AdminTools";
 import StudyChatPage from "./pages/StudyChatPage";
+import AffiliatePage from "./pages/AffiliatePage";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/tool/:toolId" component={ToolPage} />
       {/* ✅ ADICIONE ESTA LINHA */}
       <Route path="/study/:studyId" component={StudyChatPage} />
+      <Route path="/afiliados" component={AffiliatePage} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

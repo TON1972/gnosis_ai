@@ -116,6 +116,13 @@ export default function Dashboard() {
                   </span>
                 </Link>
               )}
+              {user?.isAffiliate && (
+                <Link href="/afiliados">
+                  <span className="hidden md:block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
+                    Afiliados
+                  </span>
+                </Link>
+              )}
               <Link href="/perfil">
                 <button className="p-1.5 md:p-2 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors">
                   <User className="w-5 h-5 md:w-6 md:h-6" />

@@ -6,6 +6,7 @@ import { users, subscriptions, credits, payments, plans } from "../drizzle/schem
 import { eq, sql } from "drizzle-orm";
 
 import { sendMetaEvent } from "./meta-capi.js";
+import { processAffiliateCommission } from "./affiliate_utils.js";
 
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -196,6 +197,11 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                         });
                         console.log(`✅ [Webhook] Payment recorded successfully`);
 
+                        // ✅ NOVO: Processar comissão de afiliado
+                        if (localSub?.id && amountTotal > 0) {
+                            await processAffiliateCommission(userId, localSub.id, amountTotal);
+                        }
+
                         // 7. ✅ SEND TO META CAPI (best effort — don't fail transaction for analytics)
                         if (amountTotal > 0 && user) {
                             try {
@@ -282,6 +288,11 @@ export async function handleStripeWebhook(req: Request, res: Response) {
                             createdAt: new Date()
                         });
                         console.log(`✅ Renovação registrada para User ${sub.userId} (Invoice: ${invoice.id})`);
+
+                        // ✅ NOVO: Processar comissão de afiliado (Renovação)
+                        if (sub.id && amountPaid > 0) {
+                            await processAffiliateCommission(sub.userId, sub.id, amountPaid);
+                        }
 
                         // ✅ SEND TO META CAPI
                         if (amountPaid > 0) {

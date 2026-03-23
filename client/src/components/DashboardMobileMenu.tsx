@@ -86,7 +86,15 @@ export default function DashboardMobileMenu({ user, onLogout }: DashboardMobileM
             {isAdmin && (
               <Link href="/admin" onClick={closeMenu}>
                 <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
-                  Admin
+                  Administração
+                </span>
+              </Link>
+            )}
+
+            {user?.isAffiliate && (
+              <Link href="/afiliados" onClick={closeMenu}>
+                <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
+                  Afiliados
                 </span>
               </Link>
             )}

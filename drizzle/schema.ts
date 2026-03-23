@@ -39,6 +39,12 @@ export const users = pgTable("users", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+
+  // Affiliate System
+  affiliateCode: varchar("affiliateCode", { length: 64 }).unique(),
+  isAffiliate: boolean("isAffiliate").default(false),
+  commissionPercentage: integer("commissionPercentage").default(0),
+  referredBy: integer("referredBy").references(() => users.id),
 });
 
 export type User = typeof users.$inferSelect;
@@ -316,4 +322,49 @@ export const automationLogs = pgTable("automation_logs", {
   sentAt: timestamp("sentAt").defaultNow().notNull(),
   status: text("status").default("sent"),
   isOpened: boolean("isOpened").default(false),
+});
+
+// --- TABELA DE PAGAMENTOS DE AFILIADOS ---
+export const affiliatePayouts = pgTable("affiliate_payouts", {
+  id: serial("id").primaryKey(),
+  affiliateId: integer("affiliateId").references(() => users.id).notNull(),
+  amount: integer("amount").notNull(),
+  status: varchar("status", { length: 20 }).default("pending"), // pending, completed, failed
+  paymentMethod: text("paymentMethod"),
+  paidAt: timestamp("paidAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+// --- TABELA DE COMISSÕES DE AFILIADOS ---
+export const affiliateCommissions = pgTable("affiliate_commissions", {
+  id: serial("id").primaryKey(),
+  affiliateId: integer("affiliateId").references(() => users.id).notNull(),
+  referredUserId: integer("referredUserId").references(() => users.id).notNull(),
+  subscriptionId: integer("subscriptionId").references(() => subscriptions.id).notNull(),
+  amount: integer("amount").notNull(), // Em centavos
+  status: varchar("status", { length: 20 }).default("pending"), // pending, paid, cancelled
+  payoutId: integer("payoutId").references(() => affiliatePayouts.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+// --- TABELA DE CUPONS ---
+export const coupons = pgTable("coupons", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  description: text("description"),
+  discountDays: integer("discountDays").notNull().default(30),
+  isActive: boolean("isActive").default(true).notNull(),
+  expirationDate: timestamp("expirationDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+// --- TABELA DE USO DE CUPONS ---
+export const couponUsages = pgTable("coupon_usages", {
+  id: serial("id").primaryKey(),
+  couponId: integer("couponId").references(() => coupons.id).notNull(),
+  userId: integer("userId").references(() => users.id).notNull(),
+  usedAt: timestamp("usedAt").defaultNow().notNull(),
 });

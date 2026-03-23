@@ -128,20 +128,37 @@ export function UserManagement() {
         });
     };
 
+    // Affiliate management state
+    const [isAffiliate, setIsAffiliate] = useState(false);
+    const [commissionPercentage, setCommissionPercentage] = useState(0);
+
     // Atualiza estados locais quando abrir modal
     useEffect(() => {
         if (userDetails) {
-            // Tenta encontrar o plano atual do usuário na lista de planos
-            const currentPlan = plans?.find(p => p.name === userDetails.plan_name);
-            if (currentPlan) {
-                setSelectedPlanId(String(currentPlan.id));
-            } else {
-                setSelectedPlanId("");
-            }
-
-            setSelectedBilling((userDetails.billingPeriod as "monthly" | "yearly") || "monthly");
+            // ... existing plan logic ...
+            setIsAffiliate(Boolean(userDetails.isAffiliate));
+            setCommissionPercentage(Number(userDetails.commissionPercentage || 0));
         }
     }, [userDetails, plans]);
+
+    const updateAffiliateMutation = trpc.affiliate.updateUserAffiliateStatus.useMutation({
+        onSuccess: () => {
+            toast.success("Status de afiliado atualizado com sucesso!");
+            refetch();
+        },
+        onError: (error) => {
+            toast.error(`Erro ao atualizar afiliado: ${error.message}`);
+        }
+    });
+
+    const handleUpdateAffiliate = () => {
+        if (!selectedUserId) return;
+        updateAffiliateMutation.mutate({
+            userId: selectedUserId,
+            isAffiliate,
+            commissionPercentage
+        });
+    };
 
     const handleDelete = () => {
         if (deleteUserId) {
@@ -434,6 +451,11 @@ export function UserManagement() {
                                                         TRIAL
                                                     </span>
                                                 )}
+                                                {user.isAffiliate && (
+                                                    <span className="text-xs font-bold px-2 py-1 rounded-full uppercase bg-indigo-100 text-indigo-700 border border-indigo-300">
+                                                        AFILIADO
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="py-4 px-4">
@@ -588,69 +610,120 @@ export function UserManagement() {
                             </div>
 
                             {/* Divider */}
-                            <div className="border-t border-gray-200 my-4" />
+                            <div className="border-t border-gray-100 my-4" />
 
                             {/* ÁREA DE GESTÃO DE PLANO (SUPER ADMIN) */}
                             {isSuperAdmin && (
-                                <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border-2 border-orange-200 mb-6 shadow-sm">
-                                    {/* Header */}
-                                    <div className="flex items-center gap-3 mb-5 pb-4 border-b border-orange-200">
-                                        <div className="p-2.5 bg-orange-500 rounded-lg shadow-sm">
-                                            <CreditCard className="w-5 h-5 text-white" />
+                                <div className="space-y-6">
+                                    {/* Plano */}
+                                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border-2 border-orange-200 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-orange-200">
+                                            <div className="p-2.5 bg-orange-500 rounded-lg shadow-sm">
+                                                <CreditCard className="w-5 h-5 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-black text-[#1e3a5f] uppercase tracking-wide">
+                                                    Gerenciar Plano
+                                                </h3>
+                                                <p className="text-xs text-orange-700 font-medium">
+                                                    Super Admin
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="text-sm font-black text-[#1e3a5f] uppercase tracking-wide">
-                                                Gerenciar Plano
-                                            </h3>
-                                            <p className="text-xs text-orange-700 font-medium">
-                                                Super Admin
-                                            </p>
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                                    Novo Plano
+                                                </label>
+                                                <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+                                                    <SelectTrigger className="bg-white border-2 border-orange-300 hover:border-orange-400 focus:border-orange-500 h-11">
+                                                        <SelectValue placeholder="Selecione um plano" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="bg-white">
+                                                        {plans?.map(plan => (
+                                                            <SelectItem key={plan.id} value={String(plan.id)}>
+                                                                {plan.displayName}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <Button
+                                                onClick={handleUpdatePlan}
+                                                disabled={updatePlanMutation.status === 'pending'}
+                                                className="bg-orange-600 hover:bg-orange-700 text-white font-bold w-full h-11 shadow-md transition-all"
+                                            >
+                                                {updatePlanMutation.status === 'pending' ? "Atualizando..." : "Salvar Plano"}
+                                            </Button>
                                         </div>
                                     </div>
 
-                                    {/* Form */}
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
-                                                Novo Plano
-                                            </label>
-                                            <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
-                                                <SelectTrigger className="bg-white border-2 border-orange-300 hover:border-orange-400 focus:border-orange-500 transition-colors h-11">
-                                                    <SelectValue placeholder="Selecione um plano" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-white">
-                                                    {plans?.map(plan => (
-                                                        <SelectItem key={plan.id} value={String(plan.id)}>
-                                                            {plan.displayName}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                    {/* Afiliado */}
+                                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-xl border-2 border-indigo-200 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-indigo-200">
+                                            <div className="p-2.5 bg-indigo-500 rounded-lg shadow-sm">
+                                                <User className="w-5 h-5 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-black text-[#1e3a5f] uppercase tracking-wide">
+                                                    Sistema de Afiliados
+                                                </h3>
+                                                <p className="text-xs text-indigo-700 font-medium">
+                                                    Configurar Comissões
+                                                </p>
+                                            </div>
                                         </div>
 
-                                        <Button
-                                            onClick={handleUpdatePlan}
-                                            disabled={updatePlanMutation.status === 'pending'}
-                                            className="bg-orange-600 hover:bg-orange-700 text-white font-bold w-full h-11 shadow-md hover:shadow-lg transition-all"
-                                        >
-                                            {updatePlanMutation.status === 'pending' ? (
-                                                <span className="flex items-center gap-2">
-                                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                                    </svg>
-                                                    Atualizando...
-                                                </span>
-                                            ) : (
-                                                "Salvar Alteração"
-                                            )}
-                                        </Button>
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-indigo-200">
+                                                <label className="text-sm font-bold text-gray-700">Status de Afiliado</label>
+                                                <Button
+                                                    size="sm"
+                                                    variant={isAffiliate ? "default" : "outline"}
+                                                    className={isAffiliate ? "bg-green-600 hover:bg-green-700" : ""}
+                                                    onClick={() => setIsAffiliate(!isAffiliate)}
+                                                >
+                                                    {isAffiliate ? "Ativo" : "Inativo"}
+                                                </Button>
+                                            </div>
 
-                                        {/* Warning */}
-                                        <div className="bg-orange-200/50 border-l-4 border-orange-600 p-3 rounded">
-                                            <p className="text-[10px] text-orange-900 font-medium leading-relaxed">
-                                                ⚠️ <strong>Atenção:</strong> Ao alterar o plano manualmente, os créditos serão resetados para os limites do novo plano e a assinatura será atualizada imediatamente.
-                                            </p>
+                                            {isAffiliate && (
+                                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                                            % de Comissão
+                                                        </label>
+                                                        <div className="flex items-center gap-2">
+                                                            <Input
+                                                                type="number"
+                                                                value={commissionPercentage}
+                                                                onChange={(e) => setCommissionPercentage(Number(e.target.value))}
+                                                                className="bg-white border-2 border-indigo-300 h-11"
+                                                                min="0"
+                                                                max="100"
+                                                            />
+                                                            <span className="font-bold text-indigo-700">%</span>
+                                                        </div>
+                                                    </div>
+
+                                                     {!!userDetails.affiliateCode && (
+                                                        <div className="p-3 bg-white/50 rounded-lg border border-indigo-200">
+                                                            <p className="text-[10px] font-bold text-indigo-800 uppercase">Código de Afiliado</p>
+                                                            <code className="text-sm font-mono font-bold text-indigo-900">{String(userDetails.affiliateCode ?? "")}</code>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            <Button
+                                                onClick={handleUpdateAffiliate}
+                                                disabled={updateAffiliateMutation.status === 'pending'}
+                                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold w-full h-11 shadow-md transition-all"
+                                            >
+                                                {updateAffiliateMutation.status === 'pending' ? "Salvando..." : "Salvar Configurações de Afiliado"}
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>

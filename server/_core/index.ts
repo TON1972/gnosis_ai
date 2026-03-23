@@ -80,7 +80,9 @@ const registerSchema = z.object({
     return !typos.some(typo => lowerEmail.endsWith(typo));
   }, "Email com formato inválido ou com erro de digitação. Verifique o provedor (ex: @gmail.com)."),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
-  planId: z.any().optional()
+  planId: z.any().optional(),
+  affiliateCode: z.string().optional(),
+  coupon: z.string().optional()
 });
 
 app.post("/api/register", async (req, res) => {
@@ -94,7 +96,7 @@ app.post("/api/register", async (req, res) => {
       });
     }
 
-    const { name, email, password, planId } = parseResult.data;
+    const { name, email, password, planId, affiliateCode } = parseResult.data;
     const db = await getDb();
 
     if (!db) return res.status(500).json({ success: false, message: "Banco indisponível." });
@@ -125,6 +127,16 @@ app.post("/api/register", async (req, res) => {
     const openId = `supabase:${authData.user.id}`;
     const sessionId = crypto.randomUUID(); // ✅ Gerar Session ID
 
+    // 2.5 Verificar Afiliado
+    let referredById = null;
+    if (affiliateCode) {
+      const [affiliate] = await db.select({ id: users.id }).from(users).where(eq(users.affiliateCode, affiliateCode)).limit(1);
+      if (affiliate) {
+        referredById = affiliate.id;
+        console.log(`>>> DEBUG REGISTER: User referred by ${affiliateCode} (User ID: ${referredById})`);
+      }
+    }
+
     const [newUser] = await db.insert(users).values({
       name,
       email,
@@ -133,22 +145,70 @@ app.post("/api/register", async (req, res) => {
       openId: openId,
       loginMethod: "password",
       role: "user",
-      currentSessionId: sessionId // ✅ Salvar Session ID
+      currentSessionId: sessionId, // ✅ Salvar Session ID
+      referredBy: referredById
     } as any).returning({ id: users.id, email: users.email, role: users.role });
 
     // 4. Ativação de Assinatura e Créditos
-    console.log(`>>> DEBUG REGISTER: Inserting Subscription for User ${newUser.id} with Plan ${freePlanId}`);
+    console.log(`>>> DEBUG REGISTER: Processing Registration for User ${newUser.id}`);
+
+    let targetPlanId = freePlanId;
+    let targetPlan = freePlan;
+    let subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    let usedCouponId = null;
+
+    // Lógica de Cupom
+    if (parseResult.data.coupon) {
+      const { coupons, couponUsages } = await import("../../shared/schema.js");
+      const [couponRecord] = await db
+        .select()
+        .from(coupons)
+        .where(eq(coupons.code, parseResult.data.coupon))
+        .limit(1);
+
+      if (couponRecord) {
+        const now = new Date();
+        const isExpired = couponRecord.expirationDate && new Date(couponRecord.expirationDate) < now;
+        
+        if (couponRecord.isActive && !isExpired) {
+          // Busca o plano Premium
+          const [premiumPlan] = await db.select().from(plans).where(eq(plans.name, 'premium')).limit(1);
+          if (premiumPlan) {
+            targetPlanId = premiumPlan.id;
+            targetPlan = premiumPlan;
+            subscriptionEndDate = new Date(Date.now() + couponRecord.discountDays * 24 * 60 * 60 * 1000);
+            usedCouponId = couponRecord.id;
+            console.log(`>>> DEBUG REGISTER: Coupon ${couponRecord.code} valid. Granting Premium for ${couponRecord.discountDays} days.`);
+          }
+        } else {
+          console.log(`>>> DEBUG REGISTER: Coupon ${parseResult.data.coupon} is inactive or expired.`);
+          return res.status(400).json({ success: false, message: "Cupom inválido ou expirado." });
+        }
+      } else {
+        console.log(`>>> DEBUG REGISTER: Coupon ${parseResult.data.coupon} not found.`);
+        return res.status(400).json({ success: false, message: "Cupom não encontrado." });
+      }
+    }
 
     await db.insert(subscriptions).values({
       userId: newUser.id,
-      planId: freePlanId, // ✅ GARANTIDO SER O FREE (ou 1)
+      planId: targetPlanId,
       status: "active",
       startDate: new Date(),
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      endDate: subscriptionEndDate
     });
 
-    const initial = Number(freePlan.creditsInitial ?? 0);
-    const daily = Number(freePlan.creditsDaily ?? 0);
+    if (usedCouponId) {
+      const { couponUsages } = await import("../../shared/schema.js");
+      await db.insert(couponUsages).values({
+        couponId: usedCouponId,
+        userId: newUser.id,
+        usedAt: new Date()
+      });
+    }
+
+    const initial = Number(targetPlan.creditsInitial ?? 0);
+    const daily = Number(targetPlan.creditsDaily ?? 0);
 
     await db.insert(credits).values({
       userId: newUser.id,
