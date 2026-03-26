@@ -1,0 +1,32 @@
+[dotenv@17.2.4] injecting env (28) from .env -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+Vari├íveis carregadas (Local): { hasDb: true, hasSupabase: true, hasMp: true }
+[Database] Debug URL: Length=124, Chars=[postgresql...]
+[Database] Validando formato...
+[Database] URL v├ílida! Protocol: postgresql:, Host: aws-1-us-east-2.pooler.supabase.com, Port: 6543, Path: /postgres
+[Database] Criando Pool com configura├º├úo manual (Bypassing pg-connection-string)...
+[Database] Config gerada - Host: aws-1-us-east-2.pooler.supabase.com, DB: postgres, User: ***
+[Database] Pool criado. Inicializando Drizzle...
+[Database] Testando conex├úo com .connect()...
+[Database] Conectado com sucesso ├á base de dados.
+Last User: Silva Canal (vencendo91@gmail.com) - ID: 2663 - Method: google
+Subscription Full Dump: [
+  {
+    "id": 2654,
+    "userId": 2663,
+    "planId": 1,
+    "status": "active",
+    "billingPeriod": "monthly",
+    "startDate": "2026-03-25T23:10:40.546Z",
+    "endDate": "2026-04-24T23:10:40.546Z",
+    "nextBillingDate": null,
+    "gracePeriodEndsAt": null,
+    "lastPaymentDate": null,
+    "createdAt": "2026-03-25T23:10:40.552Z",
+    "updatedAt": "2026-03-25T23:10:40.552Z",
+    "cancelledAt": null,
+    "mercadoPagoSubscriptionId": null,
+    "stripeSubscriptionId": null,
+    "stripeStatus": null
+  }
+]

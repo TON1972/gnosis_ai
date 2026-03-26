@@ -19,6 +19,7 @@ export interface UserListItem {
     stripeCustomerId: string | null;
     creditsSpent: number;
     isAffiliate: boolean;
+    couponCode: string | null;
 }
 
 export interface PaginatedUsers {
@@ -40,6 +41,7 @@ export async function listUsers(
     sortBy: 'newest' | 'oldest' | 'credits_asc' | 'credits_desc' = 'newest',
     dateFrom?: Date,
     dateTo?: Date,
+    couponFilter?: string,
     // Removed unused parameters
     _minCreditsUsed?: number,
     _maxCreditsUsed?: number
@@ -72,6 +74,10 @@ export async function listUsers(
         conditions.push(`u."createdAt" < '${endDate.toISOString()}'`);
     }
 
+    if (couponFilter && couponFilter !== 'all') {
+        conditions.push(`cp.code ILIKE '%${couponFilter}%'`);
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Determine ORDER BY clause
@@ -100,6 +106,8 @@ export async function listUsers(
         FROM users u
         LEFT JOIN subscriptions s ON u.id = s."userId" AND s.status = 'active'
         LEFT JOIN plans p ON s."planId" = p.id
+        LEFT JOIN coupon_usages cu ON u.id = cu."userId"
+        LEFT JOIN coupons cp ON cu."couponId" = cp.id
         ${whereClause}
     `);
     const countResult = await db.execute(countQuery);
@@ -119,13 +127,16 @@ export async function listUsers(
             s.status as subscription_status,
             s."stripeStatus" as stripe_status,
             u."isAffiliate",
-            COALESCE(ABS(SUM(ct.amount)), 0) as credits_spent
+            COALESCE(ABS(SUM(ct.amount)), 0) as credits_spent,
+            cp.code as coupon_code
         FROM users u
         LEFT JOIN subscriptions s ON u.id = s."userId" AND s.status = 'active'
         LEFT JOIN plans p ON s."planId" = p.id
         LEFT JOIN credit_transactions ct ON u.id = ct."userId" AND ct.amount < 0
+        LEFT JOIN coupon_usages cu ON u.id = cu."userId"
+        LEFT JOIN coupons cp ON cu."couponId" = cp.id
         ${whereClause}
-        GROUP BY u.id, p.name, p."displayName", s.status, s."stripeStatus", u."isAffiliate"
+        GROUP BY u.id, p.name, p."displayName", s.status, s."stripeStatus", u."isAffiliate", cp.code
         ${orderByClause} 
         LIMIT ${limit} 
         OFFSET ${offset}
@@ -145,6 +156,7 @@ export async function listUsers(
         stripeCustomerId: row.stripeCustomerId as string | null,
         creditsSpent: Number(row.credits_spent || 0),
         isAffiliate: Boolean(row.isAffiliate),
+        couponCode: row.coupon_code as string | null,
     }));
 
     return {
@@ -164,7 +176,8 @@ export async function listAllUsersForExport(
     planFilter?: string,
     sortBy: 'newest' | 'oldest' | 'credits_asc' | 'credits_desc' = 'newest',
     dateFrom?: Date,
-    dateTo?: Date
+    dateTo?: Date,
+    couponFilter?: string
 ): Promise<UserListItem[]> {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -189,6 +202,10 @@ export async function listAllUsersForExport(
         const endDate = new Date(dateTo);
         endDate.setDate(endDate.getDate() + 1);
         conditions.push(`u."createdAt" < '${endDate.toISOString()}'`);
+    }
+
+    if (couponFilter && couponFilter !== 'all') {
+        conditions.push(`cp.code ILIKE '%${couponFilter}%'`);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -216,13 +233,16 @@ export async function listAllUsersForExport(
             s.status as subscription_status,
             s."stripeStatus" as stripe_status,
             u."isAffiliate",
-            COALESCE(ABS(SUM(ct.amount)), 0) as credits_spent
+            COALESCE(ABS(SUM(ct.amount)), 0) as credits_spent,
+            cp.code as coupon_code
         FROM users u
         LEFT JOIN subscriptions s ON u.id = s."userId" AND s.status = 'active'
         LEFT JOIN plans p ON s."planId" = p.id
         LEFT JOIN credit_transactions ct ON u.id = ct."userId" AND ct.amount < 0
+        LEFT JOIN coupon_usages cu ON u.id = cu."userId"
+        LEFT JOIN coupons cp ON cu."couponId" = cp.id
         ${whereClause}
-        GROUP BY u.id, p.name, p."displayName", s.status, s."stripeStatus", u."isAffiliate"
+        GROUP BY u.id, p.name, p."displayName", s.status, s."stripeStatus", u."isAffiliate", cp.code
         ${orderByClause}
     `);
 
@@ -240,6 +260,7 @@ export async function listAllUsersForExport(
         stripeCustomerId: row.stripeCustomerId as string | null,
         creditsSpent: Number(row.credits_spent || 0),
         isAffiliate: Boolean(row.isAffiliate),
+        couponCode: row.coupon_code as string | null,
     }));
 }
 
@@ -334,10 +355,13 @@ export async function getUserDetails(userId: number) {
       s."billingPeriod",
       (SELECT COUNT(*) FROM saved_studies WHERE "userId" = u.id) as studies_count,
       (SELECT COUNT(*) FROM credit_transactions WHERE "userId" = u.id AND type = 'usage') as usage_count,
-      (SELECT COALESCE(ABS(SUM(amount)), 0) FROM credit_transactions WHERE "userId" = u.id AND amount < 0) as credits_spent
+      (SELECT COALESCE(ABS(SUM(amount)), 0) FROM credit_transactions WHERE "userId" = u.id AND amount < 0) as credits_spent,
+      cp.code as coupon_code
     FROM users u
     LEFT JOIN subscriptions s ON u.id = s."userId" AND s.status = 'active'
     LEFT JOIN plans p ON s."planId" = p.id
+    LEFT JOIN coupon_usages cu ON u.id = cu."userId"
+    LEFT JOIN coupons cp ON cu."couponId" = cp.id
     WHERE u.id = ${userId}
     LIMIT 1
   `);

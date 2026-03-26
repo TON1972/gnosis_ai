@@ -603,6 +603,7 @@ export const appRouter = router({
         sortBy: z.enum(['newest', 'oldest', 'credits_asc', 'credits_desc']).default('newest'),
         dateFrom: z.string().optional(),
         dateTo: z.string().optional(),
+        couponFilter: z.string().optional(),
       }))
       .query(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
@@ -620,7 +621,8 @@ export const appRouter = router({
           input.planFilter,
           input.sortBy,
           dateFrom,
-          dateTo
+          dateTo,
+          input.couponFilter
         );
       }),
 
@@ -631,6 +633,7 @@ export const appRouter = router({
         sortBy: z.enum(['newest', 'oldest', 'credits_asc', 'credits_desc']).default('newest'),
         dateFrom: z.string().optional(),
         dateTo: z.string().optional(),
+        couponFilter: z.string().optional(),
       }))
       .query(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
@@ -647,7 +650,8 @@ export const appRouter = router({
           input.planFilter,
           input.sortBy,
           dateFrom,
-          dateTo
+          dateTo,
+          input.couponFilter
         );
       }),
 
@@ -1410,6 +1414,34 @@ export const appRouter = router({
         const { coupons } = await import("../drizzle/schema.js");
         
         await db.delete(coupons).where(eq(coupons.id, input.id));
+        return { success: true };
+      }),
+
+    editCoupon: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        code: z.string().min(1).toUpperCase(),
+        description: z.string().optional(),
+        discountDays: z.number().int().positive(),
+        expirationDate: z.string().optional().nullable(),
+        isActive: z.boolean(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+        const db = await getValidatedDb();
+        const { coupons } = await import("../drizzle/schema.js");
+        
+        await db.update(coupons)
+          .set({ 
+            code: input.code,
+            description: input.description,
+            discountDays: input.discountDays,
+            expirationDate: input.expirationDate ? new Date(input.expirationDate) : null,
+            isActive: input.isActive,
+            updatedAt: new Date() 
+          })
+          .where(eq(coupons.id, input.id));
+        
         return { success: true };
       }),
 

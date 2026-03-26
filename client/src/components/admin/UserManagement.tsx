@@ -48,6 +48,7 @@ import {
     CalendarIcon,
     X,
     Download,
+    Ticket,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -58,6 +59,7 @@ export function UserManagement() {
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
     const [planFilter, setPlanFilter] = useState("all");
+    const [couponFilter, setCouponFilter] = useState("all");
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
     const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
     const [sortBy, setSortBy] = useState<"newest" | "oldest" | "credits_asc" | "credits_desc">("newest");
@@ -86,6 +88,7 @@ export function UserManagement() {
         sortBy: sortBy,
         dateFrom: dateFrom?.toISOString(),
         dateTo: dateTo?.toISOString(),
+        couponFilter: couponFilter !== "all" ? couponFilter : undefined,
     });
 
     const { data: userDetails } = trpc.admin.getUserDetails.useQuery(
@@ -187,6 +190,7 @@ export function UserManagement() {
                 sortBy: sortBy,
                 dateFrom: dateFrom?.toISOString(),
                 dateTo: dateTo?.toISOString(),
+                couponFilter: couponFilter !== "all" ? couponFilter : undefined,
             });
 
             if (!allUsers || allUsers.length === 0) {
@@ -294,6 +298,17 @@ export function UserManagement() {
                                 <SelectItem value="premium">PREMIUM</SelectItem>
                             </SelectContent>
                         </Select>
+
+                        <Input
+                            placeholder="Filtrar por Cupom"
+                            value={couponFilter === "all" ? "" : couponFilter}
+                            onChange={(e) => {
+                                const val = e.target.value.toUpperCase();
+                                setCouponFilter(val || "all");
+                                setPage(1);
+                            }}
+                            className="w-40 border-gray-300 bg-white"
+                        />
 
                         <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                             <SelectTrigger
@@ -451,9 +466,14 @@ export function UserManagement() {
                                                         TRIAL
                                                     </span>
                                                 )}
-                                                {user.isAffiliate && (
+                                                 {user.isAffiliate && (
                                                     <span className="text-xs font-bold px-2 py-1 rounded-full uppercase bg-indigo-100 text-indigo-700 border border-indigo-300">
                                                         AFILIADO
+                                                    </span>
+                                                )}
+                                                {user.couponCode && (
+                                                    <span className="text-xs font-bold px-2 py-1 rounded-full uppercase bg-amber-100 text-amber-700 border border-amber-300 flex items-center gap-1">
+                                                        <Ticket size={10} /> {user.couponCode}
                                                     </span>
                                                 )}
                                             </div>
@@ -607,6 +627,21 @@ export function UserManagement() {
                                         {String(userDetails.subscription_status || "Sem assinatura")}
                                     </p>
                                 </div>
+
+                                {/* Cupom Utilizado */}
+                                {userDetails.coupon_code && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <Ticket className="w-4 h-4 text-amber-500" />
+                                            <p className="text-xs font-bold text-gray-500 uppercase">
+                                                Cupom Utilizado
+                                            </p>
+                                        </div>
+                                        <p className="text-base font-black text-amber-700 uppercase tracking-widest">
+                                            {String(userDetails.coupon_code)}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Divider */}

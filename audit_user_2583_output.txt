@@ -1,0 +1,52 @@
+[dotenv@17.2.4] injecting env (28) from .env -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ­ƒôí add observability to secrets: https://dotenvx.com/ops
+Vari├íveis carregadas (Local): { hasDb: true, hasSupabase: true, hasMp: true }
+[Database] Debug URL: Length=124, Chars=[postgresql...]
+[Database] Validando formato...
+[Database] URL v├ílida! Protocol: postgresql:, Host: aws-1-us-east-2.pooler.supabase.com, Port: 6543, Path: /postgres
+[Database] Criando Pool com configura├º├úo manual (Bypassing pg-connection-string)...
+[Database] Config gerada - Host: aws-1-us-east-2.pooler.supabase.com, DB: postgres, User: ***
+[Database] Pool criado. Inicializando Drizzle...
+[Database] Testando conex├úo com .connect()...
+[Database] Conectado com sucesso ├á base de dados.
+--- USER AUDIT (2583) ---
+{
+  "user": {
+    "id": 2583,
+    "openId": "google:101366755922172558157",
+    "supabaseId": "60589c5b-ddc2-4a75-adb2-0a762427205d",
+    "clerkId": null,
+    "stripeCustomerId": "cus_U8ZWZngDmPxRnx",
+    "name": "David Sulivan",
+    "email": "dsulivan.r93@gmail.com",
+    "password": null,
+    "loginMethod": "google",
+    "role": "user",
+    "currentSessionId": null,
+    "createdAt": "2026-03-12T23:07:25.781Z",
+    "updatedAt": "2026-03-12T23:07:25.781Z",
+    "lastSignedIn": "2026-03-12T23:07:25.781Z",
+    "affiliateCode": null,
+    "isAffiliate": false,
+    "commissionPercentage": 0,
+    "referredBy": null
+  },
+  "sub": {
+    "id": 2574,
+    "userId": 2583,
+    "planId": 4,
+    "status": "active",
+    "billingPeriod": "yearly",
+    "startDate": "2026-03-12T23:07:25.798Z",
+    "endDate": "2027-03-12T23:10:41.887Z",
+    "nextBillingDate": null,
+    "gracePeriodEndsAt": null,
+    "lastPaymentDate": "2026-03-12T23:10:41.883Z",
+    "createdAt": "2026-03-12T23:07:25.803Z",
+    "updatedAt": "2026-03-12T23:10:41.883Z",
+    "cancelledAt": null,
+    "mercadoPagoSubscriptionId": null,
+    "stripeSubscriptionId": null,
+    "stripeStatus": null
+  }
+}

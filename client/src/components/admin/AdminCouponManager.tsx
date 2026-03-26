@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Plus, Trash2, Ticket, Calendar, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, Plus, Trash2, Ticket, Calendar, CheckCircle2, XCircle, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -20,6 +20,7 @@ export function AdminCouponManager() {
     discountDays: 30,
     expirationDate: "",
   });
+  const [editingCoupon, setEditingCoupon] = useState<any>(null);
 
   const utils = trpc.useUtils();
   const { data: coupons, isLoading } = trpc.admin.listCoupons.useQuery();
@@ -46,13 +47,51 @@ export function AdminCouponManager() {
     onError: (err) => toast.error(err.message),
   });
 
-  const handleCreate = (e: React.FormEvent) => {
+  const editMutation = trpc.admin.editCoupon.useMutation({
+    onSuccess: () => {
+      toast.success("Cupom atualizado!");
+      setIsDialogOpen(false);
+      setEditingCoupon(null);
+      setNewCoupon({ code: "", description: "", discountDays: 30, expirationDate: "" });
+      utils.admin.listCoupons.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCoupon.code) return toast.error("O código é obrigatório");
-    createMutation.mutate({
-      ...newCoupon,
-      expirationDate: newCoupon.expirationDate || null,
+    
+    if (editingCoupon) {
+      editMutation.mutate({
+        id: editingCoupon.id,
+        ...newCoupon,
+        isActive: editingCoupon.isActive,
+        expirationDate: newCoupon.expirationDate || null,
+      });
+    } else {
+      createMutation.mutate({
+        ...newCoupon,
+        expirationDate: newCoupon.expirationDate || null,
+      });
+    }
+  };
+
+  const openCreateDialog = () => {
+    setEditingCoupon(null);
+    setNewCoupon({ code: "", description: "", discountDays: 30, expirationDate: "" });
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (coupon: any) => {
+    setEditingCoupon(coupon);
+    setNewCoupon({
+      code: coupon.code,
+      description: coupon.description || "",
+      discountDays: coupon.discountDays,
+      expirationDate: coupon.expirationDate ? format(new Date(coupon.expirationDate), "yyyy-MM-dd") : "",
     });
+    setIsDialogOpen(true);
   };
 
   if (isLoading) {
@@ -79,10 +118,10 @@ export function AdminCouponManager() {
           <DialogContent className="bg-white border-2 border-[#d4af37]/20">
             <DialogHeader>
               <DialogTitle className="text-[#1e3a5f] font-bold text-xl flex items-center gap-2">
-                <Ticket className="text-[#d4af37]" /> Criar Novo Cupom
+                <Ticket className="text-[#d4af37]" /> {editingCoupon ? "Editar Cupom" : "Criar Novo Cupom"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4 py-4">
+            <form onSubmit={handleSave} className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label className="text-[#1e3a5f] font-bold">Código do Cupom</Label>
                 <Input
@@ -123,8 +162,8 @@ export function AdminCouponManager() {
                 </div>
               </div>
               <DialogFooter className="pt-4">
-                <Button type="submit" disabled={createMutation.isPending} className="w-full bg-[#1e3a5f] text-white font-bold h-12">
-                  {createMutation.isPending ? <Loader2 className="animate-spin" /> : "Gerar Cupom"}
+                <Button type="submit" disabled={createMutation.isPending || editMutation.isPending} className="w-full bg-[#1e3a5f] text-white font-bold h-12">
+                  {createMutation.isPending || editMutation.isPending ? <Loader2 className="animate-spin" /> : (editingCoupon ? "Salvar Alterações" : "Gerar Cupom")}
                 </Button>
               </DialogFooter>
             </form>
@@ -198,7 +237,15 @@ export function AdminCouponManager() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-[#1e3a5f] hover:text-[#2a4a6f] hover:bg-[#1e3a5f]/5 transition-colors"
+                        onClick={() => openEditDialog(coupon)}
+                      >
+                        <Edit2 size={18} />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"

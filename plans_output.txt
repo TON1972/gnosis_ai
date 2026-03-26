@@ -1,0 +1,69 @@
+[dotenv@17.2.4] injecting env (28) from .env -- tip: ­ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ­ƒùé´©Å backup and recover secrets: https://dotenvx.com/ops
+Vari├íveis carregadas (Local): { hasDb: true, hasSupabase: true, hasMp: true }
+[Database] Debug URL: Length=124, Chars=[postgresql...]
+[Database] Validando formato...
+[Database] URL v├ílida! Protocol: postgresql:, Host: aws-1-us-east-2.pooler.supabase.com, Port: 6543, Path: /postgres
+[Database] Criando Pool com configura├º├úo manual (Bypassing pg-connection-string)...
+[Database] Config gerada - Host: aws-1-us-east-2.pooler.supabase.com, DB: postgres, User: ***
+[Database] Pool criado. Inicializando Drizzle...
+[Database] Testando conex├úo com .connect()...
+[Database] Conectado com sucesso ├á base de dados.
+[
+  {
+    "id": 1,
+    "name": "free",
+    "displayName": "FREE",
+    "price": 0,
+    "priceMonthly": 0,
+    "priceYearly": 0,
+    "creditsInitial": 1500,
+    "creditsDaily": 100,
+    "toolsCount": 5,
+    "description": "Plano gratuito com acesso limitado",
+    "isActive": true,
+    "createdAt": "2025-11-26T22:46:55.042Z"
+  },
+  {
+    "id": 2,
+    "name": "alianca",
+    "displayName": "ALIAN├çA",
+    "price": 1898,
+    "priceMonthly": 1998,
+    "priceYearly": 16776,
+    "creditsInitial": 3000,
+    "creditsDaily": 150,
+    "toolsCount": 10,
+    "description": "Plano Alian├ºa com mais recursos",
+    "isActive": true,
+    "createdAt": "2025-11-26T22:46:55.042Z"
+  },
+  {
+    "id": 3,
+    "name": "lumen",
+    "displayName": "LUMEN",
+    "price": 3798,
+    "priceMonthly": 3698,
+    "priceYearly": 32376,
+    "creditsInitial": 6000,
+    "creditsDaily": 200,
+    "toolsCount": 15,
+    "description": "Plano Lumen com recursos avan├ºados",
+    "isActive": true,
+    "createdAt": "2025-11-26T22:46:55.042Z"
+  },
+  {
+    "id": 4,
+    "name": "premium",
+    "displayName": "GNOSIS PREMIUM",
+    "price": 5698,
+    "priceMonthly": 6898,
+    "priceYearly": 57576,
+    "creditsInitial": 12000,
+    "creditsDaily": 400,
+    "toolsCount": 19,
+    "description": "Plano Premium com acesso total",
+    "isActive": true,
+    "createdAt": "2025-11-26T22:46:55.042Z"
+  }
+]

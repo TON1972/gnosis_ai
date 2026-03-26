@@ -1,0 +1,49 @@
+[dotenv@17.2.4] injecting env (28) from .env -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+Vari├íveis carregadas (Local): { hasDb: true, hasSupabase: true, hasMp: true }
+[Database] Debug URL: Length=124, Chars=[postgresql...]
+[Database] Validando formato...
+[Database] URL v├ílida! Protocol: postgresql:, Host: aws-1-us-east-2.pooler.supabase.com, Port: 6543, Path: /postgres
+[Database] Criando Pool com configura├º├úo manual (Bypassing pg-connection-string)...
+[Database] Config gerada - Host: aws-1-us-east-2.pooler.supabase.com, DB: postgres, User: ***
+[Database] Pool criado. Inicializando Drizzle...
+[Database] Testando conex├úo com .connect()...
+[Database] Conectado com sucesso ├á base de dados.
+--- PREMIUM USERS WITHOUT COUPON USAGE RECORD ---
+[
+  {
+    "id": 2583,
+    "email": "dsulivan.r93@gmail.com",
+    "sub_id": 2574,
+    "planId": 4,
+    "usage_id": null
+  },
+  {
+    "id": 149,
+    "email": "alvimar27@gmail.com",
+    "sub_id": 143,
+    "planId": 4,
+    "usage_id": null
+  },
+  {
+    "id": 113,
+    "email": "cpprcunhas@gmail.com",
+    "sub_id": 107,
+    "planId": 4,
+    "usage_id": null
+  },
+  {
+    "id": 91,
+    "email": "yanskydr@gmail.com",
+    "sub_id": 85,
+    "planId": 4,
+    "usage_id": null
+  },
+  {
+    "id": 18,
+    "email": "pep.contatos01@gmail.com",
+    "sub_id": 14,
+    "planId": 4,
+    "usage_id": null
+  }
+]

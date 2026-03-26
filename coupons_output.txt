@@ -1,0 +1,24 @@
+[dotenv@17.2.4] injecting env (28) from .env -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ­ƒöæ add access controls to secrets: https://dotenvx.com/ops
+Vari├íveis carregadas (Local): { hasDb: true, hasSupabase: true, hasMp: true }
+[Database] Debug URL: Length=124, Chars=[postgresql...]
+[Database] Validando formato...
+[Database] URL v├ílida! Protocol: postgresql:, Host: aws-1-us-east-2.pooler.supabase.com, Port: 6543, Path: /postgres
+[Database] Criando Pool com configura├º├úo manual (Bypassing pg-connection-string)...
+[Database] Config gerada - Host: aws-1-us-east-2.pooler.supabase.com, DB: postgres, User: ***
+[Database] Pool criado. Inicializando Drizzle...
+[Database] Testando conex├úo com .connect()...
+[Database] Conectado com sucesso ├á base de dados.
+--- COUPONS IN DATABASE ---
+[
+  {
+    "id": 2,
+    "code": "WEBINAR15D",
+    "description": "PROMO P/ PAGANTES DO WEBIN├üRIO DE 10/04",
+    "discountDays": 15,
+    "isActive": true,
+    "expirationDate": null,
+    "createdAt": "2026-03-23T14:58:28.600Z",
+    "updatedAt": "2026-03-23T14:58:28.600Z"
+  }
+]
