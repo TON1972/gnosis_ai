@@ -36,10 +36,10 @@ export default function UpgradeReminderModal({ open, onClose }: UpgradeReminderM
                     <DialogHeader className="pt-2 sm:pt-0">
                         <DialogTitle className="text-center">
                             <span className="block text-xs sm:text-2xl font-bold text-white mb-1 sm:mb-2 uppercase tracking-wide">
-                                OFERTA ESTENDIDA!!!
+                                EXTENSÃO DE OFERTA
                             </span>
                             <span className="block text-lg sm:text-4xl font-extrabold text-[#d4af37] bg-white/10 py-1 sm:py-2 px-3 sm:px-4 rounded-lg inline-block transform -rotate-1 shadow-lg backdrop-blur-sm">
-                                "ATÉ 15/03"
+                                "ATÉ 30/04"
                             </span>
                         </DialogTitle>
                     </DialogHeader>
