@@ -157,7 +157,7 @@ app.post("/api/register", async (req, res) => {
     let subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     let usedCouponId = null;
 
-    // Lógica de Cupom
+    // Lógica de Cupom Avançado
     if (parseResult.data.coupon) {
       const { coupons, couponUsages } = await import("../../shared/schema.js");
       const [couponRecord] = await db
@@ -171,15 +171,29 @@ app.post("/api/register", async (req, res) => {
         const isExpired = couponRecord.expirationDate && new Date(couponRecord.expirationDate) < now;
         
         if (couponRecord.isActive && !isExpired) {
-          // Busca o plano Premium
-          const [premiumPlan] = await db.select().from(plans).where(eq(plans.name, 'premium')).limit(1);
-          if (premiumPlan) {
-            targetPlanId = premiumPlan.id;
-            targetPlan = premiumPlan;
-            subscriptionEndDate = new Date(Date.now() + couponRecord.discountDays * 24 * 60 * 60 * 1000);
-            usedCouponId = couponRecord.id;
-            console.log(`>>> DEBUG REGISTER: Coupon ${couponRecord.code} valid. Granting Premium for ${couponRecord.discountDays} days.`);
+          // Calcular data de expiração do cupom para o usuário
+          const couponExpiresAt = new Date(Date.now() + couponRecord.discountDays * 24 * 60 * 60 * 1000);
+          
+          // Se o cupom tem um plano vinculado, usar esse plano
+          if (couponRecord.grantPlanId) {
+            const [grantedPlan] = await db.select().from(plans).where(eq(plans.id, couponRecord.grantPlanId)).limit(1);
+            if (grantedPlan) {
+              targetPlanId = grantedPlan.id;
+              targetPlan = grantedPlan;
+              subscriptionEndDate = couponExpiresAt;
+              console.log(`>>> DEBUG REGISTER: Coupon ${couponRecord.code} granting plan "${grantedPlan.displayName}" for ${couponRecord.discountDays} days.`);
+            }
+          } else {
+            // Sem plano vinculado - fica no Free mas com ferramentas customizadas
+            subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Free padrão
+            console.log(`>>> DEBUG REGISTER: Coupon ${couponRecord.code} granting custom tools for ${couponRecord.discountDays} days (no plan change).`);
           }
+          
+          usedCouponId = couponRecord.id;
+          
+          // Guardar dados do cupom para registrar uso com expiração
+          (req as any)._couponExpiresAt = couponExpiresAt;
+          (req as any)._couponBonusCredits = couponRecord.bonusCredits || 0;
         } else {
           console.log(`>>> DEBUG REGISTER: Coupon ${parseResult.data.coupon} is inactive or expired.`);
           return res.status(400).json({ success: false, message: "Cupom inválido ou expirado." });
@@ -203,21 +217,29 @@ app.post("/api/register", async (req, res) => {
       await db.insert(couponUsages).values({
         couponId: usedCouponId,
         userId: newUser.id,
-        usedAt: new Date()
+        usedAt: new Date(),
+        expiresAt: (req as any)._couponExpiresAt || null,
+        isExpired: false,
       });
     }
 
     const initial = Number(targetPlan.creditsInitial ?? 0);
     const daily = Number(targetPlan.creditsDaily ?? 0);
+    const bonusFromCoupon = Number((req as any)._couponBonusCredits ?? 0);
 
     await db.insert(credits).values({
       userId: newUser.id,
-      amount: (initial + daily).toString(),
+      amount: (initial + daily + bonusFromCoupon).toString(),
       creditsInitial: initial.toString(),
       creditsDaily: daily.toString(),
+      creditsBonus: bonusFromCoupon.toString(),
       type: 'initial',
       createdAt: new Date(),
     } as any);
+
+    if (bonusFromCoupon > 0) {
+      console.log(`>>> DEBUG REGISTER: Applied ${bonusFromCoupon} bonus credits from coupon.`);
+    }
 
     // ✅ 5. LOGAR AUTOMATICAMENTE: Gerar Token JWT imediatamente
     const token = jwt.sign(

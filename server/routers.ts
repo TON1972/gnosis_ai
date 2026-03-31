@@ -1373,6 +1373,9 @@ export const appRouter = router({
         description: z.string().optional(),
         discountDays: z.number().int().positive(),
         expirationDate: z.string().optional().nullable(),
+        allowedToolIds: z.string().optional().nullable(), // JSON array string
+        bonusCredits: z.number().int().min(0).default(0),
+        grantPlanId: z.number().optional().nullable(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
@@ -1384,6 +1387,9 @@ export const appRouter = router({
           description: input.description,
           discountDays: input.discountDays,
           expirationDate: input.expirationDate ? new Date(input.expirationDate) : null,
+          allowedToolIds: input.allowedToolIds || null,
+          bonusCredits: input.bonusCredits || 0,
+          grantPlanId: input.grantPlanId || null,
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -1425,6 +1431,9 @@ export const appRouter = router({
         discountDays: z.number().int().positive(),
         expirationDate: z.string().optional().nullable(),
         isActive: z.boolean(),
+        allowedToolIds: z.string().optional().nullable(), // JSON array string
+        bonusCredits: z.number().int().min(0).default(0),
+        grantPlanId: z.number().optional().nullable(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
@@ -1438,11 +1447,68 @@ export const appRouter = router({
             discountDays: input.discountDays,
             expirationDate: input.expirationDate ? new Date(input.expirationDate) : null,
             isActive: input.isActive,
+            allowedToolIds: input.allowedToolIds || null,
+            bonusCredits: input.bonusCredits || 0,
+            grantPlanId: input.grantPlanId || null,
             updatedAt: new Date() 
           })
           .where(eq(coupons.id, input.id));
         
         return { success: true };
+      }),
+
+    // ✅ NOVO: Obter ferramentas liberadas por cupom ativo do usuário
+    getActiveCouponTools: protectedProcedure
+      .query(async ({ ctx }) => {
+        const db = await getDb();
+        if (!db) return { tools: [], bonusCredits: 0, couponCode: null, expiresAt: null };
+        
+        const { coupons, couponUsages } = await import("../drizzle/schema.js");
+        
+        // Busca uso de cupom ativo (não expirado) do usuário
+        const usages = await db
+          .select({
+            couponId: couponUsages.couponId,
+            expiresAt: couponUsages.expiresAt,
+            isExpired: couponUsages.isExpired,
+          })
+          .from(couponUsages)
+          .where(eq(couponUsages.userId, ctx.user.id));
+        
+        // Filtrar cupons não expirados
+        const now = new Date();
+        const activeUsage = usages.find(u => {
+          if (u.isExpired) return false;
+          if (u.expiresAt && new Date(u.expiresAt) < now) return false;
+          return true;
+        });
+        
+        if (!activeUsage) return { tools: [], bonusCredits: 0, couponCode: null, expiresAt: null };
+        
+        // Busca dados do cupom
+        const [coupon] = await db
+          .select()
+          .from(coupons)
+          .where(eq(coupons.id, activeUsage.couponId))
+          .limit(1);
+        
+        if (!coupon) return { tools: [], bonusCredits: 0, couponCode: null, expiresAt: null };
+        
+        // Parse tool IDs
+        let toolIds: number[] = [];
+        if (coupon.allowedToolIds) {
+          try {
+            toolIds = JSON.parse(coupon.allowedToolIds);
+          } catch { toolIds = []; }
+        }
+        
+        return {
+          tools: toolIds,
+          bonusCredits: coupon.bonusCredits || 0,
+          couponCode: coupon.code,
+          expiresAt: activeUsage.expiresAt?.toISOString() || null,
+          grantPlanId: coupon.grantPlanId || null,
+        };
       }),
 
     // ✅ 5. Listar quais planos estão vinculados a uma ferramenta específica

@@ -357,6 +357,10 @@ export const coupons = pgTable("coupons", {
   discountDays: integer("discountDays").notNull().default(30),
   isActive: boolean("isActive").default(true).notNull(),
   expirationDate: timestamp("expirationDate"),
+  // --- Novos campos: Gerenciamento Avançado ---
+  allowedToolIds: text("allowedToolIds"), // JSON array de IDs, ex: "[1,5,12]"
+  bonusCredits: integer("bonusCredits").default(0), // Créditos bônus concedidos
+  grantPlanId: integer("grantPlanId").references(() => plans.id), // Plano concedido (null = customizado)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -367,4 +371,7 @@ export const couponUsages = pgTable("coupon_usages", {
   couponId: integer("couponId").references(() => coupons.id).notNull(),
   userId: integer("userId").references(() => users.id).notNull(),
   usedAt: timestamp("usedAt").defaultNow().notNull(),
+  // --- Novos campos: Controle de expiração por uso ---
+  expiresAt: timestamp("expiresAt"), // Data em que as regras do cupom expiram
+  isExpired: boolean("isExpired").default(false), // Flag de expirado
 });
