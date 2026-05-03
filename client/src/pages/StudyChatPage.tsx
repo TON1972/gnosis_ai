@@ -12,8 +12,10 @@ import { toast } from "sonner";
 import jsPDF from "jspdf";
 import ShareButton from "@/components/ShareButton";
 import NoCreditsModal from "@/components/NoCreditsModal";
+import { useTranslation } from "react-i18next";
 
 export default function StudyChatPage() {
+  const { i18n } = useTranslation();
   const [, params] = useRoute("/study/:studyId");
   const [, setLocation] = useLocation();
   const studyId = Number(params?.studyId);
@@ -157,7 +159,8 @@ export default function StudyChatPage() {
       const response = await generateMutation.mutateAsync({
         toolId: String(studyData.study.toolId),
         input: userMessage,
-        history: messages
+        history: messages,
+        language: i18n.language // Add current language
       });
 
       // Salva a resposta da IA

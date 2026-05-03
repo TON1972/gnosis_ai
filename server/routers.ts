@@ -310,13 +310,18 @@ export const appRouter = router({
           role: z.enum(["user", "assistant"]),
           content: z.string()
         })).optional(),
+        language: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { invokeLLM } = await import("./_core/llm.js");
         const db = await getValidatedDb();
 
         const toolRecord = await db
-          .select({ promptTemplate: tools.promptTemplate })
+          .select({ 
+            promptTemplate: tools.promptTemplate,
+            promptTemplateEn: tools.promptTemplateEn,
+            promptTemplateEs: tools.promptTemplateEs
+          })
           .from(tools)
           .where(
             or(
@@ -326,7 +331,24 @@ export const appRouter = router({
           )
           .limit(1);
 
-        const systemPrompt = toolRecord[0]?.promptTemplate || "Você é um assistente de estudos bíblicos altamente qualificado.";
+        let systemPrompt = toolRecord[0]?.promptTemplate || "Você é um assistente de estudos bíblicos altamente qualificado.";
+        
+        // Use translated prompt template if available
+        if (input.language?.startsWith('en') && toolRecord[0]?.promptTemplateEn) {
+          systemPrompt = toolRecord[0].promptTemplateEn;
+        } else if (input.language?.startsWith('es') && toolRecord[0]?.promptTemplateEs) {
+          systemPrompt = toolRecord[0].promptTemplateEs;
+        }
+
+        // Force language constraint
+        let langInstruction = "IMPORTANTE: Responda OBRIGATORIAMENTE em Português do Brasil.";
+        if (input.language?.startsWith('en')) {
+          langInstruction = "IMPORTANT: You MUST respond strictly in English.";
+        } else if (input.language?.startsWith('es')) {
+          langInstruction = "IMPORTANTE: Debes responder ESTRICTAMENTE en Español.";
+        }
+
+        systemPrompt += `\n\n${langInstruction}`;
 
         const messages = [
           { role: "system" as const, content: systemPrompt },

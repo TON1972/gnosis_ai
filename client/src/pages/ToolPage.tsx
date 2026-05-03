@@ -21,7 +21,7 @@ import { getLocalizedString } from "@/lib/i18nHelper";
 import "../dashboard-mobile.css";
 
 export default function ToolPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [, params] = useRoute("/tool/:toolId");
   const [, setLocation] = useLocation();
   const toolIdFromParams = params?.toolId || "";
@@ -76,7 +76,8 @@ export default function ToolPage() {
       const response = await generateMutation.mutateAsync({
         toolId: dbTool.id.toString(),
         input: input,
-        history: []
+        history: [],
+        language: i18n.language // Pass current language to backend
       });
 
       setResult(response.content);
