@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import VersePopup from "@/components/VersePopup";
 import TutorialCarousel from "@/components/TutorialCarousel";
@@ -9,6 +10,7 @@ import { APP_LOGO, APP_TITLE } from "@/const";
 import { Link, useLocation } from "wouter";
 import React, { useState, useEffect } from "react";
 import Footer from "@/components/Footer";
+import { getLocalizedString } from "@/lib/i18nHelper";
 import {
   BookOpen,
   Languages,
@@ -58,20 +60,11 @@ const ICON_MAP: Record<string, any> = {
   "default": Sparkles
 };
 
-const theologians = [
-  "Agostinho de Hipona",
-  "Tomás de Aquino",
-  "Martinho Lutero",
-  "João Calvino",
-  "John Wesley",
-  "Karl Barth",
-  "C.S. Lewis",
-  "Dietrich Bonhoeffer",
-  "N.T. Wright",
-  "Timothy Keller"
-];
+// Theologians list is now loaded from translation JSON files
+
 
 export default function Home() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, logout } = useAuth();
   const { data: activePlan } = trpc.credits.activePlan.useQuery(undefined, { enabled: isAuthenticated });
 
@@ -93,7 +86,7 @@ export default function Home() {
   }, []);
 
   const getDisplayPrice = (plan: any) => {
-    if (plan.priceMonthly === 0) return { main: "Gratuito", multiplier: null };
+    if (plan.priceMonthly === 0) return { main: t('dashboard.freePlan'), multiplier: null };
 
     // O banco retorna valores em centavos (integer)
     const priceMonthly = plan.priceMonthly / 100;
@@ -110,7 +103,7 @@ export default function Home() {
 
   const getDisplayPeriod = (plan: any) => {
     if (plan.priceMonthly === 0) return '';
-    return billingPeriod === 'yearly' ? '/ano' : '/mês';
+    return billingPeriod === 'yearly' ? t('home.periodYearly') : t('home.periodMonthly');
   };
 
   const handlePlanClick = (planId: number | string) => {
@@ -154,11 +147,10 @@ export default function Home() {
       <section className="container mx-auto px-4 py-12 md:py-20 text-center">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-[#1e3a5f] mb-6">
-            Estudos Bíblicos Profundos com IA
+            {t('home.heroTitle')}
           </h2>
           <p className="text-lg md:text-xl lg:text-2xl text-[#8b6f47] mb-8 leading-relaxed">
-            Explore as Escrituras com ferramentas avançadas de inteligência artificial,
-            desenvolvidas especialmente para pastores, teólogos e estudantes de seminário.
+            {t('home.heroSubtitle')}
           </p>
 
           <div className="mb-12">
@@ -172,7 +164,7 @@ export default function Home() {
                 variant="outline"
                 className="border-2 border-[#1e3a5f] text-[#1e3a5f] hover:bg-[#1e3a5f] hover:text-[#d4af37] text-lg px-8 py-6 rounded-xl shadow-xl"
               >
-                Perguntas Frequentes
+                {t('home.btnFaq')}
               </Button>
             </Link>
             <Button
@@ -183,7 +175,7 @@ export default function Home() {
               size="lg"
               className="bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] text-xl px-12 py-6 rounded-xl shadow-2xl"
             >
-              Começar Agora
+              {t('home.btnStart')}
               <ArrowRight className="ml-2 w-6 h-6" />
             </Button>
           </div>
@@ -192,7 +184,7 @@ export default function Home() {
 
       <section className="container mx-auto px-4 py-8 md:py-16">
         <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#1e3a5f] text-center mb-8 md:mb-12">
-          Ferramentas Principais
+          {t('home.toolsTitle')}
         </h3>
 
         {isLoading ? (
@@ -238,7 +230,7 @@ export default function Home() {
               return displayedTools?.map((tool: any) => {
                 const isMobileOnly = tool.name === "linha_do_tempo_teológica";
                 const visibilityClass = isMobileOnly ? "block md:hidden" : "block";
-                const finalName = displayNameOverrides[tool.name] || tool.displayName || tool.name;
+                const finalName = getLocalizedString(tool, 'displayName') || displayNameOverrides[tool.name] || tool.name;
 
                 return (
                   <div
@@ -251,7 +243,7 @@ export default function Home() {
                       </div>
                       <h4 className="text-sm md:text-xl font-bold text-[#1e3a5f] text-center md:text-left">{finalName}</h4>
                     </div>
-                    <p className="text-[#8b6f47]">{tool.description}</p>
+                    <p className="text-[#8b6f47]">{getLocalizedString(tool, 'description')}</p>
                   </div>
                 );
               });
@@ -263,7 +255,7 @@ export default function Home() {
           <Link href="/faq">
             <span className="inline-flex items-center gap-2 px-8 py-4 bg-[#d4af37] text-[#1e3a5f] rounded-xl font-bold text-lg hover:bg-[#B8860B] transition-colors shadow-lg cursor-pointer">
               <Sparkles className="w-6 h-6" />
-              Entre outras poderosas ferramentas para estudos acadêmicos, clique aqui e veja!
+              {t('home.btnTools')}
               <ArrowRight className="w-6 h-6" />
             </span>
           </Link>
@@ -273,13 +265,13 @@ export default function Home() {
       <section className="container mx-auto px-4 py-8 md:py-16">
         <div className="bg-white/90 rounded-2xl p-6 md:p-12 shadow-2xl border-4 border-[#d4af37] max-w-5xl mx-auto">
           <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#1e3a5f] text-center mb-6 md:mb-8">
-            Fundamentada nos Mais Proeminentes Teólogos da História
+            {t('home.theologiansTitle')}
           </h3>
           <p className="text-xl text-[#8b6f47] text-center mb-8">
-            Nossa IA foi treinada com obras e pensamentos de renomados teólogos cristãos:
+            {t('home.theologiansSubtitle')}
           </p>
           <div className="grid md:grid-cols-2 gap-4 mb-6">
-            {theologians.map((theologian, index) => (
+            {(t('home.theologiansList', { returnObjects: true }) as string[]).map((theologian, index) => (
               <div key={index} className="flex items-center gap-3 p-3 bg-[#FFFACD] rounded-lg border-2 border-[#d4af37]">
                 <CheckCircle2 className="w-5 h-5 text-[#d4af37] flex-shrink-0" />
                 <span className="text-[#1e3a5f] font-semibold">{theologian}</span>
@@ -287,14 +279,14 @@ export default function Home() {
             ))}
           </div>
           <p className="text-center text-lg text-[#8b6f47] italic font-semibold">
-            Entre muitos outros...
+            {t('home.theologiansAndMore')}
           </p>
         </div>
       </section>
 
       <section id="planos" className="container mx-auto px-4 py-8 md:py-16">
         <h3 className="hidden md:block text-2xl md:text-3xl lg:text-4xl font-bold text-[#1e3a5f] text-center mb-4">
-          Escolha Seu Plano
+          {t('home.planChoiceTitle')}
         </h3>
 
         <div className="hidden md:flex justify-center items-center gap-4 mb-6">
@@ -305,7 +297,7 @@ export default function Home() {
               : 'bg-white/80 text-[#8b6f47] hover:bg-white'
               }`}
           >
-            Mensal
+            {t('home.monthly')}
           </button>
           <button
             onClick={() => setBillingPeriod('yearly')}
@@ -314,7 +306,7 @@ export default function Home() {
               : 'bg-white/80 text-[#8b6f47] hover:bg-white'
               }`}
           >
-            Anual
+            {t('home.yearly')}
             <span className="absolute -top-2 -right-2 bg-[#d4af37] text-[#1e3a5f] text-xs px-2 py-1 rounded-full font-bold">
               -16,5%
             </span>
@@ -322,7 +314,7 @@ export default function Home() {
         </div>
 
         <p className="hidden md:block text-base md:text-lg lg:text-xl text-[#8b6f47] text-center mb-8 md:mb-12">
-          * Créditos iniciais dos planos pagos são renovados a cada 30 dias
+          {t('home.creditRenewMsg')}
         </p>
 
         {(!isAuthenticated || !activePlan || activePlan.plan.name === 'free') && (
@@ -337,7 +329,7 @@ export default function Home() {
               }
             `}</style>
             <p className="blink-animation hidden md:inline-block text-2xl font-bold text-red-600 bg-yellow-100 border-4 border-red-500 rounded-lg py-4 px-6 shadow-lg">
-              🎉 ESSES SÃO VALORES PROMOCIONAIS DE LANÇAMENTO, APROVEITE A OPORTUNIDADE! 🎉
+              {t('home.promoMsg')}
             </p>
 
             <div className="mt-6">
@@ -348,7 +340,7 @@ export default function Home() {
                 }}
                 className="inline-flex items-center gap-2 px-8 py-4 bg-[#d4af37] md:bg-[#d4af37] bg-gradient-to-r from-red-500 to-red-600 md:from-[#d4af37] md:to-[#d4af37] text-white md:text-[#1e3a5f] rounded-xl font-bold text-lg hover:bg-[#B8860B] transition-colors shadow-lg cursor-pointer"
               >
-                PLANOS E PREÇOS
+                {t('home.btnPlans')}
               </Button>
             </div>
           </div>
@@ -363,14 +355,14 @@ export default function Home() {
             {/* Mobile: Botão para página de planos */}
             <div className="md:hidden flex flex-col items-center justify-center space-y-6">
               <p className="text-lg text-[#8b6f47] text-center px-4">
-                Confira todos os detalhes dos nossos planos e escolha o ideal para o seu ministério.
+                {t('home.mobilePlanText')}
               </p>
               <Link href="/planos">
                 <Button
                   size="lg"
                   className="bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] text-xl px-12 py-6 rounded-xl shadow-2xl w-full max-w-xs"
                 >
-                  Ver Planos e Preços
+                  {t('home.btnSeePlans')}
                 </Button>
               </Link>
             </div>
@@ -396,13 +388,13 @@ export default function Home() {
                   >
                     {isHighlight && (
                       <div className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 bg-[#1e3a5f] text-[#d4af37] px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold whitespace-nowrap">
-                        MAIS POPULAR
+                        {t('home.mostPopular')}
                       </div>
                     )}
                     {isPremium && (
                       <div className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 bg-[#d4af37] text-[#1e3a5f] px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold flex items-center gap-1 whitespace-nowrap">
                         <Crown className="w-3 h-3 md:w-4 md:h-4" />
-                        PREMIUM
+                        {t('home.premium')}
                       </div>
                     )}
                     <h4 className={`text-2xl font-bold mb-4 ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
@@ -433,14 +425,14 @@ export default function Home() {
                         }`}>
                         <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
                           }`}>
-                          {plan.creditsInitial?.toLocaleString()} créditos iniciais{isFree ? "" : "*"}
+                          {plan.creditsInitial?.toLocaleString()} {isFree ? t('home.creditsInitialFree') : t('home.creditsInitialPaid')}
                         </p>
                       </div>
                       <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
                         }`}>
                         <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
                           }`}>
-                          {plan.creditsDaily?.toLocaleString()} créditos/dia
+                          {plan.creditsDaily?.toLocaleString()} {t('home.creditsDaily')}
                         </p>
                       </div>
                       <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
@@ -454,8 +446,8 @@ export default function Home() {
                             const totalToolsCount = toolsData?.length || 19;
 
                             return validToolsCount === totalToolsCount
-                              ? `(Todas as ${totalToolsCount} ferramentas)`
-                              : `(${validToolsCount} de ${totalToolsCount} ferramentas disponíveis)`;
+                              ? t('home.toolsAll', { total: totalToolsCount })
+                              : t('home.toolsSome', { valid: validToolsCount, total: totalToolsCount });
                           })()}
                         </p>
                       </div>
@@ -476,7 +468,7 @@ export default function Home() {
                               ? isAvailable ? "text-white" : "text-white/50"
                               : isAvailable ? "text-[#1e3a5f]" : "text-gray-400"
                               }`}>
-                              {tool.displayName}
+                              {getLocalizedString(tool, 'displayName')}
                             </span>
                           </li>
                         );
@@ -491,7 +483,7 @@ export default function Home() {
                           : "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
                         }`}
                     >
-                      {isFree ? "Começar Grátis" : "Assinar Agora"}
+                      {isFree ? t('home.btnStartFree') : t('home.btnSubscribe')}
                     </Button>
                   </div>
                 );
@@ -508,7 +500,7 @@ export default function Home() {
               size="lg"
               className="bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B] text-xl px-12 py-6 rounded-xl shadow-2xl"
             >
-              Perguntas Frequentes
+              {t('home.btnFaq')}
             </Button>
           </Link>
         </div>
@@ -519,14 +511,14 @@ export default function Home() {
           <div className="text-center mb-8 md:mb-12">
             <Gift className="w-12 h-12 md:w-16 md:h-16 text-[#d4af37] mx-auto mb-4" />
             <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#1e3a5f] mb-4">
-              Acabaram Seus Créditos?
+              {t('home.outOfCreditsTitle')}
             </h3>
             <p className="text-xl text-[#8b6f47] font-semibold">
-              Faça um Upgrade de Plano ou Compre Créditos Avulso!
+              {t('home.outOfCreditsSub')}
             </p>
             <div className="mt-6 bg-green-500 text-white px-6 py-3 rounded-lg inline-block shadow-lg">
               <p className="text-base md:text-lg font-bold">
-                💸 OPÇÃO DE COMPRA DE CRÉDITOS AVULSO POR PIX LIBERADO, MAIS RÁPIDO E PRÁTICO!
+                {t('home.pixBanner')}
               </p>
             </div>
 
@@ -537,7 +529,7 @@ export default function Home() {
                 className="bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-sm px-8 py-4 rounded-lg shadow-xl font-bold flex items-center gap-2"
               >
                 <ShoppingCart className="w-4 h-4" />
-                COMPRAR CRÉDITOS AVULSO
+                {t('home.btnBuyAvulso')}
               </Button>
             </div>
           </div>
@@ -547,7 +539,7 @@ export default function Home() {
               <div className="text-center mb-4">
                 <Sparkles className="w-8 h-8 mx-auto mb-2 text-[#d4af37]" />
                 <p className="text-3xl font-bold text-[#1e3a5f]">1.000</p>
-                <p className="text-sm text-[#8b6f47]">créditos</p>
+                <p className="text-sm text-[#8b6f47]">{t('home.creditsLbl')}</p>
               </div>
               <div className="text-center mb-4">
                 <p className="text-2xl font-bold text-[#1e3a5f]">R$ 9,90</p>
@@ -556,18 +548,18 @@ export default function Home() {
                 onClick={() => window.location.href = "/auth?tab=login"}
                 className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
               >
-                Comprar
+                {t('home.btnBuy')}
               </Button>
             </div>
 
             <div className="bg-white/95 rounded-xl p-6 shadow-lg border-4 border-[#d4af37] relative">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#d4af37] text-[#1e3a5f] px-3 py-1 rounded-full text-xs font-bold">
-                POPULAR
+                {t('home.popular')}
               </div>
               <div className="text-center mb-4">
                 <Sparkles className="w-8 h-8 mx-auto mb-2 text-[#d4af37]" />
                 <p className="text-3xl font-bold text-[#1e3a5f]">3.000</p>
-                <p className="text-sm text-[#8b6f47]">créditos</p>
+                <p className="text-sm text-[#8b6f47]">{t('home.creditsLbl')}</p>
               </div>
               <div className="text-center mb-4">
                 <p className="text-2xl font-bold text-[#1e3a5f]">R$ 24,90</p>
@@ -576,7 +568,7 @@ export default function Home() {
                 onClick={() => window.location.href = "/auth?tab=login"}
                 className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
               >
-                Comprar
+                {t('home.btnBuy')}
               </Button>
             </div>
 
@@ -584,7 +576,7 @@ export default function Home() {
               <div className="text-center mb-4">
                 <Sparkles className="w-8 h-8 mx-auto mb-2 text-[#d4af37]" />
                 <p className="text-3xl font-bold text-[#1e3a5f]">6.000</p>
-                <p className="text-sm text-[#8b6f47]">créditos</p>
+                <p className="text-sm text-[#8b6f47]">{t('home.creditsLbl')}</p>
               </div>
               <div className="text-center mb-4">
                 <p className="text-2xl font-bold text-[#1e3a5f]">R$ 39,90</p>
@@ -593,18 +585,18 @@ export default function Home() {
                 onClick={() => window.location.href = "/auth?tab=login"}
                 className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
               >
-                Comprar
+                {t('home.btnBuy')}
               </Button>
             </div>
 
             <div className="bg-gradient-to-br from-[#d4af37] to-[#B8860B] rounded-xl p-6 shadow-lg border-3 border-[#1e3a5f] relative">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#1e3a5f] text-[#d4af37] px-3 py-1 rounded-full text-xs font-bold">
-                MELHOR VALOR
+                {t('home.bestValue')}
               </div>
               <div className="text-center mb-4">
                 <Sparkles className="w-8 h-8 mx-auto mb-2 text-white" />
                 <p className="text-3xl font-bold text-white">10.000</p>
-                <p className="text-sm text-[#8b6f47]">créditos</p>
+                <p className="text-sm text-[#8b6f47]">{t('home.creditsLbl')}</p>
               </div>
               <div className="text-center mb-4">
                 <p className="text-2xl font-bold text-white">R$ 69,90</p>
@@ -613,14 +605,14 @@ export default function Home() {
                 onClick={() => window.location.href = "/auth?tab=login"}
                 className="w-full bg-white text-[#1e3a5f] hover:bg-gray-100"
               >
-                Comprar
+                {t('home.btnBuy')}
               </Button>
             </div>
           </div>
 
           <div className="text-center mt-6 md:mt-8">
             <p className="text-sm md:text-base text-[#8b6f47]">
-              <strong>Créditos avulsos nunca expiram</strong> e podem ser usados em qualquer plano!
+              {t('home.creditsNeverExpireMsg')}
             </p>
           </div>
 
@@ -630,7 +622,7 @@ export default function Home() {
                 size="lg"
                 className="bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B] text-xl px-12 py-6 rounded-xl shadow-2xl"
               >
-                Perguntas Frequentes
+                {t('home.btnFaq')}
               </Button>
             </Link>
           </div>
@@ -641,12 +633,10 @@ export default function Home() {
         <div className="bg-white/90 rounded-2xl p-6 md:p-12 shadow-2xl border-4 border-[#d4af37] max-w-5xl mx-auto text-center">
           <Globe className="w-12 h-12 md:w-16 md:h-16 text-[#d4af37] mx-auto mb-4 md:mb-6" />
           <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#1e3a5f] mb-4 md:mb-6">
-            Contextualização Brasileira Exclusiva
+            {t('home.contextTitle')}
           </h3>
           <p className="text-base md:text-lg lg:text-xl text-[#8b6f47] leading-relaxed">
-            Nossa ferramenta de Contextualização Brasileira oferece referências que os melhores
-            softwares estrangeiros não possuem. Desenvolvida especialmente para a realidade
-            brasileira, com corpus exclusivo sobre cultura, sociedade e religiosidade do Brasil.
+            {t('home.contextMsg')}
           </p>
         </div>
       </section>

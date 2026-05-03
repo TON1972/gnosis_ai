@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { Link, useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -16,9 +17,11 @@ import Footer from "@/components/Footer";
 import { useUpgradeReminder } from "@/hooks/useUpgradeReminder";
 import UpgradeReminderModal from "@/components/UpgradeReminderModal";
 import HeaderCredits from "@/components/HeaderCredits";
+import { getLocalizedString } from "@/lib/i18nHelper";
 import "../dashboard-mobile.css";
 
 export default function ToolPage() {
+  const { t } = useTranslation();
   const [, params] = useRoute("/tool/:toolId");
   const [, setLocation] = useLocation();
   const toolIdFromParams = params?.toolId || "";
@@ -83,7 +86,7 @@ export default function ToolPage() {
       // ✅ Chamada da Mutation (Tipada como any para evitar erros de TS no acesso ao ID)
       const saveResponse = await saveStudyMutation.mutateAsync({
         toolId: Number(dbTool.id),
-        toolName: dbTool.displayName,
+        toolName: getLocalizedString(dbTool, 'displayName'),
         input: input,
         output: response.content,
         creditCost: response.creditCost,
@@ -95,14 +98,15 @@ export default function ToolPage() {
       }
 
       refetchCredits();
-      toast.success("Análise concluída com sucesso!");
+      refetchCredits();
+      toast.success(t('toolPage.analysisSuccess'));
     } catch (error: any) {
       if (error.message?.includes("insuficientes")) {
         const isFree = activePlan?.plan?.name === 'free';
         setModalTab(isFree ? 'plans' : 'credits');
         setShowNoCreditsModal(true);
       } else {
-        toast.error("Erro ao processar análise.");
+        toast.error(t('toolPage.analysisError'));
       }
     }
   };
@@ -110,7 +114,7 @@ export default function ToolPage() {
   const handleCopy = () => {
     navigator.clipboard.writeText(result);
     setCopied(true);
-    toast.success("Copiado!");
+    toast.success(t('common.copied'));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -119,7 +123,7 @@ export default function ToolPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${dbTool?.displayName.replace(/\s+/g, '_')}.txt`;
+    a.download = `${getLocalizedString(dbTool, 'displayName').replace(/\s+/g, '_')}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -153,7 +157,7 @@ export default function ToolPage() {
             {/* ✅ Botão Voltar movido para o header */}
             <Link href="/dashboard">
               <Button variant="outline" className="hidden md:flex border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-[#1e3a5f] font-bold">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
+                <ArrowLeft className="w-4 h-4 mr-2" /> {t('common.back')}
               </Button>
               {/* Mobile Back Button - Ajustado */}
               <Button variant="ghost" size="icon" className="flex md:hidden text-[#d4af37] hover:bg-[#2a4a7f] h-9 w-9">
@@ -173,8 +177,8 @@ export default function ToolPage() {
         <div className="max-w-5xl mx-auto">
           <main>
             <div className="bg-white/90 rounded-2xl p-8 shadow-xl border-4 border-[#d4af37] mb-6">
-              <h2 className="text-3xl font-bold text-[#1e3a5f]">{dbTool?.displayName}</h2>
-              <p className="text-[#8b6f47] mt-2">{dbTool?.description}</p>
+              <h2 className="text-3xl font-bold text-[#1e3a5f]">{getLocalizedString(dbTool, 'displayName')}</h2>
+              <p className="text-[#8b6f47] mt-2">{getLocalizedString(dbTool, 'description')}</p>
             </div>
 
             <div className="bg-white/90 rounded-2xl p-8 shadow-xl border-4 border-[#d4af37] mb-6">
@@ -182,7 +186,7 @@ export default function ToolPage() {
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={dbTool?.inputPlaceholder || "Digite o texto..."}
+                placeholder={getLocalizedString(dbTool, 'inputPlaceholder') || t('toolPage.inputPlaceholder')}
                 className="min-h-50 border-2 border-[#d4af37] rounded-lg p-4 bg-white"
               />
               <Button
@@ -191,7 +195,7 @@ export default function ToolPage() {
                 className="mt-4 w-full bg-[#1e3a5f] text-[#d4af37] font-bold py-6 text-lg transition-all active:scale-95"
               >
                 {generateMutation.isPending ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2" />}
-                {generateMutation.isPending ? "Processando..." : `Gerar ${dbTool?.displayName}`}
+                {generateMutation.isPending ? t('common.processing') : t('toolPage.btnGenerate', { name: getLocalizedString(dbTool, 'displayName') })}
               </Button>
             </div>
 
@@ -201,11 +205,11 @@ export default function ToolPage() {
                   <div className="flex items-center justify-between mb-6 border-b-2 border-[#d4af37] pb-4">
                     <div className="flex items-center gap-3">
                       <BookOpen className="w-6 h-6 text-[#d4af37]" />
-                      <span className="text-xl font-black text-[#1e3a5f] uppercase tracking-tight">Resultado</span>
+                      <span className="text-xl font-black text-[#1e3a5f] uppercase tracking-tight">{t('common.result')}</span>
                     </div>
                     <div className="flex gap-2">
                       <Button onClick={handleCopy} variant="outline" size="sm" className="border-[#d4af37] text-[#1e3a5f] font-bold hover:bg-[#d4af37]">
-                        {copied ? <CheckCircle className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />} Copiar
+                        {copied ? <CheckCircle className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />} {t('common.copy')}
                       </Button>
                       <Button onClick={handleDownloadTxt} variant="outline" size="sm" className="border-[#1e3a5f] text-[#1e3a5f] font-bold">
                         <Download className="w-4 h-4 mr-1" /> TXT
@@ -228,7 +232,7 @@ export default function ToolPage() {
                     </article>
 
                     <div className="mt-8 pt-4 border-t-2 border-[#d4af37]/30 flex justify-between items-center text-[#1e3a5f] font-bold">
-                      <span className="text-sm uppercase tracking-widest">{wordCount} palavras</span>
+                      <span className="text-sm uppercase tracking-widest">{wordCount} {t('common.words')}</span>
                       {/* <span className="bg-[#1e3a5f] text-[#d4af37] px-4 py-1 rounded-lg">Consumo: {computedCost} créditos</span> */}
                     </div>
                   </div>
@@ -246,7 +250,7 @@ export default function ToolPage() {
                         {/* Conteúdo */}
                         <div className="relative z-10 flex items-center gap-3">
                           <ExternalLink className="w-7 h-7 group-hover:rotate-12 transition-transform duration-300" />
-                          <span>Continuar Estudo na Sala</span>
+                          <span>{t('toolPage.continueStudy')}</span>
                         </div>
 
                         {/* Borda Externa Fina */}
@@ -258,7 +262,7 @@ export default function ToolPage() {
                 <div className="flex justify-center pb-12 animate-in fade-in duration-500 delay-150">
                   <Link href="/dashboard">
                     <Button variant="outline" size="lg" className="border-[#d4af37] text-[#1e3a5f] font-bold hover:bg-[#d4af37] hover:text-[#1e3a5f] shadow-lg">
-                      <ArrowLeft className="w-5 h-5 mr-2" /> Voltar ao Dashboard
+                      <ArrowLeft className="w-5 h-5 mr-2" /> {t('toolPage.backDashboard')}
                     </Button>
                   </Link>
                 </div>

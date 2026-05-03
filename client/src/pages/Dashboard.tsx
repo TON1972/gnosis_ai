@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import Footer from "@/components/Footer";
 import { useUpgradeReminder } from "@/hooks/useUpgradeReminder";
 import UpgradeReminderModal from "@/components/UpgradeReminderModal";
 import HeaderCredits from "@/components/HeaderCredits";
+import { getLocalizedString } from "@/lib/i18nHelper";
 import "../dashboard-mobile.css";
 
 interface ToolFromDb {
@@ -28,6 +30,7 @@ interface ToolFromDb {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { user: authUser, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [showNoCreditsModal, setShowNoCreditsModal] = useState(false);
@@ -59,11 +62,12 @@ export default function Dashboard() {
 
   const allowedToolIds = new Set(planTools?.map(t => t.id) || []);
 
-  // ✅ Categorias dinâmicas baseadas na coluna 'category' do banco
-  const categories = ["Todos", ...Array.from(new Set(allTools.map(t => t.category).filter(Boolean)))];
+  const getCategory = (t: any) => getLocalizedString(t, 'category');
+  // ✅ Categorias dinâmicas baseadas na coluna 'category' traduzida
+  const categories = ["Todos", ...Array.from(new Set(allTools.map(getCategory).filter(Boolean)))];
 
   const filteredTools = allTools
-    .filter(tool => selectedCategory === "Todos" || tool.category === selectedCategory)
+    .filter(tool => selectedCategory === "Todos" || getCategory(tool) === selectedCategory)
     .sort((a, b) => {
       const aAllowed = allowedToolIds.has(a.id);
       const bAllowed = allowedToolIds.has(b.id);
@@ -71,7 +75,7 @@ export default function Dashboard() {
       if (aAllowed && !bAllowed) return -1;
       if (!aAllowed && bAllowed) return 1;
       
-      return (a.displayName || "").localeCompare(b.displayName || "");
+      return (getLocalizedString(a, 'displayName') || "").localeCompare(getLocalizedString(b, 'displayName') || "");
     });
 
   const handleToolClick = (toolId: number) => {
@@ -105,21 +109,21 @@ export default function Dashboard() {
                   className="bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B] font-bold shadow-md h-9 px-4 text-sm"
                 >
                   <LucideIcons.TrendingUp className="w-4 h-4 mr-2" />
-                  Upgrade de Plano ou Créditos avulso
+                  {t('dashboard.upgradePlanBtn')}
                 </Button>
               </div>
 
               {user && (user.role === 'admin' || user.role === 'super_admin' || user.role === 'editor') && (
                 <Link href="/admin">
                   <span className="hidden md:block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
-                    Painel Admin
+                    {t('menu.admin')}
                   </span>
                 </Link>
               )}
               {user?.isAffiliate && (
                 <Link href="/afiliados">
                   <span className="hidden md:block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
-                    Afiliados
+                    {t('menu.affiliates')}
                   </span>
                 </Link>
               )}
@@ -145,7 +149,7 @@ export default function Dashboard() {
             <div className="bg-white/90 rounded-2xl p-4 shadow-xl border-4 border-[#d4af37]">
               <h3 className="text-lg font-bold text-[#1e3a5f] mb-3 flex items-center gap-2">
                 <LucideIcons.Video className="w-5 h-5 text-[#d4af37]" />
-                {dashboardConfig.videoTitle || "Destaque da Semana"}
+                {dashboardConfig.videoTitle || t('dashboard.featureVideo')}
               </h3>
               <div className="relative w-full pb-[56.25%] rounded-xl overflow-hidden shadow-lg border-2 border-[#1e3a5f]/10">
                 <iframe
@@ -167,23 +171,23 @@ export default function Dashboard() {
             className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-14 shadow-lg font-black flex items-center justify-center gap-2 text-sm rounded-xl border-2 border-[#d4af37]"
           >
             <LucideIcons.TrendingUp className="w-5 h-5" />
-            Upgrade de Plano ou Créditos avulso
+            {t('dashboard.upgradePlanBtn')}
           </Button>
         </div>
 
         <div className="bg-white/90 rounded-2xl p-6 md:p-8 shadow-xl border-4 border-[#d4af37] mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-[#1e3a5f] mb-2">
-            Graça e paz, {user?.name || user?.email?.split('@')[0] || "Irmão"}!
+            {t('dashboard.welcomeTitle', { name: user?.name || user?.email?.split('@')[0] || t('common.brother') })}
           </h2>
           <p className="text-lg text-[#8b6f47]">
-            Seu portal de ferramentas bíblicas sincronizado com o Reino.
+            {t('dashboard.welcomeSubtitle')}
           </p>
           <div className="mt-4 p-4 bg-[#FFFACD] rounded-lg border-2 border-[#d4af37]">
             <p className="text-sm text-[#1e3a5f]">
-              <strong>Plano:</strong> <span className="uppercase">{activePlanResponse?.plan?.displayName || "FREE"}</span>
+              <strong>{t('dashboard.planLabel')}</strong> <span className="uppercase">{activePlanResponse?.plan?.displayName || t('dashboard.freePlan')}</span>
               {" • "}
               {/* ✅ Contagem de ferramentas restaurada */}
-              <strong>Ferramentas Liberadas:</strong> {allowedToolIds.size} de {allTools.length}
+              <strong>{t('dashboard.availableTools')}</strong> {allowedToolIds.size} {t('dashboard.of')} {allTools.length}
             </p>
           </div>
 
@@ -196,7 +200,7 @@ export default function Dashboard() {
             {/* CreditsPanel restaurado apenas com botões - REMOVIDO NO DESKTOP E SUBSTITUÍDO POR TEXTO */}
             <div className="bg-[#1e3a5f] rounded-xl p-6 border-2 border-[#d4af37] text-center shadow-lg mb-6 md:mb-0">
               <p className="text-[#d4af37] font-bold text-lg leading-relaxed">
-                Clique em uma das ferramentas e comece já os seus estudos!
+                {t('dashboard.clickStart')}
               </p>
             </div>
 
@@ -213,7 +217,7 @@ export default function Dashboard() {
                 <div className="bg-white/90 rounded-2xl p-6 shadow-xl border-4 border-[#d4af37]">
                   <h3 className="text-xl font-bold text-[#1e3a5f] mb-4 flex items-center gap-2">
                     <LucideIcons.Video className="w-6 h-6 text-[#d4af37]" />
-                    {dashboardConfig.videoTitle || "Destaque da Semana"}
+                    {dashboardConfig.videoTitle || t('dashboard.featureVideo')}
                   </h3>
                   <div className="relative w-full pb-[56.25%] rounded-xl overflow-hidden shadow-lg border-2 border-[#1e3a5f]/10">
                     <iframe
@@ -237,7 +241,7 @@ export default function Dashboard() {
                   variant={selectedCategory === category ? "default" : "outline"}
                   className={selectedCategory === category ? "bg-[#1e3a5f] text-[#d4af37]" : "border-[#d4af37] text-[#1e3a5f]"}
                 >
-                  {category}
+                  {category === "Todos" ? t('dashboard.allCategories') : category}
                 </Button>
               ))}
             </div>
@@ -245,7 +249,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {isLoading ? (
                 <div className="col-span-full text-center py-10 text-[#1e3a5f] animate-pulse">
-                  Carregando ferramentas do banco de dados...
+                  {t('dashboard.loading')}
                 </div>
               ) : filteredTools.map((tool) => {
                 const IconComponent = (LucideIcons as any)[tool.icon || ""] || BookOpen;
@@ -263,14 +267,14 @@ export default function Dashboard() {
                         <IconComponent className={`w-8 h-8 ${isAvailable ? 'text-[#d4af37]' : 'text-gray-200'}`} />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-[#1e3a5f] mb-2">{tool.displayName}</h3>
-                        <p className="text-sm text-[#8b6f47] mb-2 line-clamp-2">{tool.description}</p>
+                        <h3 className="text-xl font-bold text-[#1e3a5f] mb-2">{getLocalizedString(tool, 'displayName')}</h3>
+                        <p className="text-sm text-[#8b6f47] mb-2 line-clamp-2">{getLocalizedString(tool, 'description')}</p>
                         <span className="inline-block px-3 py-1 bg-[#FFFACD] border border-[#d4af37] rounded-full text-xs font-semibold text-[#1e3a5f]">
-                          {tool.category || "Geral"}
+                          {getLocalizedString(tool, 'category') || t('dashboard.generalCategory')}
                         </span>
                         {!isAvailable && (
                           <p className="mt-2 text-xs text-red-600 font-semibold">
-                            Disponível em planos superiores
+                            {t('dashboard.availableOnHigherPlans')}
                           </p>
                         )}
                       </div>

@@ -1,6 +1,7 @@
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 
 interface MobileMenuProps {
@@ -11,6 +12,7 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ isAuthenticated, onLogout, loginUrl, user }: MobileMenuProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -63,58 +65,50 @@ export default function MobileMenu({ isAuthenticated, onLogout, loginUrl, user }
           <nav className="flex flex-col gap-4">
             <Link href="/" onClick={closeMenu}>
               <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
-                Página Principal
+                {t('menu.home')}
               </span>
             </Link>
             
             <Link href="/planos" onClick={closeMenu}>
               <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
-                Planos e Preços
+                {t('home.btnPlans')}
               </span>
             </Link>
             
             <Link href="/sobre" onClick={closeMenu}>
               <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
-                Sobre Nós
+                {t('menu.about')}
               </span>
             </Link>
             
             <Link href="/faq" onClick={closeMenu}>
               <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
-                Perguntas Frequentes
+                {t('menu.faq')}
               </span>
             </Link>
-
+ 
             {isAuthenticated ? (
               <>
                 <Link href="/dashboard" onClick={closeMenu}>
                   <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
-                    Painel de Controle
+                    {t('menu.dashboard')}
                   </span>
                 </Link>
                 
                 {user && (user.role === 'admin' || user.role === 'super_admin') && (
                   <Link href="/admin" onClick={closeMenu}>
                     <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
-                      Admin
+                      {t('menu.admin')}
                     </span>
                   </Link>
                 )}
-
-                {/* {user && (user.role === 'admin' || user.role === 'super_admin') && (
-                  <Link href="admin/tools" onClick={closeMenu}>
-                    <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
-                      Ferramentas
-                    </span>
-                  </Link>
-                )} */}
                 
                 {/* Ajuste realizado aqui para garantir a execução do logout */}
                 <button
                   onClick={handleLogoutClick}
                   className="block w-full text-left px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors"
                 >
-                  Sair
+                  {t('menu.logout')}
                 </button>
               </>
             ) : (
@@ -123,7 +117,7 @@ export default function MobileMenu({ isAuthenticated, onLogout, loginUrl, user }
                 className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors"
                 onClick={closeMenu}
               >
-                Entrar
+                {t('menu.login')}
               </a>
             )}
           </nav>

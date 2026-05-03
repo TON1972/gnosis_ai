@@ -5,23 +5,27 @@ import { useLocation } from "wouter"; // Alterado para navegação
 import { Download, Trash2, Clock, BookText, FileText, MessageSquare, Trash } from "lucide-react";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
-
+import { useTranslation } from "react-i18next";
+ 
 export default function SavedStudiesSection() {
+  const { t, i18n } = useTranslation();
   const { data: savedStudies, refetch } = trpc.studies.list.useQuery();
   const deleteStudyMutation = trpc.studies.delete.useMutation();
   const [, setLocation] = useLocation();
-
+ 
+  const currentLocale = i18n.language === 'en' ? 'en-US' : i18n.language === 'es' ? 'es-ES' : 'pt-BR';
+ 
   const handleDelete = async (id: number) => {
-    if (!confirm("Tem certeza que deseja excluir este estudo?")) return;
+    if (!confirm(t('savedStudies.confirmDelete'))) return;
     try {
       await deleteStudyMutation.mutateAsync({ id });
-      toast.success("Estudo excluído!");
+      toast.success(t('savedStudies.deleteSuccess'));
       refetch();
     } catch (error) {
-      toast.error("Erro ao excluir");
+      toast.error(t('savedStudies.deleteError'));
     }
   };
-
+ 
   const handleDownloadTxt = (study: any) => {
     const blob = new Blob([study.output], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -33,16 +37,16 @@ export default function SavedStudiesSection() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-
+ 
   if (!savedStudies || savedStudies.length === 0) return null;
-
+ 
   return (
     <div className="bg-white/90 rounded-2xl p-4 shadow-xl border-4 border-[#d4af37]">
       <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#d4af37]">
-        <BookText className="w-5 h-5 text-[#1e3a5f]" />
-        <h3 className="text-lg font-bold text-[#1e3a5f]">Meus Estudos Salvos</h3>
+        < BookText className="w-5 h-5 text-[#1e3a5f]" />
+        <h3 className="text-lg font-bold text-[#1e3a5f]">{t('savedStudies.title')}</h3>
       </div>
-
+ 
       <div className="saved-studies-list space-y-3 max-h-125 overflow-y-auto">
         {savedStudies.map((study) => (
           <div key={study.id} className="bg-[#FFFACD] border-2 border-[#d4af37] rounded-lg p-3">
@@ -51,10 +55,10 @@ export default function SavedStudiesSection() {
               <p className="text-xs text-[#8b6f47] line-clamp-2 mb-2">{study.input}</p>
               <div className="flex items-center gap-2 text-xs text-[#8b6f47]">
                 <Clock className="w-3 h-3" />
-                {new Date(study.createdAt).toLocaleDateString('pt-BR')}
+                {new Date(study.createdAt).toLocaleDateString(currentLocale)}
               </div>
             </div>
-
+ 
             <div className="flex gap-1">
               {/* ✅ NOVO: Botão que leva para a página de chat */}
               <Button
@@ -62,7 +66,7 @@ export default function SavedStudiesSection() {
                 className="flex-1 h-8 bg-[#1e3a5f] text-white hover:bg-[#d4af37] text-xs"
               >
                 <MessageSquare className="w-3 h-3 mr-1" />
-                Continuar Estudo
+                {t('savedStudies.continueBtn')}
               </Button>
               <Button
                 onClick={() => handleDownloadTxt(study)}

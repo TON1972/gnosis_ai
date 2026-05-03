@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
 export default function Auth() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
@@ -61,7 +63,7 @@ export default function Auth() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginEmail || !loginPassword) return toast.error("Preencha todos os campos");
+    if (!loginEmail || !loginPassword) return toast.error(t('auth.fillAll'));
     setLoading(true);
     try {
       const response = await fetch("/api/login", {
@@ -71,15 +73,15 @@ export default function Auth() {
       });
       const data = await response.json();
       if (data.success) {
-        toast.success("Bem-vindo!");
+        toast.success(t('auth.welcome'));
         // ✅ Garante que o modal de promoção apareça na nova sessão
         sessionStorage.removeItem("upgrade_reminder_shown");
         window.location.href = "/dashboard";
       } else {
-        toast.error(data.message || "Credenciais inválidas");
+        toast.error(data.message || t('auth.invalidCredentials'));
       }
     } catch (error) {
-      toast.error("Erro no servidor.");
+      toast.error(t('auth.serverError'));
     } finally {
       setLoading(false);
     }
@@ -87,8 +89,8 @@ export default function Auth() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!registerName || !registerEmail || !registerPassword) return toast.error("Preencha todos os campos");
-    if (registerPassword !== registerConfirmPassword) return toast.error("As senhas não coincidem");
+    if (!registerName || !registerEmail || !registerPassword) return toast.error(t('auth.fillAll'));
+    if (registerPassword !== registerConfirmPassword) return toast.error(t('auth.passwordMismatch'));
 
     // Validação de Email com verificação rigorosa de provedores
     const lowerEmail = registerEmail.toLowerCase();
@@ -105,7 +107,7 @@ export default function Auth() {
     if (typos.some(typo => lowerEmail.endsWith(typo))) isInvalidEmail = true;
 
     if (isInvalidEmail) {
-      return toast.error("Parece que há um erro de digitação no seu email (ex: @gmail.com).");
+      return toast.error(t('auth.emailTypo'));
     }
 
     setLoading(true);
@@ -127,13 +129,13 @@ export default function Auth() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success("Conta criada com sucesso!");
+        toast.success(t('auth.registerSuccess'));
         window.location.href = "/dashboard";
       } else {
-        toast.error(data.message || "Erro ao criar conta");
+        toast.error(data.message || t('auth.registerError'));
       }
     } catch (error) {
-      toast.error("Erro no servidor.");
+      toast.error(t('auth.serverError'));
       console.error(error);
     } finally {
       setLoading(false);
@@ -158,18 +160,18 @@ export default function Auth() {
             {APP_TITLE}
           </CardTitle> */}
           <h2 className="text-1xl md:text-2xl lg:text-3xl font-bold text-[#1e3a5f] mb-6">
-            Estudos Bíblicos Profundos com IA
+            {t('auth.title')}
           </h2>
           <CardDescription className="text-[#1e3a5f]/70 font-medium">
-            Sua jornada de conhecimento bíblico começa aqui
+            {t('auth.subtitle')}
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "register")}>
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-[#1e3a5f]/10 p-1">
-              <TabsTrigger value="login" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">Entrar</TabsTrigger>
-              <TabsTrigger value="register" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">Cadastrar</TabsTrigger>
+              <TabsTrigger value="login" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">{t('auth.loginTab')}</TabsTrigger>
+              <TabsTrigger value="register" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">{t('auth.registerTab')}</TabsTrigger>
             </TabsList>
 
             <div className="mb-6">
@@ -184,27 +186,27 @@ export default function Auth() {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
-                Continuar com Google
+                {t('auth.googleAuth')}
               </Button>
             </div>
 
             <div className="relative mb-6">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-[#d4af37]/30" /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#FFFACD] px-2 text-[#1e3a5f]/60 font-bold">Ou via E-mail</span></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#FFFACD] px-2 text-[#1e3a5f]/60 font-bold">{t('auth.orEmail')}</span></div>
             </div>
 
             <TabsContent value="login" className="space-y-4">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-[#1e3a5f] font-bold">Email</Label>
+                  <Label className="text-[#1e3a5f] font-bold">{t('auth.emailLabel')}</Label>
                   <Input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="border-[#d4af37]/40 bg-white" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[#1e3a5f] font-bold">Senha</Label>
+                  <Label className="text-[#1e3a5f] font-bold">{t('auth.passwordLabel')}</Label>
                   <Input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="border-[#d4af37]/40 bg-white" />
                 </div>
                 <Button type="submit" disabled={loading} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold transition-all active:scale-95">
-                  {loading ? <Loader2 className="animate-spin" /> : "Entrar e Estudar"}
+                  {loading ? <Loader2 className="animate-spin" /> : t('auth.submitLogin')}
                 </Button>
               </form>
             </TabsContent>
@@ -212,39 +214,39 @@ export default function Auth() {
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-3">
                 <div className="space-y-1">
-                  <Label className="text-[#1e3a5f] font-bold">Nome Completo</Label>
+                  <Label className="text-[#1e3a5f] font-bold">{t('auth.nameLabel')}</Label>
                   <Input value={registerName} onChange={(e) => setRegisterName(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3"> {/* Updated grid cols to 1 */}
                   <div className="space-y-1">
-                    <Label className="text-[#1e3a5f] font-bold">Email</Label>
+                    <Label className="text-[#1e3a5f] font-bold">{t('auth.emailLabel')}</Label>
                     <Input type="email" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-[#1e3a5f] font-bold">Senha</Label>
+                    <Label className="text-[#1e3a5f] font-bold">{t('auth.passwordLabel')}</Label>
                     <Input type="password" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[#1e3a5f] font-bold">Confirmar</Label>
+                    <Label className="text-[#1e3a5f] font-bold">{t('auth.confirmLabel')}</Label>
                     <Input type="password" value={registerConfirmPassword} onChange={(e) => setRegisterConfirmPassword(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-[#1e3a5f] font-bold">Cupom de Desconto (Opcional)</Label>
+                  <Label className="text-[#1e3a5f] font-bold">{t('auth.couponLabel')}</Label>
                   <Input
-                    placeholder="Ex: GANHE30"
+                    placeholder={t('auth.couponPlaceholder')}
                     value={registerCoupon}
                     onChange={(e) => setRegisterCoupon(e.target.value.toUpperCase())}
                     className="border-[#d4af37]/40 bg-white h-10 uppercase font-bold text-[#1e3a5f]"
                   />
                 </div>
                 <Button type="submit" disabled={loading} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold mt-2 shadow-lg transition-all active:scale-95">
-                  {loading ? <Loader2 className="animate-spin" /> : "Criar Conta e Começar"}
+                  {loading ? <Loader2 className="animate-spin" /> : t('auth.submitRegister')}
                 </Button>
               </form>
             </TabsContent>

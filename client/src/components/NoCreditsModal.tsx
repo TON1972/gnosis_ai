@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import { Crown, Sparkles, Gift, CheckCircle2, Zap, Rocket, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -20,6 +21,7 @@ const BONUS_CREDITS = [
 ];
 
 export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: NoCreditsModalProps) {
+  const { t } = useTranslation();
   const { data: allPlans, isLoading: isLoadingPlans } = trpc.plans.list.useQuery();
   const { data: allTools, isLoading: isLoadingTools } = trpc.tools.list.useQuery();
   const { data: activePlanData } = trpc.credits.activePlan.useQuery();
@@ -62,7 +64,7 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
 
         <DialogHeader className="p-4 text-center">
           <DialogTitle className="text-xl md:text-3xl font-black text-[#1e3a5f] flex items-center justify-center gap-2">
-            <Rocket className="w-8 h-8 text-[#d4af37]" /> IMPULSIONE SUA TEOLOGIA
+            <Rocket className="w-8 h-8 text-[#d4af37]" /> {t('modals.credits.title')}
           </DialogTitle>
           <DialogDescription className="sr-only">Escolha planos ou créditos avulsos</DialogDescription>
         </DialogHeader>
@@ -73,13 +75,13 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
             onClick={() => setView('plans')}
             className={`flex-1 md:w-48 font-bold rounded-xl transition-all h-12 border-2 ${view === 'plans' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f] shadow-lg scale-105' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]/20'}`}
           >
-            <Crown className="w-4 h-4 mr-2" /> Assinaturas
+            <Crown className="w-4 h-4 mr-2" /> {t('modals.credits.tabs.plans')}
           </Button>
           <Button
             onClick={() => setView('credits')}
             className={`flex-1 md:w-48 font-bold rounded-xl transition-all h-12 border-2 ${view === 'credits' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f] shadow-lg scale-105' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]/20'}`}
           >
-            <Gift className="w-4 h-4 mr-2" /> Avulsos
+            <Gift className="w-4 h-4 mr-2" /> {t('modals.credits.tabs.credits')}
           </Button>
         </div>
 
@@ -87,15 +89,15 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="w-12 h-12 animate-spin text-[#1e3a5f]" />
-              <p className="mt-4 font-bold text-[#1e3a5f]">Carregando ofertas...</p>
+              <p className="mt-4 font-bold text-[#1e3a5f]">{t('modals.credits.loading')}</p>
             </div>
           ) : view === 'plans' ? (
             /* CONTEÚDO DE PLANOS */
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="flex justify-center items-center gap-4 mb-8">
-                <button onClick={() => setBillingPeriod('monthly')} className={`px-6 py-2 rounded-full font-bold text-sm border-2 transition-all ${billingPeriod === 'monthly' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f]' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]'}`}>Mensal</button>
+                <button onClick={() => setBillingPeriod('monthly')} className={`px-6 py-2 rounded-full font-bold text-sm border-2 transition-all ${billingPeriod === 'monthly' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f]' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]'}`}>{t('modals.credits.billing.monthly')}</button>
                 <button onClick={() => setBillingPeriod('yearly')} className={`px-6 py-2 rounded-full font-bold text-sm border-2 relative transition-all ${billingPeriod === 'yearly' ? 'bg-[#1e3a5f] text-[#d4af37] border-[#1e3a5f]' : 'bg-white/50 text-[#1e3a5f] border-[#d4af37]'}`}>
-                  Anual <span className="absolute -top-3 -right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse shadow-md">-16,5%</span>
+                  {t('modals.credits.billing.yearly')} <span className="absolute -top-3 -right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse shadow-md">{t('modals.credits.billing.off')}</span>
                 </button>
               </div>
 
@@ -108,15 +110,15 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
 
                   return (
                     <div key={plan.id} className={`relative flex flex-col rounded-2xl p-5 border-4 shadow-xl transition-all ${isLumen ? 'bg-[#1e3a5f] border-[#d4af37] text-white ring-4 ring-[#d4af37]/20' : 'bg-white border-[#d4af37]/40 text-[#1e3a5f]'}`}>
-                      {isActive && <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full z-20 shadow-md">ATIVO</div>}
+                      {isActive && <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full z-20 shadow-md">{t('modals.credits.active')}</div>}
                       <h4 className="text-lg font-black uppercase tracking-tight">{plan.displayName}</h4>
                       <div className="flex items-baseline gap-1 mt-2 mb-4">
                         <span className={`text-3xl font-black ${isLumen ? 'text-[#d4af37]' : 'text-[#1e3a5f]'}`}>R$ {formatPriceDisplay(price)}</span>
-                        <span className="text-[10px] font-bold opacity-70">/mês</span>
+                        <span className="text-[10px] font-bold opacity-70">{t('modals.credits.billing.perMonth')}</span>
                       </div>
                       <div className={`space-y-2 mb-4 p-3 rounded-xl ${isLumen ? 'bg-white/10' : 'bg-[#FFFACD]/50'}`}>
-                        <p className="text-[11px] font-bold flex items-center gap-2"><Zap className="w-3 h-3" /> {Number(plan.creditsInitial).toLocaleString()} iniciais</p>
-                        <p className="text-[11px] font-bold flex items-center gap-2"><Sparkles className="w-3 h-3" /> {Number(plan.creditsDaily).toLocaleString()}/dia</p>
+                        <p className="text-[11px] font-bold flex items-center gap-2"><Zap className="w-3 h-3" /> {Number(plan.creditsInitial).toLocaleString()} {t('modals.credits.initial')}</p>
+                        <p className="text-[11px] font-bold flex items-center gap-2"><Sparkles className="w-3 h-3" /> {Number(plan.creditsDaily).toLocaleString()}{t('modals.credits.daily')}</p>
                       </div>
                       <div className="flex-1 mb-6 space-y-1.5 overflow-y-auto max-h-48 pr-1 custom-scrollbar text-[10px]">
                         {allTools?.map((tool: any) => {
@@ -140,7 +142,7 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
                         disabled={isActive || createCheckout.isPending || plan.name === 'free'}
                         className={`w-full font-black py-5 rounded-xl transition-all shadow-md active:scale-95 ${isActive ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-none' : isLumen ? 'bg-[#d4af37] text-[#1e3a5f] hover:bg-white' : 'bg-[#1e3a5f] text-white'}`}
                       >
-                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : isActive ? 'PLANO ATUAL' : plan.name === 'free' ? 'PLANO BASE' : 'ASSINAR AGORA'}
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : isActive ? t('modals.credits.btnActive') : plan.name === 'free' ? t('modals.credits.btnBase') : t('modals.credits.btnSubscribe')}
                       </Button>
                     </div>
                   );
@@ -154,7 +156,7 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
         </div>
 
         <div className="text-center pt-8">
-          <Button variant="ghost" onClick={onClose} className="text-[#1e3a5f] font-bold hover:bg-[#d4af37]/10 px-8 py-2 rounded-lg transition-all">Talvez mais tarde</Button>
+          <Button variant="ghost" onClick={onClose} className="text-[#1e3a5f] font-bold hover:bg-[#d4af37]/10 px-8 py-2 rounded-lg transition-all">{t('modals.credits.later')}</Button>
         </div>
       </DialogContent>
       <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }`}</style>

@@ -240,6 +240,8 @@ export const appRouter = router({
             id: tools.id,
             name: tools.name,
             displayName: tools.displayName,
+            displayNameEn: tools.displayNameEn,
+            displayNameEs: tools.displayNameEs,
             category: tools.category,
             icon: tools.icon
           })
@@ -270,6 +272,22 @@ export const appRouter = router({
           category: toolCategories.name,
           // Mantemos o categoryId se precisar
           categoryId: tools.categoryId,
+          // ✅ English fields
+          nameEn: tools.nameEn,
+          displayNameEn: tools.displayNameEn,
+          descriptionEn: tools.descriptionEn,
+          inputPlaceholderEn: tools.inputPlaceholderEn,
+          promptTemplateEn: tools.promptTemplateEn,
+          categoryEn: toolCategories.nameEn,
+
+          // ✅ Spanish fields
+          nameEs: tools.nameEs,
+          displayNameEs: tools.displayNameEs,
+          descriptionEs: tools.descriptionEs,
+          inputPlaceholderEs: tools.inputPlaceholderEs,
+          promptTemplateEs: tools.promptTemplateEs,
+          categoryEs: toolCategories.nameEs,
+
           icon: tools.icon,
           isActive: tools.isActive,
           order: tools.order,
@@ -962,6 +980,18 @@ export const appRouter = router({
         creditsInitial: z.number().nonnegative(),
         priceMonthly: z.number().nonnegative().optional(),
         priceYearly: z.number().nonnegative().optional(),
+        nameEn: z.string().optional(),
+        displayNameEn: z.string().optional(),
+        descriptionEn: z.string().optional(),
+        nameEs: z.string().optional(),
+        displayNameEs: z.string().optional(),
+        descriptionEs: z.string().optional(),
+        priceUsd: z.number().nonnegative().optional(),
+        priceMonthlyUsd: z.number().nonnegative().optional(),
+        priceYearlyUsd: z.number().nonnegative().optional(),
+        priceEur: z.number().nonnegative().optional(),
+        priceMonthlyEur: z.number().nonnegative().optional(),
+        priceYearlyEur: z.number().nonnegative().optional(),
         syncUsers: z.boolean().default(false),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -980,6 +1010,18 @@ export const appRouter = router({
             creditsInitial: input.creditsInitial,
             ...(input.priceMonthly !== undefined ? { priceMonthly: Math.round(input.priceMonthly * 100) } : {}),
             ...(input.priceYearly !== undefined ? { priceYearly: Math.round(input.priceYearly * 100) } : {}),
+            nameEn: input.nameEn,
+            displayNameEn: input.displayNameEn,
+            descriptionEn: input.descriptionEn,
+            nameEs: input.nameEs,
+            displayNameEs: input.displayNameEs,
+            descriptionEs: input.descriptionEs,
+            ...(input.priceUsd !== undefined ? { priceUsd: Math.round(input.priceUsd * 100) } : {}),
+            ...(input.priceMonthlyUsd !== undefined ? { priceMonthlyUsd: Math.round(input.priceMonthlyUsd * 100) } : {}),
+            ...(input.priceYearlyUsd !== undefined ? { priceYearlyUsd: Math.round(input.priceYearlyUsd * 100) } : {}),
+            ...(input.priceEur !== undefined ? { priceEur: Math.round(input.priceEur * 100) } : {}),
+            ...(input.priceMonthlyEur !== undefined ? { priceMonthlyEur: Math.round(input.priceMonthlyEur * 100) } : {}),
+            ...(input.priceYearlyEur !== undefined ? { priceYearlyEur: Math.round(input.priceYearlyEur * 100) } : {}),
           })
           .where(eq(plans.id, input.planId));
 
@@ -1266,7 +1308,19 @@ export const appRouter = router({
         isActive: tools.isActive,
         categoryName: toolCategories.name,
         categoryId: tools.categoryId,
-        promptTemplate: tools.promptTemplate
+        promptTemplate: tools.promptTemplate,
+        nameEn: tools.nameEn,
+        displayNameEn: tools.displayNameEn,
+        descriptionEn: tools.descriptionEn,
+        inputPlaceholderEn: tools.inputPlaceholderEn,
+        promptTemplateEn: tools.promptTemplateEn,
+        categoryEn: tools.categoryEn,
+        nameEs: tools.nameEs,
+        displayNameEs: tools.displayNameEs,
+        descriptionEs: tools.descriptionEs,
+        inputPlaceholderEs: tools.inputPlaceholderEs,
+        promptTemplateEs: tools.promptTemplateEs,
+        categoryEs: tools.categoryEs,
       })
         .from(tools)
         .leftJoin(toolCategories, eq(tools.categoryId, toolCategories.id))
@@ -1280,15 +1334,44 @@ export const appRouter = router({
       return await db.select().from(toolCategories).orderBy(toolCategories.name);
     }),
 
-    // ✅ 3. Mutation para Criar ou Editar (Upsert)
     // server/routers.ts
 
-    // server/routers.ts -> dentro de admin: router({ ... })
+    upsertCategory: protectedProcedure
+      .input(z.object({
+        id: z.number().optional().nullable(),
+        name: z.string().min(1),
+        nameEn: z.string().optional().nullable(),
+        nameEs: z.string().optional().nullable(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
 
-    // server/routers.ts -> dentro do router 'admin'
-    // server/routers.ts -> admin: router({ ... })
+        if (input.id) {
+          await db.update(toolCategories)
+            .set({ name: input.name, nameEn: input.nameEn, nameEs: input.nameEs })
+            .where(eq(toolCategories.id, input.id));
+          return { success: true, categoryId: input.id };
+        } else {
+          const inserted = await db.insert(toolCategories)
+            .values({ name: input.name, nameEn: input.nameEn, nameEs: input.nameEs })
+            .returning({ id: toolCategories.id });
+          return { success: true, categoryId: inserted[0].id };
+        }
+      }),
 
-    // server/routers.ts
+    deleteCategory: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+        
+        await db.update(tools).set({ categoryId: null }).where(eq(tools.categoryId, input.id));
+        await db.delete(toolCategories).where(eq(toolCategories.id, input.id));
+        return { success: true };
+      }),
 
     upsertTool: protectedProcedure
       .input(z.object({
@@ -1301,6 +1384,18 @@ export const appRouter = router({
         categoryId: z.number().optional().nullable(),
         isActive: z.boolean().default(true),
         planIds: z.array(z.number()).optional(),
+        nameEn: z.string().optional().nullable(),
+        displayNameEn: z.string().optional().nullable(),
+        descriptionEn: z.string().optional().nullable(),
+        inputPlaceholderEn: z.string().optional().nullable(),
+        promptTemplateEn: z.string().optional().nullable(),
+        categoryEn: z.string().optional().nullable(),
+        nameEs: z.string().optional().nullable(),
+        displayNameEs: z.string().optional().nullable(),
+        descriptionEs: z.string().optional().nullable(),
+        inputPlaceholderEs: z.string().optional().nullable(),
+        promptTemplateEs: z.string().optional().nullable(),
+        categoryEs: z.string().optional().nullable(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
@@ -1315,6 +1410,18 @@ export const appRouter = router({
           categoryId: input.categoryId,
           isActive: input.isActive ? "true" : "false", // Ajuste conforme seu schema
           name: input.displayName.toLowerCase().replace(/\s+/g, '_'),
+          nameEn: input.nameEn,
+          displayNameEn: input.displayNameEn,
+          descriptionEn: input.descriptionEn,
+          inputPlaceholderEn: input.inputPlaceholderEn,
+          promptTemplateEn: input.promptTemplateEn,
+          categoryEn: input.categoryEn,
+          nameEs: input.nameEs,
+          displayNameEs: input.displayNameEs,
+          descriptionEs: input.descriptionEs,
+          inputPlaceholderEs: input.inputPlaceholderEs,
+          promptTemplateEs: input.promptTemplateEs,
+          categoryEs: input.categoryEs,
         };
 
         let toolId = input.id;

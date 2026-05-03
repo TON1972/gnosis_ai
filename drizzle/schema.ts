@@ -176,6 +176,18 @@ export const tools = pgTable("tools", {
   isActive: boolean("isActive").default(true),
   order: integer("order").default(0),
   createdAt: timestamp("createdAt").defaultNow(),
+  nameEn: varchar("nameEn", { length: 100 }),
+  displayNameEn: varchar("displayNameEn", { length: 150 }),
+  descriptionEn: text("descriptionEn"),
+  inputPlaceholderEn: text("inputPlaceholderEn"),
+  promptTemplateEn: text("promptTemplateEn"),
+  categoryEn: text("categoryEn"),
+  nameEs: varchar("nameEs", { length: 100 }),
+  displayNameEs: varchar("displayNameEs", { length: 150 }),
+  descriptionEs: text("descriptionEs"),
+  inputPlaceholderEs: text("inputPlaceholderEs"),
+  promptTemplateEs: text("promptTemplateEs"),
+  categoryEs: text("categoryEs"),
 });
 
 
@@ -186,6 +198,8 @@ export type InsertTool = typeof tools.$inferInsert;
 export const toolCategories = pgTable("tool_categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  nameEn: text("nameEn"),
+  nameEs: text("nameEs"),
   createdAt: timestamp("createdAt").defaultNow(),
 });
 

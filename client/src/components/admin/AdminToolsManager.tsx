@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import ToolDialog from "@/components/ToolDialog";
+import { AdminCategoriesManager } from "./AdminCategoriesManager";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +21,7 @@ import {
 
 export function AdminToolsManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<any>(null);
   const [toolToDelete, setToolToDelete] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -81,6 +83,13 @@ export function AdminToolsManager() {
               className="pl-10 pr-4 py-2 border-2 border-gray-100 rounded-xl text-sm focus:border-[#d4af37] outline-none transition-all w-full md:w-64"
             />
           </div>
+          <Button 
+            onClick={() => setIsCategoriesOpen(true)}
+            variant="outline"
+            className="border-[#d4af37] text-[#1e3a5f] font-bold"
+          >
+            Categorias
+          </Button>
           <Button 
             onClick={() => { setEditingTool(null); setIsDialogOpen(true); }}
             className="bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] font-bold"
@@ -165,6 +174,11 @@ export function AdminToolsManager() {
         onClose={() => setIsDialogOpen(false)} 
         onSave={handleSave}
         editingTool={editingTool}
+      />
+
+      <AdminCategoriesManager 
+        isOpen={isCategoriesOpen}
+        onClose={() => setIsCategoriesOpen(false)}
       />
 
       <AlertDialog open={!!toolToDelete} onOpenChange={() => setToolToDelete(null)}>
