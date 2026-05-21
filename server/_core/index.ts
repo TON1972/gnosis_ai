@@ -19,6 +19,7 @@ import { handleStripeWebhook } from "../stripeWebhook.js";
 import { handleResendWebhook } from "../resendWebhook.js";
 import { COOKIE_NAME } from "../../shared/const.js";
 import { getSessionCookieOptions } from "./cookies.js";
+import { mobileRouter } from "../mobileApi.js";
 
 // Integração com Banco de Dados e Schema
 import { getDb } from "../db.js";
@@ -256,7 +257,11 @@ app.post("/api/register", async (req, res) => {
     });
 
     console.log(`✅ Registro e Login Automático concluídos: ${email}`);
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ 
+      success: true, 
+      token, 
+      user: { id: newUser.id, email: newUser.email, role: newUser.role } 
+    });
 
   } catch (error: any) {
     console.error("Erro interno no registro:", error);
@@ -304,7 +309,11 @@ app.post("/api/login", async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ 
+      success: true, 
+      token, 
+      user: { id: user.id, email: user.email, role: user.role } 
+    });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: "Erro interno no servidor." });
   }
@@ -319,6 +328,7 @@ app.post("/api/webhooks/mercadopago", handleMercadoPagoWebhook);
 app.post("/api/webhooks/resend", handleResendWebhook);
 
 app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
+app.use("/api/v1/mobile", mobileRouter);
 
 const PORT = Number(process.env.PORT) || 3000;
 if (process.env.NODE_ENV === "development") {

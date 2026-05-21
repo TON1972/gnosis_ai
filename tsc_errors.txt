@@ -1,0 +1,57 @@
+api/login.ts(6,10): error TS2305: Module '"cookie"' has no exported member 'serialize'.
+api/oauth/google/callback.ts(120,19): error TS2461: Type 'any[] | QueryResult<never>' is not an array type.
+api/register.ts(7,10): error TS2305: Module '"cookie"' has no exported member 'serialize'.
+client/src/components/admin/UserManagement.tsx(588,33): error TS2322: Type 'unknown' is not assignable to type 'string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<...> | null | undefined'.
+drizzle/schema.ts(27,14): error TS7022: 'users' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+drizzle/schema.ts(47,48): error TS7024: Function implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions.
+server/_core/passport.ts(4,22): error TS7016: Could not find a declaration file for module 'passport'. '/Volumes/Dados/Server/gnosis_ai/node_modules/passport/lib/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/passport` if it exists or add a new declaration (.d.ts) file containing `declare module 'passport';`
+server/_core/passport.ts(5,46): error TS2307: Cannot find module 'passport-facebook' or its corresponding type declarations.
+server/_core/passport.ts(7,43): error TS2307: Cannot find module 'passport-local' or its corresponding type declarations.
+server/_core/passport.ts(15,67): error TS7006: Parameter 'email' implicitly has an 'any' type.
+server/_core/passport.ts(15,74): error TS7006: Parameter 'password' implicitly has an 'any' type.
+server/_core/passport.ts(15,84): error TS7006: Parameter 'done' implicitly has an 'any' type.
+server/_core/passport.ts(66,8): error TS2551: Property '$returningId' does not exist on type 'PgInsertBase<any, NodePgQueryResultHKT, undefined, undefined, false, never>'. Did you mean 'returning'?
+server/_core/passport.ts(82,17): error TS2339: Property 'facebookClientId' does not exist on type '{ appUrl: string; supabaseUrl: string; supabaseServiceKey: string; jwtSecret: string; cookieSecret: string; ownerOpenId: string; databaseUrl: string; isProduction: boolean; appId: string; openaiApiKey: string; ... 8 more ...; cookieMaxAge: number; }'.
+server/_core/passport.ts(83,21): error TS2339: Property 'facebookClientSecret' does not exist on type '{ appUrl: string; supabaseUrl: string; supabaseServiceKey: string; jwtSecret: string; cookieSecret: string; ownerOpenId: string; databaseUrl: string; isProduction: boolean; appId: string; openaiApiKey: string; ... 8 more ...; cookieMaxAge: number; }'.
+server/_core/passport.ts(87,11): error TS7006: Parameter 'accessToken' implicitly has an 'any' type.
+server/_core/passport.ts(87,24): error TS7006: Parameter 'refreshToken' implicitly has an 'any' type.
+server/_core/passport.ts(87,38): error TS7006: Parameter 'profile' implicitly has an 'any' type.
+server/_core/passport.ts(87,47): error TS7006: Parameter 'done' implicitly has an 'any' type.
+server/_core/passport.ts(110,8): error TS2551: Property '$returningId' does not exist on type 'PgInsertBase<any, NodePgQueryResultHKT, undefined, undefined, false, never>'. Did you mean 'returning'?
+server/_core/passport.ts(146,9): error TS2339: Property 'logout' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+server/_core/passport.ts(146,17): error TS7006: Parameter 'err' implicitly has an 'any' type.
+server/_core/passport.ts(154,25): error TS7006: Parameter 'user' implicitly has an 'any' type.
+server/_core/passport.ts(154,31): error TS7006: Parameter 'done' implicitly has an 'any' type.
+server/_core/passport.ts(158,45): error TS7006: Parameter 'done' implicitly has an 'any' type.
+server/db.ts(98,21): error TS7053: Element implicitly has an 'any' type because expression of type '0' can't be used to index type 'any[] | QueryResult<never>'.
+  Property '0' does not exist on type 'any[] | QueryResult<never>'.
+server/mobileApi.ts(4,10): error TS2305: Module '"../shared/schema.js"' has no exported member 'planToolsSnake'.
+server/mobileApi.ts(4,26): error TS2305: Module '"../shared/schema.js"' has no exported member 'toolCategories'.
+server/mobileApi.ts(5,17): error TS2305: Module '"../shared/schema.js"' has no exported member 'studyMessages'.
+server/mobileApi.ts(56,33): error TS2551: Property 'inputPlaceholder' does not exist on type 'PgTableWithColumns<{ name: "tools"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "tools"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 19 more ...; createdAt: PgColumn<...>;...'. Did you mean 'inputPlaceholderEn'?
+server/mobileApi.ts(62,42): error TS2551: Property 'categoryId' does not exist on type 'PgTableWithColumns<{ name: "tools"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "tools"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 19 more ...; createdAt: PgColumn<...>;...'. Did you mean 'category'?
+server/mobileApi.ts(93,31): error TS2551: Property 'promptTemplate' does not exist on type 'PgTableWithColumns<{ name: "tools"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "tools"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 19 more ...; createdAt: PgColumn<...>;...'. Did you mean 'promptTemplateEn'?
+server/nextauth.ts(19,21): error TS2339: Property 'facebookClientId' does not exist on type '{ appUrl: string; supabaseUrl: string; supabaseServiceKey: string; jwtSecret: string; cookieSecret: string; ownerOpenId: string; databaseUrl: string; isProduction: boolean; appId: string; openaiApiKey: string; ... 8 more ...; cookieMaxAge: number; }'.
+server/nextauth.ts(20,25): error TS2339: Property 'facebookClientSecret' does not exist on type '{ appUrl: string; supabaseUrl: string; supabaseServiceKey: string; jwtSecret: string; cookieSecret: string; ownerOpenId: string; databaseUrl: string; isProduction: boolean; appId: string; openaiApiKey: string; ... 8 more ...; cookieMaxAge: number; }'.
+server/oauth.ts(124,13): error TS2461: Type 'any[] | QueryResult<never>' is not an array type.
+server/routers.ts(1035,13): error TS2561: Object literal may only specify known properties, but 'nameEn' does not exist in type '{ displayName?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined; name?: string | SQL<...> | PgColumn<...> | undefined; ... 9 more ...; isActive?: boolean | ... 2 more ... | undefined; }'. Did you mean to write 'name'?
+server/stripeFinancial.ts(4,5): error TS2322: Type '"2025-12-15.clover"' is not assignable to type '"2026-01-28.clover"'.
+server/subscriptionStatus.ts(7,3): error TS2322: Type '"2025-12-15.clover"' is not assignable to type '"2026-01-28.clover"'.
+server/test_users.ts(15,16): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number | Date'.
+      Type 'null' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number'.
+      Type 'null' is not assignable to type 'string | number'.
+server/test_users.ts(18,63): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number | Date'.
+      Type 'null' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number'.
+      Type 'null' is not assignable to type 'string | number'.
+server/test_users.ts(31,11): error TS2740: Type 'Omit<PgSelectBase<any, { id: any; email: any; name: any; }, "partial", ({ subscriptions: "not-null"; } | (Record<any, "not-null"> & { subscriptions: "not-null"; })) & { plans: "not-null"; }, false, "where", ({ ...; } | { ...; })[], { ...; }>, "where">' is missing the following properties from type 'PgSelectBase<any, { id: any; email: any; name: any; }, "partial", {} | Record<any, "not-null">, false, never, ({ id: any; email: any; name: any; } | { id: any; email: any; name: any; })[], { id: any; email: any; name: any; }>': config, joinsNotNullableMap, tableName, isPartialSelect, and 6 more.
+shared/schema.ts(5,14): error TS7022: 'users' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+shared/schema.ts(22,48): error TS7024: Function implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions.
