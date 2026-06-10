@@ -391,7 +391,7 @@ export default function Home() {
                     )}
                     <h4 className={`text-2xl font-bold mb-4 ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
                       }`}>
-                      {plan.displayName}
+                      {getLocalizedString(plan, 'displayName')}
                     </h4>
                     <div className="mb-6">
                       <div className="flex items-baseline flex-wrap gap-1">

@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import CreditPackages from "./CreditPackages";
 import { getPlanPriceDisplay } from "@shared/planPricing";
+import { getLocalizedString } from "@/lib/i18nHelper";
 
 interface NoCreditsModalProps {
   open: boolean;
@@ -112,7 +113,7 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
                   return (
                     <div key={plan.id} className={`relative flex flex-col rounded-2xl p-5 border-4 shadow-xl transition-all ${isLumen ? 'bg-[#1e3a5f] border-[#d4af37] text-white ring-4 ring-[#d4af37]/20' : 'bg-white border-[#d4af37]/40 text-[#1e3a5f]'}`}>
                       {isActive && <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full z-20 shadow-md">{t('modals.credits.active')}</div>}
-                      <h4 className="text-lg font-black uppercase tracking-tight">{plan.displayName}</h4>
+                      <h4 className="text-lg font-black uppercase tracking-tight">{getLocalizedString(plan, 'displayName')}</h4>
                       <div className="mt-2 mb-4">
                         <div className="flex items-baseline gap-1">
                           <span className={`text-3xl font-black ${isLumen ? 'text-[#d4af37]' : 'text-[#1e3a5f]'}`}>{priceDisplay.main}</span>
@@ -136,7 +137,7 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
                           return (
                             <div key={tool.id} className="flex items-start gap-2">
                               {hasTool ? <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0 mt-0.5" /> : <span className="text-red-500 font-bold text-[10px] w-3 text-center shrink-0">×</span>}
-                              <span className={`leading-tight font-medium ${hasTool ? 'opacity-100' : 'opacity-40'}`}>{tool.displayName}</span>
+                              <span className={`leading-tight font-medium ${hasTool ? 'opacity-100' : 'opacity-40'}`}>{getLocalizedString(tool, 'displayName')}</span>
                             </div>
                           );
                         })}
@@ -146,7 +147,7 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
                           type: 'plan',
                           id: String(plan.id),
                           price: priceDisplay.amountCents / 100,
-                          title: `Plano ${plan.displayName} - Gnosis AI`,
+                          title: `Plano ${getLocalizedString(plan, 'displayName')} - Gnosis AI`,
                           billingPeriod,
                           language: i18n.language,
                         })}

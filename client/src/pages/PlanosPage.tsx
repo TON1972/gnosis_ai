@@ -9,6 +9,7 @@ import { CheckCircle2, Crown, Loader2 } from "lucide-react";
 import MobileMenu from "@/components/MobileMenu";
 import CreditPackages from "@/components/CreditPackages";
 import { getPlanPriceDisplay, getPlanPriceQuote } from "@shared/planPricing";
+import { getLocalizedString } from "@/lib/i18nHelper";
 
 export default function PlanosPage() {
   const { i18n } = useTranslation();
@@ -70,7 +71,7 @@ export default function PlanosPage() {
           type: 'plan',
           id: String(plan.id),
           price: price,
-          title: `Assinatura Plano ${plan.displayName} (${billing === 'yearly' ? 'Anual' : 'Mensal'}) - Gnosis AI`,
+          title: `Assinatura Plano ${getLocalizedString(plan, 'displayName')} (${billing === 'yearly' ? 'Anual' : 'Mensal'}) - Gnosis AI`,
           billingPeriod: billing,
           language: i18n.language,
         });
@@ -206,7 +207,7 @@ export default function PlanosPage() {
                   )}
                   <h4 className={`text-3xl md:text-2xl font-bold mb-6 md:mb-4 ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
                     }`}>
-                    {plan.displayName}
+                    {getLocalizedString(plan, 'displayName')}
                   </h4>
                   <div className="mb-8">
                     <div className="flex items-baseline flex-wrap gap-1">
@@ -274,7 +275,7 @@ export default function PlanosPage() {
                             ? isAvailable ? "text-white" : "text-white/50"
                             : isAvailable ? "text-[#1e3a5f]" : "text-gray-400"
                             }`}>
-                            {tool.displayName}
+                            {getLocalizedString(tool, 'displayName')}
                           </span>
                         </li>
                       );
