@@ -284,7 +284,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   // 2. Montagem do Payload para OpenAI
   const payload: Record<string, unknown> = {
-    model: "gpt-4.1-mini", // ✅ Recomendado para velocidade/custo. Use "gpt-4o" para máxima qualidade.
+    model: "gpt-4.1-mini", // ✅ Recomendado para velocidade/custo. Use "gpt-4o" para máxima qualidade. // gpt-4.1-mini
     messages: messages.map(normalizeMessage),
   };
 
@@ -299,7 +299,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   // ✅ IMPORTANTE: Removido o bloco "thinking" (específico do Gemini/Reasoning)
   // O parâmetro da OpenAI é max_completion_tokens ou max_tokens
-  payload.max_tokens = 4096; 
+  payload.max_tokens = 5096; 
 
   const normalizedResponseFormat = normalizeResponseFormat({
     responseFormat,

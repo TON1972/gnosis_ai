@@ -11,7 +11,7 @@ import { Link, useLocation } from "wouter";
 import React, { useState, useEffect } from "react";
 import Footer from "@/components/Footer";
 import { getLocalizedString } from "@/lib/i18nHelper";
-import { formatPlanPrice, getPlanPriceQuote } from "@shared/planPricing";
+import { getPlanPriceDisplay } from "@shared/planPricing";
 import {
   BookOpen,
   Languages,
@@ -87,21 +87,15 @@ export default function Home() {
   }, []);
 
   const getDisplayPrice = (plan: any) => {
-    if (plan.priceMonthly === 0) return { main: t('dashboard.freePlan'), multiplier: null };
-
-    const quote = getPlanPriceQuote(plan, billingPeriod, i18n.language);
-
-    if (billingPeriod === "yearly") {
-      const monthlyEquivalent = formatPlanPrice(Math.round(quote.amountCents / 12), quote);
-      return { main: monthlyEquivalent, multiplier: "x 12" };
+    const display = getPlanPriceDisplay(plan, billingPeriod, i18n.language, t("dashboard.freePlan"));
+    if (display.amountCents === 0 && plan.priceMonthly === 0) {
+      return { main: t("dashboard.freePlan"), periodLabel: "", sublabel: null };
     }
-
-    return { main: formatPlanPrice(quote.amountCents, quote), multiplier: null };
-  };
-
-  const getDisplayPeriod = (plan: any) => {
-    if (plan.priceMonthly === 0) return '';
-    return billingPeriod === 'yearly' ? t('home.periodYearly') : t('home.periodMonthly');
+    return {
+      main: display.main,
+      periodLabel: display.periodLabel,
+      sublabel: display.sublabel ?? null,
+    };
   };
 
   const handlePlanClick = (planId: number | string) => {
@@ -400,21 +394,22 @@ export default function Home() {
                       {plan.displayName}
                     </h4>
                     <div className="mb-6">
-                      <span className={`text-4xl font-bold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
-                        }`}>
-                        {priceDisplay.main}
-                      </span>
-                      {priceDisplay.multiplier && (
-                        <span className={`text-lg ml-1 ${isHighlight || isPremium ? "text-white/60" : "text-[#8b6f47]/60"
+                      <div className="flex items-baseline flex-wrap gap-1">
+                        <span className={`text-4xl font-bold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
                           }`}>
-                          {priceDisplay.multiplier}
+                          {priceDisplay.main}
                         </span>
-                      )}
-                      {!isFree && (
-                        <span className={`text-lg ${isHighlight || isPremium ? "text-white/80" : "text-[#8b6f47]"
-                          }`}>
-                          {getDisplayPeriod(plan)}
-                        </span>
+                        {!isFree && priceDisplay.periodLabel && (
+                          <span className={`text-lg ${isHighlight || isPremium ? "text-white/80" : "text-[#8b6f47]"
+                            }`}>
+                            {priceDisplay.periodLabel}
+                          </span>
+                        )}
+                      </div>
+                      {!isFree && priceDisplay.sublabel && (
+                        <p className={`text-sm font-semibold mt-1 ${isHighlight || isPremium ? "text-white/70" : "text-[#8b6f47]"}`}>
+                          {priceDisplay.sublabel}
+                        </p>
                       )}
                     </div>
 

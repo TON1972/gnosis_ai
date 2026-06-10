@@ -6,7 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import CreditPackages from "./CreditPackages";
-import { formatPlanPrice, getPlanPriceQuote } from "@shared/planPricing";
+import { getPlanPriceDisplay } from "@shared/planPricing";
 
 interface NoCreditsModalProps {
   open: boolean;
@@ -23,7 +23,9 @@ const BONUS_CREDITS = [
 
 export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: NoCreditsModalProps) {
   const { t, i18n } = useTranslation();
-  const { data: allPlans, isLoading: isLoadingPlans } = trpc.plans.list.useQuery();
+  const { data: allPlans, isLoading: isLoadingPlans, refetch: refetchPlans } = trpc.plans.list.useQuery(undefined, {
+    staleTime: 0,
+  });
   const { data: allTools, isLoading: isLoadingTools } = trpc.tools.list.useQuery();
   const { data: activePlanData } = trpc.credits.activePlan.useQuery();
 
@@ -46,8 +48,9 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
   useEffect(() => {
     if (open) {
       setView(initialTab);
+      void refetchPlans();
     }
-  }, [open, initialTab]);
+  }, [open, initialTab, refetchPlans]);
 
   const isLoading = isLoadingPlans || isLoadingTools;
 
@@ -99,18 +102,29 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
                   const isActive = String(activePlanData?.plan?.id) === String(plan.id);
                   const isLumen = plan.name === 'lumen';
                   const isProcessing = createCheckout.isPending && createCheckout.variables?.id === String(plan.id);
-                  const quote = getPlanPriceQuote(plan, billingPeriod, i18n.language);
-                  const displayPrice = billingPeriod === "yearly"
-                    ? formatPlanPrice(Math.round(quote.amountCents / 12), quote)
-                    : formatPlanPrice(quote.amountCents, quote);
+                  const priceDisplay = getPlanPriceDisplay(
+                    plan,
+                    billingPeriod,
+                    i18n.language,
+                    t("dashboard.freePlan"),
+                  );
 
                   return (
                     <div key={plan.id} className={`relative flex flex-col rounded-2xl p-5 border-4 shadow-xl transition-all ${isLumen ? 'bg-[#1e3a5f] border-[#d4af37] text-white ring-4 ring-[#d4af37]/20' : 'bg-white border-[#d4af37]/40 text-[#1e3a5f]'}`}>
                       {isActive && <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full z-20 shadow-md">{t('modals.credits.active')}</div>}
                       <h4 className="text-lg font-black uppercase tracking-tight">{plan.displayName}</h4>
-                      <div className="flex items-baseline gap-1 mt-2 mb-4">
-                        <span className={`text-3xl font-black ${isLumen ? 'text-[#d4af37]' : 'text-[#1e3a5f]'}`}>{displayPrice}</span>
-                        <span className="text-[10px] font-bold opacity-70">{t('modals.credits.billing.perMonth')}</span>
+                      <div className="mt-2 mb-4">
+                        <div className="flex items-baseline gap-1">
+                          <span className={`text-3xl font-black ${isLumen ? 'text-[#d4af37]' : 'text-[#1e3a5f]'}`}>{priceDisplay.main}</span>
+                          {priceDisplay.periodLabel && (
+                            <span className="text-[10px] font-bold opacity-70">{priceDisplay.periodLabel}</span>
+                          )}
+                        </div>
+                        {priceDisplay.sublabel && (
+                          <p className={`text-[11px] font-bold mt-1 ${isLumen ? 'text-white/80' : 'text-[#8b6f47]'}`}>
+                            {priceDisplay.sublabel}
+                          </p>
+                        )}
                       </div>
                       <div className={`space-y-2 mb-4 p-3 rounded-xl ${isLumen ? 'bg-white/10' : 'bg-[#FFFACD]/50'}`}>
                         <p className="text-[11px] font-bold flex items-center gap-2"><Zap className="w-3 h-3" /> {Number(plan.creditsInitial).toLocaleString()} {t('modals.credits.initial')}</p>
@@ -131,7 +145,7 @@ export default function NoCreditsModal({ open, onClose, initialTab = 'plans' }: 
                         onClick={() => !isActive && createCheckout.mutate({
                           type: 'plan',
                           id: String(plan.id),
-                          price: quote.amountCents / 100,
+                          price: priceDisplay.amountCents / 100,
                           title: `Plano ${plan.displayName} - Gnosis AI`,
                           billingPeriod,
                           language: i18n.language,

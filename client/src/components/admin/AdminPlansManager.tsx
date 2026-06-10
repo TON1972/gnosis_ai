@@ -13,7 +13,10 @@ import { Loader2, Edit2 } from "lucide-react";
 const centsToUnits = (value?: number | null) => (value || 0) / 100;
 
 export function AdminPlansManager() {
-    const { data: plans, isLoading, refetch } = trpc.plans.list.useQuery();
+    const utils = trpc.useUtils();
+    const { data: plans, isLoading, refetch } = trpc.plans.list.useQuery(undefined, {
+        staleTime: 0,
+    });
     const updatePlanMutation = trpc.admin.updatePlan.useMutation();
 
     const [editingPlan, setEditingPlan] = useState<any>(null);
@@ -79,6 +82,7 @@ export function AdminPlansManager() {
 
             toast.success("Plano atualizado com sucesso!");
             setEditingPlan(null);
+            await utils.plans.list.invalidate();
             refetch();
         } catch (error) {
             toast.error("Erro ao atualizar plano.");

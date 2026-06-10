@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { CheckCircle2, Crown, Loader2 } from "lucide-react";
 import MobileMenu from "@/components/MobileMenu";
 import CreditPackages from "@/components/CreditPackages";
-import { formatPlanPrice, getPlanPriceQuote } from "@shared/planPricing";
+import { getPlanPriceDisplay, getPlanPriceQuote } from "@shared/planPricing";
 
 export default function PlanosPage() {
   const { i18n } = useTranslation();
@@ -38,21 +38,15 @@ export default function PlanosPage() {
   const isLoading = isLoadingPlans || isLoadingTools;
 
   const getDisplayPrice = (plan: any) => {
-    if (plan.priceMonthly === 0) return { main: "Gratuito", multiplier: null };
-
-    const quote = getPlanPriceQuote(plan, billingPeriod, i18n.language);
-
-    if (billingPeriod === "yearly") {
-      const monthlyEquivalent = formatPlanPrice(Math.round(quote.amountCents / 12), quote);
-      return { main: monthlyEquivalent, multiplier: "x 12" };
+    const display = getPlanPriceDisplay(plan, billingPeriod, i18n.language);
+    if (display.amountCents === 0 && plan.priceMonthly === 0) {
+      return { main: "Gratuito", periodLabel: "", sublabel: null };
     }
-
-    return { main: formatPlanPrice(quote.amountCents, quote), multiplier: null };
-  };
-
-  const getDisplayPeriod = (plan: any) => {
-    if (plan.priceMonthly === 0) return '';
-    return billingPeriod === 'yearly' ? '/ano' : '/mês';
+    return {
+      main: display.main,
+      periodLabel: display.periodLabel,
+      sublabel: display.sublabel ?? null,
+    };
   };
 
   const createCheckout = trpc.payments.createCheckoutSession.useMutation();
@@ -215,21 +209,22 @@ export default function PlanosPage() {
                     {plan.displayName}
                   </h4>
                   <div className="mb-8">
-                    <span className={`text-5xl md:text-4xl font-bold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
-                      }`}>
-                      {priceDisplay.main}
-                    </span>
-                    {priceDisplay.multiplier && (
-                      <span className={`text-lg ml-1 ${isHighlight || isPremium ? "text-white/60" : "text-[#8b6f47]/60"
+                    <div className="flex items-baseline flex-wrap gap-1">
+                      <span className={`text-5xl md:text-4xl font-bold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
                         }`}>
-                        {priceDisplay.multiplier}
+                        {priceDisplay.main}
                       </span>
-                    )}
-                    {!isFree && (
-                      <span className={`text-xl ${isHighlight || isPremium ? "text-white/80" : "text-[#8b6f47]"
-                        }`}>
-                        {getDisplayPeriod(plan)}
-                      </span>
+                      {!isFree && priceDisplay.periodLabel && (
+                        <span className={`text-xl ${isHighlight || isPremium ? "text-white/80" : "text-[#8b6f47]"
+                          }`}>
+                          {priceDisplay.periodLabel}
+                        </span>
+                      )}
+                    </div>
+                    {!isFree && priceDisplay.sublabel && (
+                      <p className={`text-sm font-semibold mt-1 ${isHighlight || isPremium ? "text-white/70" : "text-[#8b6f47]"}`}>
+                        {priceDisplay.sublabel}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-4 md:space-y-3 mb-8 md:mb-6">
