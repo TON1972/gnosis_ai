@@ -3,7 +3,9 @@ import { Button } from "./ui/button";
 import { Coins, Crown, Sparkles, Gift, CheckCircle2, Zap, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { formatPlanPrice, getPlanPriceQuote } from "@shared/planPricing";
 
 interface BuyCreditsModalProps {
   open: boolean;
@@ -18,6 +20,7 @@ const BONUS_CREDITS = [
 ];
 
 export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
+  const { i18n } = useTranslation();
   const { data: allPlans, isLoading: isLoadingPlans } = trpc.plans.list.useQuery();
   const { data: allTools, isLoading: isLoadingTools } = trpc.tools.list.useQuery();
   const { data: activePlanData } = trpc.credits.activePlan.useQuery();
@@ -42,14 +45,6 @@ export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps)
       setView('credits');
     }
   }, [open]);
-
-  const formatPriceDisplay = (value: any) => {
-    const numericValue = Number(value);
-    if (isNaN(numericValue)) return "0,00";
-    // O banco guarda em cents, então dividimos por 100
-    const baseValue = billingPeriod === 'yearly' ? (numericValue / 12) : numericValue;
-    return (baseValue / 100).toFixed(2).replace('.', ',');
-  };
 
   const isLoading = isLoadingPlans || isLoadingTools;
 
@@ -103,14 +98,17 @@ export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps)
                   const isActive = String(activePlanData?.plan?.id) === String(plan.id);
                   const isLumen = plan.name === 'lumen';
                   const isProcessing = createCheckout.isPending && createCheckout.variables?.id === String(plan.id);
-                  const price = billingPeriod === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+                  const quote = getPlanPriceQuote(plan, billingPeriod, i18n.language);
+                  const displayPrice = billingPeriod === "yearly"
+                    ? formatPlanPrice(Math.round(quote.amountCents / 12), quote)
+                    : formatPlanPrice(quote.amountCents, quote);
 
                   return (
                     <div key={plan.id} className={`relative flex flex-col rounded-2xl p-5 border-4 shadow-xl transition-all ${isLumen ? 'bg-[#1e3a5f] border-[#d4af37] text-white ring-4 ring-[#d4af37]/20' : 'bg-white border-[#d4af37]/40 text-[#1e3a5f]'}`}>
                       {isActive && <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full z-20 shadow-md">ATIVO</div>}
                       <h4 className="text-lg font-black uppercase tracking-tight">{plan.displayName}</h4>
                       <div className="flex items-baseline gap-1 mt-2 mb-4">
-                        <span className={`text-3xl font-black ${isLumen ? 'text-[#d4af37]' : 'text-[#1e3a5f]'}`}>R$ {formatPriceDisplay(price)}</span>
+                        <span className={`text-3xl font-black ${isLumen ? 'text-[#d4af37]' : 'text-[#1e3a5f]'}`}>{displayPrice}</span>
                         <span className="text-[10px] font-bold opacity-70">/mês</span>
                       </div>
                       <div className={`space-y-2 mb-4 p-3 rounded-xl ${isLumen ? 'bg-white/10' : 'bg-[#FFFACD]/50'}`}>
@@ -132,9 +130,10 @@ export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps)
                         onClick={() => !isActive && createCheckout.mutate({
                           type: 'plan',
                           id: String(plan.id),
-                          price: price / 100,
+                          price: quote.amountCents / 100,
                           title: `Plano ${plan.displayName} - Gnosis AI`,
-                          billingPeriod
+                          billingPeriod,
+                          language: i18n.language,
                         })}
                         disabled={isActive || createCheckout.isPending || plan.name === 'free'}
                         className={`w-full font-black py-5 rounded-xl transition-all shadow-md active:scale-95 ${isActive ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-none' : isLumen ? 'bg-[#d4af37] text-[#1e3a5f] hover:bg-white' : 'bg-[#1e3a5f] text-white'}`}

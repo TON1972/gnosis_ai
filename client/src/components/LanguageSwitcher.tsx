@@ -33,14 +33,6 @@ export function LanguageSwitcher() {
       >
         🇺🇸
       </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => changeLanguage("es")}
-        className={i18n.language.startsWith("es") ? "bg-accent" : ""}
-      >
-        🇪🇸
-      </Button>
     </div>
   );
 }

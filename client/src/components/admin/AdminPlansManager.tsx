@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, Edit2 } from "lucide-react";
 
+const centsToUnits = (value?: number | null) => (value || 0) / 100;
+
 export function AdminPlansManager() {
     const { data: plans, isLoading, refetch } = trpc.plans.list.useQuery();
     const updatePlanMutation = trpc.admin.updatePlan.useMutation();
@@ -20,8 +22,11 @@ export function AdminPlansManager() {
         creditsInitial: 0,
         syncUsers: false,
         priceMonthly: 0,
+        priceYearly: 0,
         priceMonthlyUsd: 0,
+        priceYearlyUsd: 0,
         priceMonthlyEur: 0,
+        priceYearlyEur: 0,
         displayName: "",
         displayNameEn: "",
         displayNameEs: "",
@@ -36,9 +41,12 @@ export function AdminPlansManager() {
             creditsDaily: plan.creditsDaily,
             creditsInitial: plan.creditsInitial,
             syncUsers: false,
-            priceMonthly: plan.priceMonthly / 100,
-            priceMonthlyUsd: (plan.priceMonthlyUsd || 0) / 100,
-            priceMonthlyEur: (plan.priceMonthlyEur || 0) / 100,
+            priceMonthly: centsToUnits(plan.priceMonthly),
+            priceYearly: centsToUnits(plan.priceYearly),
+            priceMonthlyUsd: centsToUnits(plan.priceMonthlyUsd),
+            priceYearlyUsd: centsToUnits(plan.priceYearlyUsd),
+            priceMonthlyEur: centsToUnits(plan.priceMonthlyEur),
+            priceYearlyEur: centsToUnits(plan.priceYearlyEur),
             displayName: plan.displayName || "",
             displayNameEn: plan.displayNameEn || "",
             displayNameEs: plan.displayNameEs || "",
@@ -58,8 +66,11 @@ export function AdminPlansManager() {
                 creditsInitial: formData.creditsInitial,
                 syncUsers: formData.syncUsers,
                 priceMonthly: formData.priceMonthly,
+                priceYearly: formData.priceYearly,
                 priceMonthlyUsd: formData.priceMonthlyUsd,
+                priceYearlyUsd: formData.priceYearlyUsd,
                 priceMonthlyEur: formData.priceMonthlyEur,
+                priceYearlyEur: formData.priceYearlyEur,
                 displayNameEn: formData.displayNameEn,
                 descriptionEn: formData.descriptionEn,
                 displayNameEs: formData.displayNameEs,
@@ -103,27 +114,36 @@ export function AdminPlansManager() {
                                 {plan.name}
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4 pt-4">
+                        <CardContent className="space-y-3 pt-4 text-sm">
                             <div className="flex justify-between border-b pb-2">
-                                <span className="text-gray-600">Mensal (BRL)</span>
-                                <span className="font-bold text-[#1e3a5f]">R$ {(plan.priceMonthly / 100).toFixed(2)}</span>
+                                <span className="text-gray-600">BR (mensal / anual)</span>
+                                <span className="font-bold text-[#1e3a5f]">
+                                    R$ {centsToUnits(plan.priceMonthly).toFixed(2)} / R$ {centsToUnits(plan.priceYearly).toFixed(2)}
+                                </span>
                             </div>
                             <div className="flex justify-between border-b pb-2">
-                                <span className="text-gray-600">Mensal (USD/EUR)</span>
-                                <span className="font-bold text-[#1e3a5f]">${((plan.priceMonthlyUsd || 0) / 100).toFixed(2)} / €{((plan.priceMonthlyEur || 0) / 100).toFixed(2)}</span>
+                                <span className="text-gray-600">EN USD (mensal / anual)</span>
+                                <span className="font-bold text-[#1e3a5f]">
+                                    ${centsToUnits(plan.priceMonthlyUsd).toFixed(2)} / ${centsToUnits(plan.priceYearlyUsd).toFixed(2)}
+                                </span>
+                            </div>
+                            <div className="flex justify-between border-b pb-2">
+                                <span className="text-gray-600">ES EUR (mensal / anual)</span>
+                                <span className="font-bold text-[#1e3a5f]">
+                                    €{centsToUnits(plan.priceMonthlyEur).toFixed(2)} / €{centsToUnits(plan.priceYearlyEur).toFixed(2)}
+                                </span>
                             </div>
                         </CardContent>
                     </Card>
                 ))}
             </div>
 
-            {/* Modal de Edição */}
             <Dialog open={!!editingPlan} onOpenChange={(open) => !open && setEditingPlan(null)}>
                 <DialogContent className="sm:max-w-2xl bg-white text-[#1e3a5f]">
                     <DialogHeader>
                         <DialogTitle>Editar Plano: {editingPlan?.displayName}</DialogTitle>
                         <DialogDescription>
-                            Ajuste textos internacionais, créditos e preços.
+                            Ajuste textos internacionais, créditos e preços por moeda.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -136,43 +156,71 @@ export function AdminPlansManager() {
                            <TabsTrigger value="es">ES</TabsTrigger>
                          </TabsList>
 
-                         <TabsContent value="values" className="grid gap-4 mt-4">
+                         <TabsContent value="values" className="grid gap-5 mt-4">
                              <div className="grid grid-cols-2 gap-4">
                                <div className="grid gap-2">
-                                   <Label>Diários</Label>
+                                   <Label>Créditos diários</Label>
                                    <Input type="number" value={formData.creditsDaily} onChange={(e) => setFormData({ ...formData, creditsDaily: Number(e.target.value) })} />
                                </div>
                                <div className="grid gap-2">
-                                   <Label>Mensais</Label>
+                                   <Label>Créditos mensais</Label>
                                    <Input type="number" value={formData.creditsInitial} onChange={(e) => setFormData({ ...formData, creditsInitial: Number(e.target.value) })} />
                                </div>
                              </div>
-                             <div className="grid grid-cols-3 gap-4">
-                               <div className="grid gap-2">
-                                   <Label>Preço Mensal (BRL)</Label>
-                                   <Input type="number" value={formData.priceMonthly} onChange={(e) => setFormData({ ...formData, priceMonthly: Number(e.target.value) })} />
+
+                             <div className="rounded-lg border p-4 space-y-3">
+                               <p className="text-sm font-bold text-[#1e3a5f]">Brasil (BRL)</p>
+                               <div className="grid grid-cols-2 gap-4">
+                                 <div className="grid gap-2">
+                                     <Label>Preço mensal</Label>
+                                     <Input type="number" step="0.01" value={formData.priceMonthly} onChange={(e) => setFormData({ ...formData, priceMonthly: Number(e.target.value) })} />
+                                 </div>
+                                 <div className="grid gap-2">
+                                     <Label>Preço anual (total)</Label>
+                                     <Input type="number" step="0.01" value={formData.priceYearly} onChange={(e) => setFormData({ ...formData, priceYearly: Number(e.target.value) })} />
+                                 </div>
                                </div>
-                               <div className="grid gap-2">
-                                   <Label>Preço Mensal (USD)</Label>
-                                   <Input type="number" value={formData.priceMonthlyUsd} onChange={(e) => setFormData({ ...formData, priceMonthlyUsd: Number(e.target.value) })} />
+                             </div>
+
+                             <div className="rounded-lg border p-4 space-y-3">
+                               <p className="text-sm font-bold text-[#1e3a5f]">Inglês / internacional (USD)</p>
+                               <div className="grid grid-cols-2 gap-4">
+                                 <div className="grid gap-2">
+                                     <Label>Preço mensal</Label>
+                                     <Input type="number" step="0.01" value={formData.priceMonthlyUsd} onChange={(e) => setFormData({ ...formData, priceMonthlyUsd: Number(e.target.value) })} />
+                                 </div>
+                                 <div className="grid gap-2">
+                                     <Label>Preço anual (total)</Label>
+                                     <Input type="number" step="0.01" value={formData.priceYearlyUsd} onChange={(e) => setFormData({ ...formData, priceYearlyUsd: Number(e.target.value) })} />
+                                 </div>
                                </div>
-                               <div className="grid gap-2">
-                                   <Label>Preço Mensal (EUR)</Label>
-                                   <Input type="number" value={formData.priceMonthlyEur} onChange={(e) => setFormData({ ...formData, priceMonthlyEur: Number(e.target.value) })} />
+                             </div>
+
+                             <div className="rounded-lg border p-4 space-y-3">
+                               <p className="text-sm font-bold text-[#1e3a5f]">Espanhol / Europa (EUR)</p>
+                               <div className="grid grid-cols-2 gap-4">
+                                 <div className="grid gap-2">
+                                     <Label>Preço mensal</Label>
+                                     <Input type="number" step="0.01" value={formData.priceMonthlyEur} onChange={(e) => setFormData({ ...formData, priceMonthlyEur: Number(e.target.value) })} />
+                                 </div>
+                                 <div className="grid gap-2">
+                                     <Label>Preço anual (total)</Label>
+                                     <Input type="number" step="0.01" value={formData.priceYearlyEur} onChange={(e) => setFormData({ ...formData, priceYearlyEur: Number(e.target.value) })} />
+                                 </div>
                                </div>
                              </div>
                          </TabsContent>
 
                          <TabsContent value="pt" className="grid gap-4 mt-4">
                             <div className="grid gap-2">
-                                <Label>Nome Exibido</Label>
+                                <Label>Nome exibido</Label>
                                 <Input disabled value={formData.displayName} placeholder="Padrão do banco..." />
                             </div>
                          </TabsContent>
 
                          <TabsContent value="en" className="grid gap-4 mt-4">
                             <div className="grid gap-2">
-                                <Label>Display Name</Label>
+                                <Label>Display name</Label>
                                 <Input value={formData.displayNameEn} onChange={(e) => setFormData({ ...formData, displayNameEn: e.target.value })} />
                             </div>
                             <div className="grid gap-2">
@@ -183,7 +231,7 @@ export function AdminPlansManager() {
 
                          <TabsContent value="es" className="grid gap-4 mt-4">
                             <div className="grid gap-2">
-                                <Label>Nombre Mostrado</Label>
+                                <Label>Nombre mostrado</Label>
                                 <Input value={formData.displayNameEs} onChange={(e) => setFormData({ ...formData, displayNameEs: e.target.value })} />
                             </div>
                             <div className="grid gap-2">
@@ -201,10 +249,10 @@ export function AdminPlansManager() {
                             />
                             <div className="grid gap-1.5 leading-none">
                                 <Label htmlFor="sync" className="font-bold text-red-600">
-                                    Sincronizar Assinantes Ativos?
+                                    Sincronizar assinantes ativos?
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-tight">
-                                    Atualiza saldo de todos os usuários neste plano.
+                                    Atualiza o saldo de todos os usuários neste plano.
                                 </p>
                             </div>
                         </div>

@@ -270,4 +270,67 @@ mobileRouter.get("/credits/active-plan", requireMobileAuth, async (req, res) => 
   }
 });
 
-// Outros endpoints como checkout nativo ou histórico seriam implementados aqui.
+// ---------------------------------------------------------
+// 6. USAGE HISTORY & AFFILIATE
+// ---------------------------------------------------------
+
+mobileRouter.get("/credits/usage-history", requireMobileAuth, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const db = await getDb();
+    if (!db) throw new Error("Banco indisponível");
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const transactions = await db
+      .select()
+      .from(creditTransactions)
+      .where(
+        and(
+          eq(creditTransactions.userId, user.id),
+          // or(eq(creditTransactions.type, 'usage'), eq(creditTransactions.type, 'spend')),
+          sql`${creditTransactions.createdAt} >= ${thirtyDaysAgo}`
+        )
+      )
+      .orderBy(desc(creditTransactions.createdAt));
+
+    return res.status(200).json({ success: true, history: transactions });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+mobileRouter.get("/affiliate/stats", requireMobileAuth, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const db = await getDb();
+    if (!db) throw new Error("Banco indisponível");
+
+    const { users, affiliateCommissions } = await import("../drizzle/schema.js");
+
+    const [affiliateUser] = await db
+      .select({ affiliateCode: users.affiliateCode, commissionPercentage: users.commissionPercentage })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1);
+
+    const commissions = await db
+      .select()
+      .from(affiliateCommissions)
+      .where(eq(affiliateCommissions.affiliateId, user.id));
+
+    return res.status(200).json({ 
+      success: true, 
+      stats: {
+        code: affiliateUser?.affiliateCode,
+        commissionPercentage: affiliateUser?.commissionPercentage,
+        commissions: commissions
+      } 
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Outros endpoints como checkout nativo seriam implementados aqui.

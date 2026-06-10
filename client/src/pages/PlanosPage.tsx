@@ -4,11 +4,14 @@ import { trpc } from "@/lib/trpc";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { CheckCircle2, Crown, Loader2 } from "lucide-react";
 import MobileMenu from "@/components/MobileMenu";
 import CreditPackages from "@/components/CreditPackages";
+import { formatPlanPrice, getPlanPriceQuote } from "@shared/planPricing";
 
 export default function PlanosPage() {
+  const { i18n } = useTranslation();
   const { user, isAuthenticated, logout } = useAuth();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
   const [, setLocation] = useLocation();
@@ -34,21 +37,17 @@ export default function PlanosPage() {
 
   const isLoading = isLoadingPlans || isLoadingTools;
 
-  // Lógica de Preço
   const getDisplayPrice = (plan: any) => {
     if (plan.priceMonthly === 0) return { main: "Gratuito", multiplier: null };
 
-    // O banco retorna valores em centavos (integer)
-    const priceMonthly = plan.priceMonthly / 100;
-    const priceYearly = plan.priceYearly / 100;
+    const quote = getPlanPriceQuote(plan, billingPeriod, i18n.language);
 
-    if (billingPeriod === 'yearly') {
-      // Exibe o valor mensal equivalente no plano anual
-      const monthlyEquivalent = (priceYearly / 12).toFixed(2).replace('.', ',');
-      return { main: `R$ ${monthlyEquivalent}`, multiplier: 'x 12' };
+    if (billingPeriod === "yearly") {
+      const monthlyEquivalent = formatPlanPrice(Math.round(quote.amountCents / 12), quote);
+      return { main: monthlyEquivalent, multiplier: "x 12" };
     }
 
-    return { main: `R$ ${priceMonthly.toFixed(2).replace('.', ',')}`, multiplier: null };
+    return { main: formatPlanPrice(quote.amountCents, quote), multiplier: null };
   };
 
   const getDisplayPeriod = (plan: any) => {
@@ -69,8 +68,8 @@ export default function PlanosPage() {
       if (!plan) return;
 
       const billing = billingPeriod;
-      const priceCents = billing === 'yearly' ? plan.priceYearly : plan.priceMonthly;
-      const price = priceCents / 100;
+      const quote = getPlanPriceQuote(plan, billing, i18n.language);
+      const price = quote.amountCents / 100;
 
       try {
         const checkout = await createCheckout.mutateAsync({
@@ -78,7 +77,8 @@ export default function PlanosPage() {
           id: String(plan.id),
           price: price,
           title: `Assinatura Plano ${plan.displayName} (${billing === 'yearly' ? 'Anual' : 'Mensal'}) - Gnosis AI`,
-          billingPeriod: billing
+          billingPeriod: billing,
+          language: i18n.language,
         });
 
         if (checkout.init_point) {

@@ -11,6 +11,7 @@ import { Link, useLocation } from "wouter";
 import React, { useState, useEffect } from "react";
 import Footer from "@/components/Footer";
 import { getLocalizedString } from "@/lib/i18nHelper";
+import { formatPlanPrice, getPlanPriceQuote } from "@shared/planPricing";
 import {
   BookOpen,
   Languages,
@@ -64,7 +65,7 @@ const ICON_MAP: Record<string, any> = {
 
 
 export default function Home() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, isAuthenticated, logout } = useAuth();
   const { data: activePlan } = trpc.credits.activePlan.useQuery(undefined, { enabled: isAuthenticated });
 
@@ -88,17 +89,14 @@ export default function Home() {
   const getDisplayPrice = (plan: any) => {
     if (plan.priceMonthly === 0) return { main: t('dashboard.freePlan'), multiplier: null };
 
-    // O banco retorna valores em centavos (integer)
-    const priceMonthly = plan.priceMonthly / 100;
-    const priceYearly = plan.priceYearly / 100;
+    const quote = getPlanPriceQuote(plan, billingPeriod, i18n.language);
 
-    if (billingPeriod === 'yearly') {
-      // Exibe o valor mensal equivalente no plano anual
-      const monthlyEquivalent = (priceYearly / 12).toFixed(2).replace('.', ',');
-      return { main: `R$ ${monthlyEquivalent}`, multiplier: 'x 12' };
+    if (billingPeriod === "yearly") {
+      const monthlyEquivalent = formatPlanPrice(Math.round(quote.amountCents / 12), quote);
+      return { main: monthlyEquivalent, multiplier: "x 12" };
     }
 
-    return { main: `R$ ${priceMonthly.toFixed(2).replace('.', ',')}`, multiplier: null };
+    return { main: formatPlanPrice(quote.amountCents, quote), multiplier: null };
   };
 
   const getDisplayPeriod = (plan: any) => {

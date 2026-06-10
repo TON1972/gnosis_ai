@@ -35,6 +35,7 @@ export async function createStripeCheckout(params: {
     planId: number;
     planName: string;
     price: number;
+    currency?: 'brl' | 'usd' | 'eur';
     billingPeriod: 'monthly' | 'yearly';
     userId: number;
     userEmail: string;
@@ -46,7 +47,7 @@ export async function createStripeCheckout(params: {
     clientIp?: string;
     clientUserAgent?: string;
 }) {
-    const { planId, planName, price, billingPeriod, userId, userEmail, customerId, trialDays, fbc, fbp, clientIp, clientUserAgent } = params;
+    const { planId, planName, price, currency = 'brl', billingPeriod, userId, userEmail, customerId, trialDays, fbc, fbp, clientIp, clientUserAgent } = params;
 
     try {
         const unitAmount = Math.round(price * 100);
@@ -61,7 +62,7 @@ export async function createStripeCheckout(params: {
             line_items: [
                 {
                     price_data: {
-                        currency: 'brl',
+                        currency,
                         product_data: {
                             name: isYearly ? `Plano ${planName} - GNOSIS AI (Anual)` : `Plano ${planName} - GNOSIS AI`,
                             description: isYearly ? `Pagamento Único (Acesso por 1 Ano)` : `Assinatura Mensal`,

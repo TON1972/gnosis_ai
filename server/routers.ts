@@ -45,6 +45,7 @@ import {
 import { affiliateRouter } from "./affiliate.js";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { getPlanPriceQuote } from "../shared/planPricing.js";
 //import {  userCredits } from "@shared/schema";
 
 // Helper para garantir conexão com DB
@@ -1701,6 +1702,7 @@ export const appRouter = router({
         price: z.number(),
         title: z.string(),
         billingPeriod: z.enum(['monthly', 'yearly']).optional(),
+        language: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         try {
@@ -1741,9 +1743,12 @@ export const appRouter = router({
             if (!targetPlan) throw new Error("Plano não encontrado");
 
             const planName = targetPlan.displayName;
-            const price = (input.billingPeriod === 'yearly' ? targetPlan.priceYearly : targetPlan.priceMonthly) / 100;
+            const billingPeriod = input.billingPeriod || 'monthly';
+            const priceQuote = getPlanPriceQuote(targetPlan, billingPeriod, input.language);
+            const price = priceQuote.amountCents / 100;
+            const useStripeForYearly = billingPeriod === 'yearly' && priceQuote.currency !== 'brl';
 
-            if (input.billingPeriod === 'yearly') {
+            if (billingPeriod === 'yearly' && !useStripeForYearly) {
               const mpSession = await createManualPaymentCheckout({
                 planId: Number(input.id),
                 planName: planName,
@@ -1780,8 +1785,9 @@ export const appRouter = router({
               const stripeSession = await createStripeCheckout({
                 planId: Number(input.id),
                 planName: planName,
-                price: price, // Valor em reais buscado no banco
-                billingPeriod: input.billingPeriod || 'monthly',
+                price: price,
+                currency: priceQuote.currency,
+                billingPeriod,
                 userId: ctx.user.id,
                 userEmail: user.email,
                 customerId: customerId,

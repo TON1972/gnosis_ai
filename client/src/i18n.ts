@@ -23,6 +23,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
+    supportedLngs: ['pt', 'en'],
     fallbackLng: 'pt',
     detection: {
       order: ['localStorage'], // Apenas usa o localStorage, ignora o idioma do navegador para forçar PT por padrão
@@ -32,5 +33,9 @@ i18n
       escapeValue: false 
     }
   });
+
+if (i18n.language?.startsWith('es')) {
+  void i18n.changeLanguage('pt');
+}
 
 export default i18n;
