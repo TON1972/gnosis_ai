@@ -82,7 +82,21 @@
     "paymentRequiredCardNote": "Tarjeta obligatoria para iniciar el trial.",
     "trialBillingNote": "Después de {{days}} días, se cobrará automáticamente el plan elegido.",
     "startTrialCheckout": "Iniciar trial de {{days}} días",
-    "subscribeNow": "Suscribirse ahora"
+    "subscribeNow": "Suscribirse ahora",
+    "trialBadge": "Prueba gratuita",
+    "trialDaysHeadline": "{{days}} días para explorar",
+    "billingToggle": "Periodo de facturación",
+    "recommendedPlan": "Recomendado",
+    "afterTrialPrice": "Después del trial",
+    "accountDetails": "Tus datos",
+    "optional": "opcional",
+    "trialBenefit1": "Acceso completo a las herramientas del plan elegido",
+    "trialBenefit2": "Cancela antes del fin del trial sin cargo",
+    "trialBenefit3": "Pago seguro vía Stripe",
+    "checkoutError": "Error al iniciar el pago. Inténtalo de nuevo.",
+    "yearlySaveHint": "Mejor valor",
+    "planOptions": "Planes disponibles",
+    "planToolsCount": "{{count}} herramientas"
   },
   "dashboard": {
     "welcomeTitle": "¡Gracia y paz, {{name}}!",

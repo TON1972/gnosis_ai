@@ -9,6 +9,14 @@ import { isBasicPlan } from "@/lib/planHelpers";
 import { BASIC_MIGRATION_SESSION_DISMISS_KEY } from "@shared/planConstants";
 import { useLocation } from "wouter";
 
+const MIGRATION_ALLOWED_PREFIXES = ["/dashboard", "/perfil", "/tool/", "/study/", "/admin"];
+
+function isAuthenticatedAppRoute(path: string): boolean {
+  return MIGRATION_ALLOWED_PREFIXES.some(
+    (prefix) => path === prefix || path.startsWith(prefix),
+  );
+}
+
 type BillingPeriod = "monthly" | "yearly";
 
 interface BasicMigrationModalProps {
@@ -149,11 +157,15 @@ function BasicMigrationModalContent({
 }
 
 export default function BasicMigrationGate() {
-  const [, setLocation] = useLocation();
-  const { data: user, isLoading: userLoading } = trpc.auth.me.useQuery();
+  const [location, setLocation] = useLocation();
+  const onAuthenticatedRoute = isAuthenticatedAppRoute(location);
+
+  const { data: user, isLoading: userLoading } = trpc.auth.me.useQuery(undefined, {
+    enabled: onAuthenticatedRoute,
+  });
   const { data: migrationStatus, isLoading: statusLoading } =
     trpc.credits.basicMigrationStatus.useQuery(undefined, {
-      enabled: !!user,
+      enabled: onAuthenticatedRoute && !!user,
     });
 
   const [showModal, setShowModal] = useState(false);
@@ -169,6 +181,10 @@ export default function BasicMigrationGate() {
   }, []);
 
   useEffect(() => {
+    if (!onAuthenticatedRoute) {
+      setShowModal(false);
+      return;
+    }
     if (userLoading || statusLoading || !user || !migrationStatus?.eligible) {
       setShowModal(false);
       return;
@@ -176,7 +192,7 @@ export default function BasicMigrationGate() {
 
     const dismissed = sessionStorage.getItem(BASIC_MIGRATION_SESSION_DISMISS_KEY);
     setShowModal(!dismissed);
-  }, [user, userLoading, statusLoading, migrationStatus]);
+  }, [onAuthenticatedRoute, user, userLoading, statusLoading, migrationStatus]);
 
   const handleDismiss = () => {
     sessionStorage.setItem(BASIC_MIGRATION_SESSION_DISMISS_KEY, "1");
@@ -188,7 +204,7 @@ export default function BasicMigrationGate() {
     setLocation("/planos");
   };
 
-  if (!migrationStatus?.eligible) return null;
+  if (!onAuthenticatedRoute || !migrationStatus?.eligible) return null;
 
   return (
     <>

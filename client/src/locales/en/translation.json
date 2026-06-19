@@ -88,7 +88,21 @@
     "paymentRequiredCardNote": "Card required to start the trial.",
     "trialBillingNote": "After {{days}} days, your selected plan will be billed automatically.",
     "startTrialCheckout": "Start {{days}}-day trial",
-    "subscribeNow": "Subscribe now"
+    "subscribeNow": "Subscribe now",
+    "trialBadge": "Free trial",
+    "trialDaysHeadline": "{{days}} days to explore",
+    "billingToggle": "Billing period",
+    "recommendedPlan": "Recommended",
+    "afterTrialPrice": "After trial",
+    "accountDetails": "Your details",
+    "optional": "optional",
+    "trialBenefit1": "Full access to your plan's tools",
+    "trialBenefit2": "Cancel before the trial ends with no charge",
+    "trialBenefit3": "Secure payment via Stripe",
+    "checkoutError": "Could not start checkout. Please try again.",
+    "yearlySaveHint": "Best value",
+    "planOptions": "Available plans",
+    "planToolsCount": "{{count}} tools"
   },
   "dashboard": {
     "welcomeTitle": "Grace and peace, {{name}}!",
