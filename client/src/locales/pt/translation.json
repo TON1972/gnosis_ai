@@ -24,7 +24,17 @@
     "manage": "Gerenciar Planos",
     "daily_credits": "Créditos Diários",
     "monthly_credits": "Créditos Mensais",
-    "monthly_price": "Preço Mensal"
+    "monthly_price": "Preço Mensal",
+    "monthly": "Mensal",
+    "yearly": "Anual"
+  },
+  "migration": {
+    "title": "SEU ACESSO FREE TERMINA EM {{days}} DIAS!",
+    "subtitle": "Mas tudo vai ficar muito melhor!",
+    "body": "Por apenas {{yearlyPrice}} no anual ou {{monthlyPrice}} no mensal você vai ter acesso a 8 das 20 ferramentas incríveis!",
+    "migrateYearly": "MIGRAR AGORA ({{price}}/ANUAL)",
+    "migrateMonthly": "MIGRAR AGORA ({{price}}/MENSAL)",
+    "viewPlans": "Ver Outros Planos"
   },
   "footer": {
     "rights": "Todos os direitos reservados.",
@@ -43,7 +53,8 @@
     "processing": "Processando...",
     "result": "Resultado",
     "words": "palavras",
-    "serverError": "Erro ao processar."
+    "serverError": "Erro ao processar.",
+    "close": "Fechar"
   },
   "auth": {
     "title": "Estudos Bíblicos Profundos com IA",

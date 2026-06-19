@@ -24,7 +24,17 @@
     "manage": "Manage Plans",
     "daily_credits": "Daily Credits",
     "monthly_credits": "Monthly Credits",
-    "monthly_price": "Monthly Price"
+    "monthly_price": "Monthly Price",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "migration": {
+    "title": "YOUR FREE ACCESS ENDS IN {{days}} DAYS!",
+    "subtitle": "But everything is about to get much better!",
+    "body": "For just {{yearlyPrice}} on the annual plan or {{monthlyPrice}} monthly, you get access to 8 of our 20 amazing tools!",
+    "migrateYearly": "UPGRADE NOW ({{price}}/YEARLY)",
+    "migrateMonthly": "UPGRADE NOW ({{price}}/MONTHLY)",
+    "viewPlans": "See Other Plans"
   },
   "footer": {
     "rights": "All rights reserved.",
@@ -43,7 +53,8 @@
     "processing": "Processing...",
     "result": "Result",
     "words": "words",
-    "serverError": "Error processing."
+    "serverError": "Error processing.",
+    "close": "Close"
   },
   "auth": {
     "title": "Deep Biblical Studies with AI",

@@ -102,10 +102,10 @@ function BasicMigrationModalContent({
         </p>
 
         <p className="text-[#8b6f47] mb-6 leading-relaxed">
-          {t(
-            "migration.body",
-            "Por apenas R$3,89 no anual ou R$4,97 no mensal você vai ter acesso a 8 das 20 ferramentas incríveis!",
-          )}
+          {t("migration.body", "Por apenas {{yearlyPrice}} no anual ou {{monthlyPrice}} no mensal você vai ter acesso a 8 das 20 ferramentas incríveis!", {
+            yearlyPrice: yearlyDisplay?.main ?? "R$ 3,89",
+            monthlyPrice: monthlyDisplay?.main ?? "R$ 4,97",
+          })}
         </p>
 
         <div className="flex gap-2 mb-6 justify-center">
