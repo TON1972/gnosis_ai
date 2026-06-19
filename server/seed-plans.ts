@@ -15,14 +15,15 @@ const calculateYearlyPrice = (monthly: number) => {
 
 const PLANS_DATA = [
   {
-    name: "free",
-    displayName: "Plano FREE",
-    priceMonthly: 0,
-    priceYearly: 0,
-    creditsInitial: 500, // cumulative, NOT renewable after 30 days
-    creditsDaily: 50, // non-cumulative
+    name: "basic",
+    displayName: "Plano Basic",
+    displayNameEn: "Basic Plan",
+    priceMonthly: 497,
+    priceYearly: 4668,
+    creditsInitial: 500,
+    creditsDaily: 50,
     toolsCount: 6,
-    description: "Plano gratuito com ferramentas básicas",
+    description: "Plano de entrada com ferramentas básicas",
   },
   {
     name: "alianca",
@@ -243,12 +244,12 @@ async function seedPlansAndTools() {
 
     const planToolsData = [];
 
-    // FREE plan - only 4 basic tools
-    const freePlanId = planMap.get("free")!;
+    // Basic plan - ferramentas básicas
+    const basicPlanId = planMap.get("basic") ?? planMap.get("free")!;
     for (const toolName of FREE_TOOLS) {
       const toolId = toolMap.get(toolName);
       if (toolId) {
-        planToolsData.push({ planId: freePlanId, toolId });
+        planToolsData.push({ planId: basicPlanId, toolId });
       }
     }
 
@@ -273,7 +274,7 @@ async function seedPlansAndTools() {
 
     console.log("\n✨ Seeding completed successfully!");
     console.log("\n📊 Summary:");
-    console.log(`  - FREE: 6 tools`);
+    console.log(`  - BASIC: 6 tools`);
     console.log(`  - ALIANÇA: 10 tools (excluding: ${ALIANCA_EXCLUDED_TOOLS.join(", ")})`);
     console.log(`  - LUMEN: 18 tools (all)`);
     console.log(`  - PREMIUM: 18 tools (all)`);

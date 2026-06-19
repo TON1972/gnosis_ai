@@ -17,6 +17,7 @@ import { serveStatic, setupVite } from "./vite.js";
 import { handleMercadoPagoWebhook } from "./webhookHandler.js";
 import { handleStripeWebhook } from "../stripeWebhook.js";
 import { handleResendWebhook } from "../resendWebhook.js";
+import { getBasicPlan } from "../planHelpers.js";
 import { COOKIE_NAME } from "../../shared/const.js";
 import { getSessionCookieOptions } from "./cookies.js";
 import { mobileRouter } from "../mobileApi.js";
@@ -112,16 +113,11 @@ app.post("/api/register", async (req, res) => {
 
     if (authError) return res.status(400).json({ success: false, message: authError.message });
 
-    // 2. Localização do Plano FREE (Sempre iniciar como Free)
-    // O frontend cuidará do upgrade se o usuário selecionou um pago
-    // 2. Localização do Plano FREE (Hard-coded fallback ID: 1)
-    const [freePlan] = await db.select().from(plans).where(eq(plans.name, 'free')).limit(1);
-
-    // HARD FAIL-SAFE: Se não achar, usa ID 1.
-    const freePlanId = freePlan ? freePlan.id : 1;
-    console.log(`>>> DEBUG REGISTER: Params planId: ${planId} (IGNORED) -> Enforcing Plan ID: ${freePlanId}`);
-
-    if (!freePlan && freePlanId !== 1) throw new Error("Plano gratuito não encontrado e fallback falhou.");
+    // 2. Plano Basic (entrada paga — sem trial gratuito)
+    const basicPlan = await getBasicPlan(db);
+    if (!basicPlan) {
+      return res.status(500).json({ success: false, message: "Plano Basic não configurado." });
+    }
 
     // 3. Persistência no Banco Local com openId para evitar erro de constraint
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -153,12 +149,13 @@ app.post("/api/register", async (req, res) => {
     // 4. Ativação de Assinatura e Créditos
     console.log(`>>> DEBUG REGISTER: Processing Registration for User ${newUser.id}`);
 
-    let targetPlanId = freePlanId;
-    let targetPlan = freePlan;
+    let grantAccessWithoutPayment = false;
+    let targetPlanId = basicPlan.id;
+    let targetPlan = basicPlan;
     let subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     let usedCouponId = null;
 
-    // Lógica de Cupom Avançado
+    // Cupom com plano vinculado concede acesso sem checkout
     if (parseResult.data.coupon) {
       const { coupons, couponUsages } = await import("../../shared/schema.js");
       const [couponRecord] = await db
@@ -179,15 +176,14 @@ app.post("/api/register", async (req, res) => {
           if (couponRecord.grantPlanId) {
             const [grantedPlan] = await db.select().from(plans).where(eq(plans.id, couponRecord.grantPlanId)).limit(1);
             if (grantedPlan) {
+              grantAccessWithoutPayment = true;
               targetPlanId = grantedPlan.id;
-              targetPlan = grantedPlan;
+              targetPlan = grantedPlan as typeof basicPlan;
               subscriptionEndDate = couponExpiresAt;
               console.log(`>>> DEBUG REGISTER: Coupon ${couponRecord.code} granting plan "${grantedPlan.displayName}" for ${couponRecord.discountDays} days.`);
             }
           } else {
-            // Sem plano vinculado - fica no Free mas com ferramentas customizadas
-            subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Free padrão
-            console.log(`>>> DEBUG REGISTER: Coupon ${couponRecord.code} granting custom tools for ${couponRecord.discountDays} days (no plan change).`);
+            console.log(`>>> DEBUG REGISTER: Coupon ${couponRecord.code} valid but requires paid Basic subscription at checkout.`);
           }
           
           usedCouponId = couponRecord.id;
@@ -205,41 +201,43 @@ app.post("/api/register", async (req, res) => {
       }
     }
 
-    await db.insert(subscriptions).values({
-      userId: newUser.id,
-      planId: targetPlanId,
-      status: "active",
-      startDate: new Date(),
-      endDate: subscriptionEndDate
-    });
-
-    if (usedCouponId) {
-      const { couponUsages } = await import("../../shared/schema.js");
-      await db.insert(couponUsages).values({
-        couponId: usedCouponId,
+    if (grantAccessWithoutPayment && targetPlan) {
+      await db.insert(subscriptions).values({
         userId: newUser.id,
-        usedAt: new Date(),
-        expiresAt: (req as any)._couponExpiresAt || null,
-        isExpired: false,
+        planId: targetPlanId,
+        status: "active",
+        startDate: new Date(),
+        endDate: subscriptionEndDate
       });
-    }
 
-    const initial = Number(targetPlan.creditsInitial ?? 0);
-    const daily = Number(targetPlan.creditsDaily ?? 0);
-    const bonusFromCoupon = Number((req as any)._couponBonusCredits ?? 0);
+      if (usedCouponId) {
+        const { couponUsages } = await import("../../shared/schema.js");
+        await db.insert(couponUsages).values({
+          couponId: usedCouponId,
+          userId: newUser.id,
+          usedAt: new Date(),
+          expiresAt: (req as any)._couponExpiresAt || null,
+          isExpired: false,
+        });
+      }
 
-    await db.insert(credits).values({
-      userId: newUser.id,
-      amount: (initial + daily + bonusFromCoupon).toString(),
-      creditsInitial: initial.toString(),
-      creditsDaily: daily.toString(),
-      creditsBonus: bonusFromCoupon.toString(),
-      type: 'initial',
-      createdAt: new Date(),
-    } as any);
+      const initial = Number(targetPlan.creditsInitial ?? 0);
+      const daily = Number(targetPlan.creditsDaily ?? 0);
+      const bonusFromCoupon = Number((req as any)._couponBonusCredits ?? 0);
 
-    if (bonusFromCoupon > 0) {
-      console.log(`>>> DEBUG REGISTER: Applied ${bonusFromCoupon} bonus credits from coupon.`);
+      await db.insert(credits).values({
+        userId: newUser.id,
+        amount: (initial + daily + bonusFromCoupon).toString(),
+        creditsInitial: initial.toString(),
+        creditsDaily: daily.toString(),
+        creditsBonus: bonusFromCoupon.toString(),
+        type: 'initial',
+        createdAt: new Date(),
+      } as any);
+
+      if (bonusFromCoupon > 0) {
+        console.log(`>>> DEBUG REGISTER: Applied ${bonusFromCoupon} bonus credits from coupon.`);
+      }
     }
 
     // ✅ 5. LOGAR AUTOMATICAMENTE: Gerar Token JWT imediatamente
@@ -260,7 +258,9 @@ app.post("/api/register", async (req, res) => {
     return res.status(200).json({ 
       success: true, 
       token, 
-      user: { id: newUser.id, email: newUser.email, role: newUser.role } 
+      user: { id: newUser.id, email: newUser.email, role: newUser.role },
+      requiresCheckout: !grantAccessWithoutPayment,
+      basicPlanId: basicPlan.id,
     });
 
   } catch (error: any) {

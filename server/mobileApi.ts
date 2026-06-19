@@ -8,6 +8,7 @@ import {
 import { eq, desc, and, asc, sql } from "drizzle-orm";
 import { requireMobileAuth } from "./_core/mobileAuth.js";
 import { getUserCredits, useCredits, getUserActivePlan } from "./credits.js";
+import { sortPlansByDisplayOrder } from "../shared/planConstants.js";
 
 export const mobileRouter = express.Router();
 
@@ -253,7 +254,7 @@ mobileRouter.get("/plans", async (req, res) => {
     const db = await getDb();
     if (!db) throw new Error("Banco de dados indisponível");
 
-    const plansData = await db.select().from(plans);
+    const plansData = sortPlansByDisplayOrder(await db.select().from(plans));
     return res.status(200).json({ success: true, plans: plansData });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });

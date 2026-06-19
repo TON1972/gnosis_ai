@@ -10,6 +10,7 @@ import MobileMenu from "@/components/MobileMenu";
 import CreditPackages from "@/components/CreditPackages";
 import { getPlanPriceDisplay, getPlanPriceQuote } from "@shared/planPricing";
 import { getLocalizedString } from "@/lib/i18nHelper";
+import { isBasicPlan } from "@/lib/planHelpers";
 
 export default function PlanosPage() {
   const { i18n } = useTranslation();
@@ -151,7 +152,7 @@ export default function PlanosPage() {
         </p>
 
         {/* Mensagem promocional */}
-        {(!isAuthenticated || !activePlan || activePlan.plan.name === 'free') && (
+        {(!isAuthenticated || !activePlan || isBasicPlan(activePlan.plan.name)) && (
           <div className="mb-12 text-center">
             <style>{`
               @keyframes blink {
@@ -181,7 +182,7 @@ export default function PlanosPage() {
             {plansData?.map((plan: any) => {
               const isHighlight = plan.name === 'lumen';
               const isPremium = plan.name === 'premium';
-              const isFree = plan.name === 'free';
+              const isBasic = isBasicPlan(plan.name);
               const priceDisplay = getDisplayPrice(plan);
 
               return (
@@ -215,14 +216,14 @@ export default function PlanosPage() {
                         }`}>
                         {priceDisplay.main}
                       </span>
-                      {!isFree && priceDisplay.periodLabel && (
+                      {priceDisplay.periodLabel && (
                         <span className={`text-xl ${isHighlight || isPremium ? "text-white/80" : "text-[#8b6f47]"
                           }`}>
                           {priceDisplay.periodLabel}
                         </span>
                       )}
                     </div>
-                    {!isFree && priceDisplay.sublabel && (
+                    {priceDisplay.sublabel && (
                       <p className={`text-sm font-semibold mt-1 ${isHighlight || isPremium ? "text-white/70" : "text-[#8b6f47]"}`}>
                         {priceDisplay.sublabel}
                       </p>
@@ -233,7 +234,7 @@ export default function PlanosPage() {
                       }`}>
                       <p className={`font-semibold text-lg md:text-base ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
                         }`}>
-                        {plan.creditsInitial?.toLocaleString()} créditos iniciais{isFree ? "" : "*"}
+                        {plan.creditsInitial?.toLocaleString()} créditos iniciais{isBasic ? "" : "*"}
                       </p>
                     </div>
                     <div className={`p-4 md:p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
@@ -290,7 +291,7 @@ export default function PlanosPage() {
                         : "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
                       }`}
                   >
-                    {isFree ? "Começar Grátis" : "Assinar Agora"}
+                    {isBasic ? "Assinar Basic" : "Assinar Agora"}
                   </Button>
                 </div>
               )

@@ -10,11 +10,10 @@ import SavedStudiesSection from "@/components/SavedStudiesSection";
 import SubscriptionWarningBanner from "@/components/SubscriptionWarningBanner";
 import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import { trpc } from "@/lib/trpc";
+import PaymentRequiredGate from "@/components/PaymentRequiredGate";
 import * as LucideIcons from "lucide-react";
 import { User, Lock, BookOpen } from "lucide-react";
 import Footer from "@/components/Footer";
-import { useUpgradeReminder } from "@/hooks/useUpgradeReminder";
-import UpgradeReminderModal from "@/components/UpgradeReminderModal";
 import HeaderCredits from "@/components/HeaderCredits";
 import { getLocalizedString } from "@/lib/i18nHelper";
 import "../dashboard-mobile.css";
@@ -35,9 +34,6 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [showNoCreditsModal, setShowNoCreditsModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
-
-  // Upgrade Reminder para usuários free
-  const { showModal: showUpgradeReminder, handleClose: handleCloseUpgradeReminder } = useUpgradeReminder();
 
   const { data: dbUser } = trpc.auth.me.useQuery(undefined, {
     enabled: !!authUser,
@@ -288,7 +284,7 @@ export default function Dashboard() {
       </div>
       <Footer />
       <NoCreditsModal open={showNoCreditsModal} onClose={() => setShowNoCreditsModal(false)} />
-      <UpgradeReminderModal open={showUpgradeReminder} onClose={handleCloseUpgradeReminder} />
+      <PaymentRequiredGate />
     </div>
   );
 }

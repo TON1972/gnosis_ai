@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import jsPDF from "jspdf";
 import ShareButton from "@/components/ShareButton";
 import NoCreditsModal from "@/components/NoCreditsModal";
-import { useTranslation } from "react-i18next";
+import { isBasicPlan } from "@/lib/planHelpers";
 
 export default function StudyChatPage() {
   const { i18n } = useTranslation();
@@ -133,8 +133,8 @@ export default function StudyChatPage() {
     const estimatedCost = 10;
 
     if (currentCredits < estimatedCost) {
-      const isFree = activePlan?.plan?.name === 'free';
-      setModalTab(isFree ? 'plans' : 'credits');
+      const isEntryPlan = isBasicPlan(activePlan?.plan?.name);
+      setModalTab(isEntryPlan ? 'plans' : 'credits');
       setShowNoCreditsModal(true);
       return;
     }
@@ -176,8 +176,8 @@ export default function StudyChatPage() {
       refetchCredits();
     } catch (error: any) {
       if (error.message?.includes("insuficientes")) {
-        const isFree = activePlan?.plan?.name === 'free';
-        setModalTab(isFree ? 'plans' : 'credits');
+        const isEntryPlan = isBasicPlan(activePlan?.plan?.name);
+        setModalTab(isEntryPlan ? 'plans' : 'credits');
         setShowNoCreditsModal(true);
       } else {
         toast.error("Erro ao processar mensagem.");

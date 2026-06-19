@@ -1,7 +1,7 @@
 import { Request, Response, Router } from "express";
 import jwt from "jsonwebtoken";
 import { getDb } from "./db.js";
-import { users, plans, subscriptions, credits } from "../shared/schema.js";
+import { users } from "../shared/schema.js";
 import { eq } from "drizzle-orm";
 import { ENV } from "./_core/env.js";
 import { COOKIE_NAME } from "../shared/const.js";
@@ -74,32 +74,26 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
     });
 
     const userData = await userRes.json();
-    const { email, name, id: googleId } = userData; // Use Google ID
+    const { email, name, id: googleId } = userData;
     const openId = `google:${googleId}`;
 
     const db = await getDb();
     if (!db) throw new Error("Database connection failed");
 
-    // Verifica se usuário já existe
     const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     let authUser: AuthUser;
+    let isNewUser = false;
 
     if (existing.length > 0) {
       const dbUser = existing[0];
       authUser = { id: dbUser.id, email: dbUser.email!, name: dbUser.name, role: dbUser.role, loginMethod: dbUser.loginMethod || "google" };
     } else {
-      // 🚀 NOVO USUÁRIO: Cria sempre como FREE inicialmente
+      isNewUser = true;
 
-      // 1. Busca sempre o plano FREE (id=1)
-      const [freePlan] = await db.select().from(plans).where(eq(plans.id, 1)).limit(1);
-      if (!freePlan) throw new Error("Plano FREE não encontrado.");
-
-      // 2. Criar Usuário Local
-      // A. Sincronizar com Supabase Auth (Criar usuário lá se não existir)
       let supabaseId = "";
       try {
-        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        const { data: authUserData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email,
           email_confirm: true,
           user_metadata: { full_name: name }
@@ -114,13 +108,12 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
             console.error("Erro ao criar usuário no Supabase:", authError);
           }
         } else {
-          supabaseId = authUser.user.id;
+          supabaseId = authUserData.user.id;
         }
       } catch (err) {
         console.error("Erro ao conectar Supabase Admin:", err);
       }
 
-      // B. Inserir no Banco Local
       const [inserted] = await db.insert(users).values({
         email,
         openId,
@@ -128,50 +121,29 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
         name: name || null,
         role: "user",
         loginMethod: "google",
-      }).returning();
+      }).returning() as Array<{ id: number; email: string | null; name: string | null; role: string; loginMethod: string | null }>;
 
-      const newUserId = inserted.id;
-
-      // 3. Criar Assinatura FREE
-      await db.insert(subscriptions).values({
-        userId: newUserId,
-        planId: freePlan.id,
-        status: "active",
-        startDate: new Date(),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      });
-
-      // 4. Criar Créditos Iniciais do FREE
-      const initial = Number(freePlan.creditsInitial ?? 0);
-      const daily = Number(freePlan.creditsDaily ?? 0);
-
-      await db.insert(credits).values({
-        userId: newUserId,
-        amount: (initial + daily).toString(),
-        creditsInitial: initial.toString(),
-        creditsDaily: daily.toString(),
-        type: 'initial',
-        createdAt: new Date(),
-      } as any);
-
-      authUser = { id: newUserId, email, name: name || null, role: "user", loginMethod: "google" };
+      authUser = { id: inserted.id, email, name: name || null, role: "user", loginMethod: "google" };
     }
 
     setSessionCookie(res, req, generateJWT(authUser));
 
-    // Verificar se havia um plano pago pendente no cookie
-    const pendingPlanId = Number(req.cookies?.pending_plan_id || 1);
+    const pendingPlanId = Number(req.cookies?.pending_plan_id || 0);
     const pendingBilling = req.cookies?.pending_billing_period || 'yearly';
 
-    // Limpa cookies
     res.clearCookie('pending_plan_id');
     res.clearCookie('pending_billing_period');
 
-    // Se o plano pendente for pago (>1), redireciona para o checkout
-    if (pendingPlanId > 1) {
+    if (isNewUser) {
+      if (pendingPlanId > 0) {
+        res.redirect(`/dashboard?requirePayment=1&plan=${pendingPlanId}&billing=${pendingBilling}`);
+      } else {
+        res.redirect("/dashboard?requirePayment=1");
+      }
+    } else if (pendingPlanId > 0) {
       res.redirect(`/auth?google_checkout=true&plan=${pendingPlanId}&billing=${pendingBilling}`);
     } else {
-      res.redirect("/dashboard");
+      res.redirect("/dashboard?freshLogin=1");
     }
 
   } catch (error: any) {

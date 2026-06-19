@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "./ui/button";
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { isBasicPlan, isPaidTierPlan } from "@/lib/planHelpers";
 import NoCreditsModal from "./NoCreditsModal";
 
 // ✅ Atualizado para aceitar o tipo da aba opcionalmente
@@ -156,19 +157,19 @@ export default function CreditsPanel({ onNeedCredits, onlyButtons = false }: Cre
             </div>
 
             <h4 className="text-[#d4af37] font-black text-lg uppercase leading-tight mb-1">
-              {activePlan?.plan?.name === 'free' ? "Desbloqueie o Poder!" : "Não pare agora!"}
+              {isBasicPlan(activePlan?.plan?.name) ? "Desbloqueie o Poder!" : "Não pare agora!"}
             </h4>
             <p className="text-white/80 text-xs font-medium mb-3">
-              {activePlan?.plan?.name === 'free'
+              {isBasicPlan(activePlan?.plan?.name)
                 ? "Seus créditos acabaram? Evolua para o Pro e tenha acesso ilimitado!"
                 : "Seus créditos estão baixos. Garanta mais avulsos que nunca expiram!"}
             </p>
 
             <Button
-              onClick={() => handleOpenModal(activePlan?.plan?.name === 'free' ? 'plans' : 'credits')}
+              onClick={() => handleOpenModal(isBasicPlan(activePlan?.plan?.name) ? 'plans' : 'credits')}
               className="w-full bg-[#d4af37] text-[#1e3a5f] font-black hover:bg-[#ffe066] hover:scale-105 transition-all shadow-lg text-sm h-10"
             >
-              {activePlan?.plan?.name === 'free' ? "VIRAR PREMIUM" : "RECARREGAR"}
+              {isBasicPlan(activePlan?.plan?.name) ? "VIRAR PREMIUM" : "RECARREGAR"}
             </Button>
           </div>
         </div>
@@ -177,7 +178,7 @@ export default function CreditsPanel({ onNeedCredits, onlyButtons = false }: Cre
       {/* Action Buttons */}
       <div className="space-y-3">
         {/* Só mostra o botão normal de upgrade se NÃO for o card de upsell do free, para evitar duplicidade visual */}
-        {(activePlan?.plan?.name !== 'free' || !isLowCredits) && (
+        {(isPaidTierPlan(activePlan?.plan?.name) || !isLowCredits) && (
           <Button
             onClick={() => handleOpenModal('plans')}
             className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-12 shadow-lg font-black flex items-center justify-center gap-2 transition-all active:scale-95"

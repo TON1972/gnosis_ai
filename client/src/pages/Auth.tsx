@@ -6,57 +6,65 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  //   Select,
-  //   SelectContent,
-  //   SelectItem,
-  //   SelectTrigger,
-  //   SelectValue
-} from "@/components/ui/select";
-import { BookOpen, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { getLocalizedString } from "@/lib/i18nHelper";
+import { getPlanPriceDisplay } from "@shared/planPricing";
+import { isBasicPlan } from "@/lib/planHelpers";
+import { BASIC_MIGRATION_SESSION_DISMISS_KEY } from "@shared/planConstants";
 
 export default function Auth() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly");
 
-  // Login States
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
-  // Register States
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
   const [registerCoupon, setRegisterCoupon] = useState("");
-  //   const [selectedPlan, setSelectedPlan] = useState<string>("1"); // Removed
-  //   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly"); // Removed
 
-  // Queries & Mutations
-  // Queries & Mutations
-  // const { data: plans } = trpc.plans.list.useQuery(); // Removed for simplified registration
-  // const createCheckout = trpc.payments.createCheckoutSession.useMutation(); // Removed
+  const { data: plansList } = trpc.plans.list.useQuery(undefined, {
+    enabled: activeTab === "register",
+  });
+
+  const basicPlan = plansList?.find((p) => isBasicPlan(p.name));
+
+  const createCheckout = trpc.payments.createCheckoutSession.useMutation({
+    onSuccess: (data) => {
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      }
+    },
+    onError: () => {
+      toast.error(t("auth.checkoutError", "Erro ao iniciar pagamento. Tente novamente."));
+      setLocation("/dashboard?requirePayment=1");
+    },
+  });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get("tab");
-
     if (tabParam === "register") setActiveTab("register");
 
-    // ✅ Capturar Código de Afiliado da URL
+    const billingParam = params.get("billing");
+    if (billingParam === "monthly" || billingParam === "yearly") {
+      setBillingPeriod(billingParam);
+    }
+
     const affiliateParam = params.get("ref") || params.get("aff");
     if (affiliateParam) {
       sessionStorage.setItem("affiliate_code", affiliateParam);
-      console.log("Afiliado detectado:", affiliateParam);
     }
   }, []);
 
-  // ✅ NOVO: Lógica de Login Social (Simplificada)
   const handleGoogleLogin = () => {
     window.location.href = "/api/oauth/google";
   };
@@ -73,18 +81,34 @@ export default function Auth() {
       });
       const data = await response.json();
       if (data.success) {
+        sessionStorage.removeItem(BASIC_MIGRATION_SESSION_DISMISS_KEY);
         toast.success(t('auth.welcome'));
-        // ✅ Garante que o modal de promoção apareça na nova sessão
-        sessionStorage.removeItem("upgrade_reminder_shown");
         window.location.href = "/dashboard";
       } else {
         toast.error(data.message || t('auth.invalidCredentials'));
       }
-    } catch (error) {
+    } catch {
       toast.error(t('auth.serverError'));
     } finally {
       setLoading(false);
     }
+  };
+
+  const startBasicCheckout = async (planId: number) => {
+    const plan = plansList?.find((p) => p.id === planId) ?? basicPlan;
+    if (!plan) {
+      window.location.href = "/dashboard?requirePayment=1";
+      return;
+    }
+    const priceDisplay = getPlanPriceDisplay(plan, billingPeriod, i18n.language);
+    await createCheckout.mutateAsync({
+      type: "plan",
+      id: String(plan.id),
+      price: priceDisplay.amountCents / 100,
+      title: `Plano ${getLocalizedString(plan, "displayName")} - Gnosis AI`,
+      billingPeriod,
+      language: i18n.language,
+    });
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -92,17 +116,14 @@ export default function Auth() {
     if (!registerName || !registerEmail || !registerPassword) return toast.error(t('auth.fillAll'));
     if (registerPassword !== registerConfirmPassword) return toast.error(t('auth.passwordMismatch'));
 
-    // Validação de Email com verificação rigorosa de provedores
     const lowerEmail = registerEmail.toLowerCase();
     let isInvalidEmail = false;
 
-    // 1. Validar provedores comuns estritamente
     if (lowerEmail.includes("@gmail") && !lowerEmail.endsWith("@gmail.com")) isInvalidEmail = true;
     else if (lowerEmail.includes("@hotmail") && !lowerEmail.match(/@hotmail\.com(\.br)?$/)) isInvalidEmail = true;
     else if (lowerEmail.includes("@outlook") && !lowerEmail.match(/@outlook\.com(\.br)?$/)) isInvalidEmail = true;
     else if (lowerEmail.includes("@yahoo") && !lowerEmail.match(/@yahoo\.com(\.br)?$/)) isInvalidEmail = true;
 
-    // 2. Lista negra geral de typos
     const typos = [".comcom", ".coom", ".comm", ".cmo", ".con", ".ocmoc"];
     if (typos.some(typo => lowerEmail.endsWith(typo))) isInvalidEmail = true;
 
@@ -112,25 +133,34 @@ export default function Auth() {
 
     setLoading(true);
     try {
-      // 1. Criar a conta (Backend agora força o plano FREE inicialmente)
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           name: registerName,
           email: registerEmail,
           password: registerPassword,
           affiliateCode: sessionStorage.getItem("affiliate_code") || undefined,
           coupon: registerCoupon || undefined,
-          // planId ignorado pelo backend agora
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        toast.success(t('auth.registerSuccess'));
-        window.location.href = "/dashboard";
+        if (data.requiresCheckout) {
+          toast.success(t("auth.registerCheckout", "Conta criada! Redirecionando para pagamento..."));
+          const planId = data.basicPlanId ?? basicPlan?.id;
+          if (planId) {
+            await startBasicCheckout(planId);
+          } else {
+            window.location.href = "/dashboard?requirePayment=1";
+          }
+        } else {
+          toast.success(t('auth.registerSuccess'));
+          window.location.href = "/dashboard";
+        }
       } else {
         toast.error(data.message || t('auth.registerError'));
       }
@@ -142,10 +172,9 @@ export default function Auth() {
     }
   };
 
-  // Removed post-login checkout useEffect
-
-
-  // Removed unused getSelectedPlanDetails and selectedPlanDetails helpers
+  const basicPrice = basicPlan
+    ? getPlanPriceDisplay(basicPlan, billingPeriod, i18n.language)
+    : null;
 
   return (
     <div className="min-h-screen bg-[#1e3a5f] flex items-center justify-center p-4">
@@ -156,9 +185,6 @@ export default function Auth() {
               <img src={APP_LOGO} alt={APP_TITLE} className="h-32 w-32 object-contain" loading="lazy" />
             </div>
           </div>
-          {/* <CardTitle className="text-3xl font-bold text-[#1e3a5f] uppercase tracking-tighter">
-            {APP_TITLE}
-          </CardTitle> */}
           <h2 className="text-1xl md:text-2xl lg:text-3xl font-bold text-[#1e3a5f] mb-6">
             {t('auth.title')}
           </h2>
@@ -213,12 +239,46 @@ export default function Auth() {
 
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-3">
+                <div className="rounded-lg border border-[#d4af37]/40 bg-white/60 p-3 text-center">
+                  <p className="text-sm font-bold text-[#1e3a5f] mb-2">
+                    {t("auth.basicPlanRequired", "Plano Basic — assinatura obrigatória")}
+                  </p>
+                  <div className="flex gap-2 justify-center mb-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={billingPeriod === "monthly" ? "default" : "outline"}
+                      className={billingPeriod === "monthly" ? "bg-[#1e3a5f] text-white" : ""}
+                      onClick={() => setBillingPeriod("monthly")}
+                    >
+                      {t("plans.monthly", "Mensal")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={billingPeriod === "yearly" ? "default" : "outline"}
+                      className={billingPeriod === "yearly" ? "bg-[#1e3a5f] text-white" : ""}
+                      onClick={() => setBillingPeriod("yearly")}
+                    >
+                      {t("plans.yearly", "Anual")}
+                    </Button>
+                  </div>
+                  {basicPrice && (
+                    <p className="text-xl font-bold text-[#1e3a5f]">
+                      {basicPrice.main}
+                      {basicPrice.periodLabel && (
+                        <span className="text-sm font-normal text-[#8b6f47] ml-1">{basicPrice.periodLabel}</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+
                 <div className="space-y-1">
                   <Label className="text-[#1e3a5f] font-bold">{t('auth.nameLabel')}</Label>
                   <Input value={registerName} onChange={(e) => setRegisterName(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
                 </div>
 
-                <div className="grid grid-cols-1 gap-3"> {/* Updated grid cols to 1 */}
+                <div className="grid grid-cols-1 gap-3">
                   <div className="space-y-1">
                     <Label className="text-[#1e3a5f] font-bold">{t('auth.emailLabel')}</Label>
                     <Input type="email" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} className="border-[#d4af37]/40 bg-white h-10" />
@@ -245,8 +305,8 @@ export default function Auth() {
                     className="border-[#d4af37]/40 bg-white h-10 uppercase font-bold text-[#1e3a5f]"
                   />
                 </div>
-                <Button type="submit" disabled={loading} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold mt-2 shadow-lg transition-all active:scale-95">
-                  {loading ? <Loader2 className="animate-spin" /> : t('auth.submitRegister')}
+                <Button type="submit" disabled={loading || createCheckout.isPending} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold mt-2 shadow-lg transition-all active:scale-95">
+                  {loading || createCheckout.isPending ? <Loader2 className="animate-spin" /> : t('auth.submitRegisterPay', 'Criar conta e pagar')}
                 </Button>
               </form>
             </TabsContent>

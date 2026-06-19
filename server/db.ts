@@ -4,6 +4,7 @@ import pg from "pg";
 const { Pool } = pg;
 import { ENV } from "./_core/env.js";
 import * as schema from "../drizzle/schema.js";
+import { sortPlansByDisplayOrder } from "../shared/planConstants.js";
 
 // Tipos auxiliares
 type InsertUser = typeof schema.users.$inferInsert;
@@ -95,28 +96,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       })
       .returning();
 
-    const newUser = result[0];
-    if (newUser) {
-      const existingSub = await db.select().from(schema.subscriptions)
-        .where(eq(schema.subscriptions.userId, newUser.id))
-        .limit(1);
-
-      if (existingSub.length === 0) {
-        const freePlan = await db.select().from(schema.plans)
-          .where(eq(schema.plans.name, "free"))
-          .limit(1);
-
-        if (freePlan.length > 0) {
-          await db.insert(schema.subscriptions).values({
-            userId: newUser.id,
-            planId: freePlan[0].id,
-            status: "active",
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-          });
-        }
-      }
-    }
+    // Novos usuários não recebem assinatura automática — pagamento obrigatório no cadastro.
   } catch (error) {
     console.error("[Database] Erro no upsertUser:", error);
     throw error;
@@ -134,7 +114,9 @@ export async function getAllPlans() {
   const db = await getDb();
   if (!db) return [];
   // Retorna planos ativos
-  return await db.select().from(schema.plans).where(eq(schema.plans.isActive, true));
+  return sortPlansByDisplayOrder(
+    await db.select().from(schema.plans).where(eq(schema.plans.isActive, true))
+  );
 }
 
 export async function getPlanById(planId: number) {

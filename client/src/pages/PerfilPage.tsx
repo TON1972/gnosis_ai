@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "wouter";
+import { isPaidTierPlan } from "@/lib/planHelpers";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -121,7 +122,7 @@ export default function PerfilPage() {
               </Button>
             </Link>
             {/* Botão Gerenciar Assinatura (Só aparece se nao for Free) */}
-            {activePlan?.plan?.name !== 'free' && (
+            {isPaidTierPlan(activePlan?.plan?.name) && (
               <Button
                 onClick={() => createPortalSession.mutate()}
                 disabled={createPortalSession.isPending}

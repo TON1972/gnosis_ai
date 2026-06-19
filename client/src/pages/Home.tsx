@@ -12,6 +12,7 @@ import React, { useState, useEffect } from "react";
 import Footer from "@/components/Footer";
 import { getLocalizedString } from "@/lib/i18nHelper";
 import { getPlanPriceDisplay } from "@shared/planPricing";
+import { isBasicPlan } from "@/lib/planHelpers";
 import {
   BookOpen,
   Languages,
@@ -88,9 +89,6 @@ export default function Home() {
 
   const getDisplayPrice = (plan: any) => {
     const display = getPlanPriceDisplay(plan, billingPeriod, i18n.language, t("dashboard.freePlan"));
-    if (display.amountCents === 0 && plan.priceMonthly === 0) {
-      return { main: t("dashboard.freePlan"), periodLabel: "", sublabel: null };
-    }
     return {
       main: display.main,
       periodLabel: display.periodLabel,
@@ -309,7 +307,7 @@ export default function Home() {
           {t('home.creditRenewMsg')}
         </p>
 
-        {(!isAuthenticated || !activePlan || activePlan.plan.name === 'free') && (
+        {(!isAuthenticated || !activePlan || isBasicPlan(activePlan.plan.name)) && (
           <div className="mb-8 text-center">
             <style>{`
               @keyframes blink {
@@ -364,7 +362,7 @@ export default function Home() {
               {plansData?.map((plan: any) => {
                 const isHighlight = plan.name === 'lumen';
                 const isPremium = plan.name === 'premium';
-                const isFree = plan.name === 'free';
+                const isBasic = isBasicPlan(plan.name);
 
                 const priceDisplay = getDisplayPrice(plan);
 
@@ -399,14 +397,14 @@ export default function Home() {
                           }`}>
                           {priceDisplay.main}
                         </span>
-                        {!isFree && priceDisplay.periodLabel && (
+                        {priceDisplay.periodLabel && (
                           <span className={`text-lg ${isHighlight || isPremium ? "text-white/80" : "text-[#8b6f47]"
                             }`}>
                             {priceDisplay.periodLabel}
                           </span>
                         )}
                       </div>
-                      {!isFree && priceDisplay.sublabel && (
+                      {priceDisplay.sublabel && (
                         <p className={`text-sm font-semibold mt-1 ${isHighlight || isPremium ? "text-white/70" : "text-[#8b6f47]"}`}>
                           {priceDisplay.sublabel}
                         </p>
@@ -418,7 +416,7 @@ export default function Home() {
                         }`}>
                         <p className={`font-semibold ${isHighlight || isPremium ? "text-white" : "text-[#1e3a5f]"
                           }`}>
-                          {plan.creditsInitial?.toLocaleString()} {isFree ? t('home.creditsInitialFree') : t('home.creditsInitialPaid')}
+                          {plan.creditsInitial?.toLocaleString()} {isBasic ? t('home.creditsInitialFree') : t('home.creditsInitialPaid')}
                         </p>
                       </div>
                       <div className={`p-3 rounded-lg ${isHighlight || isPremium ? "bg-white/20" : "bg-[#FFFACD]"
@@ -476,7 +474,7 @@ export default function Home() {
                           : "bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f]"
                         }`}
                     >
-                      {isFree ? t('home.btnStartFree') : t('home.btnSubscribe')}
+                      {isBasic ? t('home.btnSubscribe') : t('home.btnSubscribe')}
                     </Button>
                   </div>
                 );

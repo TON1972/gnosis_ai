@@ -144,10 +144,10 @@ export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps)
                           billingPeriod,
                           language: i18n.language,
                         })}
-                        disabled={isActive || createCheckout.isPending || plan.name === 'free'}
+                        disabled={isActive || createCheckout.isPending}
                         className={`w-full font-black py-5 rounded-xl transition-all shadow-md active:scale-95 ${isActive ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-none' : isLumen ? 'bg-[#d4af37] text-[#1e3a5f] hover:bg-white' : 'bg-[#1e3a5f] text-white'}`}
                       >
-                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : isActive ? 'PLANO ATUAL' : plan.name === 'free' ? 'PLANO BASE' : 'ASSINAR AGORA'}
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : isActive ? 'PLANO ATUAL' : 'ASSINAR AGORA'}
                       </Button>
                     </div>
                   );

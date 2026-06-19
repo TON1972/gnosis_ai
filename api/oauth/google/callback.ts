@@ -2,7 +2,7 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { getDb } from "../../../server/db.js";
-import { users, plans, subscriptions, credits } from "../../../drizzle/schema.js";
+import { users } from "../../../drizzle/schema.js";
 import { eq } from "drizzle-orm";
 import { ENV } from "../../../server/_core/env.js";
 import { COOKIE_NAME } from "../../../shared/const.js";
@@ -34,11 +34,6 @@ function generateJWT(user: AuthUser): string {
     );
 }
 
-function setSessionCookie(res: Response, req: Request, token: string) {
-    const cookieOptions = getSessionCookieOptions(req);
-    res.setHeader('Set-Cookie', `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`);
-}
-
 export default async function handler(req: Request, res: Response) {
     try {
         const { code } = req.query;
@@ -68,34 +63,20 @@ export default async function handler(req: Request, res: Response) {
         const db = await getDb();
         if (!db) throw new Error("Database connection failed");
 
-        // Verifica se usuário já existe
         const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
         let authUser: AuthUser;
+        let isNewUser = false;
 
         if (existing.length > 0) {
             const dbUser = existing[0];
             authUser = { id: dbUser.id, email: dbUser.email!, name: dbUser.name, role: dbUser.role, loginMethod: dbUser.loginMethod || "google" };
         } else {
-            // 🚀 NOVO USUÁRIO: Recupera plano do cookie e cria estrutura completa
+            isNewUser = true;
 
-            // 1. Recuperar plano pendente do cookie
-            // Em Vercel functions/Express, req.cookies pode não estar populado sem middleware, mas Vercel costuma popular
-            const pendingPlanId = Number(req.cookies?.pending_plan_id || 1);
-
-            const [selectedPlan] = await db.select().from(plans).where(eq(plans.id, pendingPlanId)).limit(1);
-
-            // Fallback para plano 1 se não encontrar (segurança)
-            const safePlan = selectedPlan || (await db.select().from(plans).where(eq(plans.id, 1)).limit(1))[0];
-
-            if (!safePlan) throw new Error("Sistema sem planos configurados.");
-
-            // 2. Criar Usuário Local
-
-            // A. Sincronizar com Supabase Auth (Criar usuário lá se não existir)
             let supabaseId = "";
             try {
-                const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+                const { data: authUserData, error: authError } = await supabaseAdmin.auth.admin.createUser({
                     email,
                     email_confirm: true,
                     user_metadata: { full_name: name }
@@ -110,13 +91,12 @@ export default async function handler(req: Request, res: Response) {
                         console.error("Erro ao criar usuário no Supabase:", authError);
                     }
                 } else {
-                    supabaseId = authUser.user.id;
+                    supabaseId = authUserData.user.id;
                 }
             } catch (err) {
                 console.error("Erro ao conectar Supabase Admin:", err);
             }
 
-            // B. Inserir no Banco Local
             const [inserted] = await db.insert(users).values({
                 email,
                 openId,
@@ -126,48 +106,30 @@ export default async function handler(req: Request, res: Response) {
                 loginMethod: "google",
             }).returning();
 
-            const newUserId = inserted.id;
-
-            // 3. Criar Assinatura
-            await db.insert(subscriptions).values({
-                userId: newUserId,
-                planId: safePlan.id,
-                status: "active",
-                startDate: new Date(),
-                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-            });
-
-            // 4. Criar Créditos Iniciais
-            const initial = Number(safePlan.creditsInitial ?? 0);
-            const daily = Number(safePlan.creditsDaily ?? 0);
-
-            await db.insert(credits).values({
-                userId: newUserId,
-                amount: (initial + daily).toString(),
-                creditsInitial: initial.toString(),
-                creditsDaily: daily.toString(),
-                type: safePlan.name === 'alianca' ? 'alianca' : 'initial',
-                createdAt: new Date(),
-            } as any);
-
-            authUser = { id: newUserId, email, name: name || null, role: "user", loginMethod: "google" };
-
-            // Limpa o cookie de plano
-            res.setHeader('Set-Cookie', `pending_plan_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
+            authUser = { id: inserted.id, email, name: name || null, role: "user", loginMethod: "google" };
         }
 
-        // Set Session Cookie e Redirect
         const token = generateJWT(authUser);
-        const cookieOptions = getSessionCookieOptions(req);
-        // Vercel serverless functions usam setHeader para cookies
-        // Mas se res for Response do express, res.cookie funciona. Vamos garantir com setHeader que é universal.
-        // Concatenando múltiplos cookies se necessário, mas aqui é o principal.
+        const pendingPlanId = Number(req.cookies?.pending_plan_id || 0);
+        const pendingBilling = req.cookies?.pending_billing_period || 'yearly';
+
         res.setHeader('Set-Cookie', [
             `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`,
-            `pending_plan_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`
+            `pending_plan_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+            `pending_billing_period=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
         ]);
 
-        res.redirect("/dashboard");
+        if (isNewUser) {
+            if (pendingPlanId > 0) {
+                res.redirect(`/dashboard?requirePayment=1&plan=${pendingPlanId}&billing=${pendingBilling}`);
+            } else {
+                res.redirect("/dashboard?requirePayment=1");
+            }
+        } else if (pendingPlanId > 0) {
+            res.redirect(`/auth?google_checkout=true&plan=${pendingPlanId}&billing=${pendingBilling}`);
+        } else {
+            res.redirect("/dashboard?freshLogin=1");
+        }
     } catch (error: any) {
         console.error("[OAuth Error]:", error);
         res.redirect(`/auth?error=${encodeURIComponent(error.message || "Unknown error")}`);

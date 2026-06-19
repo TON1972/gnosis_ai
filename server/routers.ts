@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies.js";
 import { systemRouter } from "./_core/systemRouter.js";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc.js";
 import { getAllPlans, getToolsForPlan, getAllTools } from "./db.js";
+import { sortPlansByDisplayOrder } from "../shared/planConstants.js";
 // Gnosis.log removido - usando OAuth apenas
 import {
   savedStudies,
@@ -25,6 +26,7 @@ import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { getDb } from "./db.js";
 import { eq, desc, sql, and, lt, gte, or, asc } from "drizzle-orm";
 import { getUserCredits, useCredits, getUserActivePlan } from "./credits.js";
+import { getBasicMigrationStatus } from "./basicMigration.js";
 import { checkSubscriptionStatus, markSubscriptionPaid } from "./subscriptionStatus.js";
 import { getUserStats, getFinancialCalendar, getDelinquentUsers, getUsersByPlan, getToolUsageStats } from "./admin.js";
 import { getStripeFinancialData } from "./stripeFinancial.js";
@@ -219,12 +221,14 @@ export const appRouter = router({
         }).from(planToolsSnake);
 
         // 3. Mescla os dados convertendo IDs para String para comparação segura
-        return plansData.map(plan => ({
-          ...plan,
-          toolIds: allRelations
-            .filter(rel => String(rel.planId) === String(plan.id))
-            .map(rel => String(rel.toolId))
-        }));
+        return sortPlansByDisplayOrder(
+          plansData.map(plan => ({
+            ...plan,
+            toolIds: allRelations
+              .filter(rel => String(rel.planId) === String(plan.id))
+              .map(rel => String(rel.toolId))
+          }))
+        );
       } catch (error) {
         console.error("Erro ao listar planos:", error);
         return [];
@@ -530,6 +534,10 @@ export const appRouter = router({
 
     activePlan: protectedProcedure.query(async ({ ctx }) => {
       return await getUserActivePlan(ctx.user.id);
+    }),
+
+    basicMigrationStatus: protectedProcedure.query(async ({ ctx }) => {
+      return await getBasicMigrationStatus(ctx.user.id);
     }),
 
     use: protectedProcedure

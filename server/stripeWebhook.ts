@@ -170,14 +170,32 @@ export async function handleStripeWebhook(req: Request, res: Response) {
 
                         // 5. Conceder créditos do plano
                         console.log(`✅ [Webhook] Updating credits for user ${userId}`);
-                        await tx.update(credits)
-                            .set({
+                        const existingCredits = await tx.select()
+                            .from(credits)
+                            .where(eq(credits.userId, userId))
+                            .limit(1);
+
+                        if (existingCredits.length > 0) {
+                            await tx.update(credits)
+                                .set({
+                                    creditsInitial: plan.creditsInitial,
+                                    creditsDaily: plan.creditsDaily,
+                                    amount: sql`(${plan.creditsInitial}::integer + ${plan.creditsDaily}::integer + ${credits.creditsBonus})`,
+                                    lastDailyReset: new Date()
+                                })
+                                .where(eq(credits.userId, userId));
+                        } else {
+                            await tx.insert(credits).values({
+                                userId,
                                 creditsInitial: plan.creditsInitial,
                                 creditsDaily: plan.creditsDaily,
-                                amount: sql`(${plan.creditsInitial}::integer + ${plan.creditsDaily}::integer + ${credits.creditsBonus})`,
-                                lastDailyReset: new Date()
-                            })
-                            .where(eq(credits.userId, userId));
+                                creditsBonus: 0,
+                                amount: sql`(${plan.creditsInitial}::integer + ${plan.creditsDaily}::integer)`,
+                                type: 'initial',
+                                lastDailyReset: new Date(),
+                                createdAt: new Date(),
+                            } as any);
+                        }
 
                         // 6. Registrar pagamento (inside transaction — rollback if fails)
                         const [localSub] = await tx.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);

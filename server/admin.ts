@@ -56,11 +56,11 @@ export async function getUserStats(): Promise<UserStats> {
     SELECT 
       (SELECT COUNT(*) FROM users) as total_users,
       COUNT(DISTINCT CASE 
-        WHEN s.status = 'active' AND p.name != 'free' 
+        WHEN s.status = 'active' AND p.name NOT IN ('free', 'basic') 
         THEN u.id 
       END) as paid_users,
       (SELECT COUNT(*) FROM users) - COUNT(DISTINCT CASE 
-        WHEN s.status = 'active' AND p.name != 'free' 
+        WHEN s.status = 'active' AND p.name NOT IN ('free', 'basic') 
         THEN u.id 
       END) as free_users
     FROM users u
@@ -101,6 +101,7 @@ export async function getUsersByPlan(): Promise<PlanDistribution[]> {
 
   // Define cores para cada plano
   const colorMap: Record<string, string> = {
+    'basic': '#94a3b8',
     'free': '#94a3b8',
     'lumen': '#3b82f6',
     'alianca': '#8b5cf6',

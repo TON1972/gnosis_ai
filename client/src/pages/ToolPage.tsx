@@ -14,9 +14,8 @@ import { toast } from "sonner";
 import SubscriptionWarningBanner from "@/components/SubscriptionWarningBanner";
 import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import Footer from "@/components/Footer";
-import { useUpgradeReminder } from "@/hooks/useUpgradeReminder";
-import UpgradeReminderModal from "@/components/UpgradeReminderModal";
 import HeaderCredits from "@/components/HeaderCredits";
+import { isBasicPlan } from "@/lib/planHelpers";
 import { getLocalizedString } from "@/lib/i18nHelper";
 import "../dashboard-mobile.css";
 
@@ -49,9 +48,6 @@ export default function ToolPage() {
 
   const [modalTab, setModalTab] = useState<'plans' | 'credits'>('plans');
 
-  // Upgrade Reminder para usuários free
-  const { showModal: showUpgradeReminder, handleClose: handleCloseUpgradeReminder } = useUpgradeReminder();
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [toolIdFromParams]);
@@ -64,8 +60,8 @@ export default function ToolPage() {
     const estimatedCost = dbTool.creditCost || 50;
 
     if (currentCredits < estimatedCost) {
-      const isFree = activePlan?.plan?.name === 'free';
-      setModalTab(isFree ? 'plans' : 'credits');
+      const isEntryPlan = isBasicPlan(activePlan?.plan?.name);
+      setModalTab(isEntryPlan ? 'plans' : 'credits');
       setShowNoCreditsModal(true);
       return;
     }
@@ -103,8 +99,8 @@ export default function ToolPage() {
       toast.success(t('toolPage.analysisSuccess'));
     } catch (error: any) {
       if (error.message?.includes("insuficientes")) {
-        const isFree = activePlan?.plan?.name === 'free';
-        setModalTab(isFree ? 'plans' : 'credits');
+        const isEntryPlan = isBasicPlan(activePlan?.plan?.name);
+        setModalTab(isEntryPlan ? 'plans' : 'credits');
         setShowNoCreditsModal(true);
       } else {
         toast.error(t('toolPage.analysisError'));
@@ -278,8 +274,6 @@ export default function ToolPage() {
         onClose={() => setShowNoCreditsModal(false)}
         initialTab={modalTab}
       />
-      <UpgradeReminderModal open={showUpgradeReminder} onClose={handleCloseUpgradeReminder} />
-
       {/* ✅ CSS para os efeitos de luxo do botão */}
       <style>{`
         .premium-btn {

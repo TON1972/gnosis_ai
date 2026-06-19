@@ -89,8 +89,7 @@ export async function getUserActivePlan(userId: number) {
     .limit(1);
 
   if (subs.length === 0) {
-    const freePlan = await db.select().from(plans).where(eq(plans.name, 'free')).limit(1);
-    return freePlan.length > 0 ? { subscription: null, plan: freePlan[0] } : null;
+    return null;
   }
 
   const planResults = await db.select().from(plans).where(eq(plans.id, subs[0].planId)).limit(1);

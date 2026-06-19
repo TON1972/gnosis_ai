@@ -3,6 +3,7 @@ import { notifyOwner } from "./notification.js";
 import { adminProcedure, publicProcedure, router } from "./trpc.js";
 import { getDb } from "../db.js";
 import { users, credits, plans } from "../../drizzle/schema.js";
+import { getBasicPlan } from "../planHelpers.js";
 import { eq } from "drizzle-orm";
 
 export const systemRouter = router({
@@ -35,12 +36,10 @@ export const systemRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Get FREE plan
-      const freePlanResult = await db.select().from(plans).where(eq(plans.name, 'free')).limit(1);
-      if (freePlanResult.length === 0) {
-        throw new Error("FREE plan not found in database");
+      const basicPlan = await getBasicPlan(db);
+      if (!basicPlan) {
+        throw new Error("Basic plan not found in database");
       }
-      const freePlan = freePlanResult[0];
 
       // Get all users
       const allUsers = await db.select().from(users);
@@ -64,8 +63,8 @@ export const systemRouter = router({
           
           await db.insert(credits).values({
             userId: user.id,
-            creditsInitial: freePlan.creditsInitial,
-            creditsDaily: freePlan.creditsDaily,
+            creditsInitial: basicPlan.creditsInitial,
+            creditsDaily: basicPlan.creditsDaily,
             creditsBonus: 0,
             creditsInitialExpiry: expiryDate,
             lastDailyReset: new Date(),

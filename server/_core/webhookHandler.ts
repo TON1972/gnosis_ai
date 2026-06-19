@@ -191,18 +191,32 @@ export async function processPaymentLogic(body: any, expressReq?: ExpressRequest
                 const billingPeriod = meta.billing_period || meta.billingPeriod || 'monthly';
                 const interval = billingPeriod === 'yearly' ? '1 year' : '1 month';
 
-                await database.update(subscriptions)
-                    .set({
-                        planId,
-                        status: 'active',
-                        billingPeriod: billingPeriod,
-                        updatedAt: new Date(),
-                        lastPaymentDate: new Date(), // ✅ Registra a data do pagamento
-                        // Apenas atualiza endDate se estiver expirado ou se for uma nova compra explícita
-                        // Mas como é webhook de aprovação, renovamos o período
-                        endDate: sql`NOW() + ${sql.raw(`interval '${interval}'`)}`
-                    } as any)
-                    .where(eq(subscriptions.userId, userId));
+                const [existingSub] = await database.select()
+                    .from(subscriptions)
+                    .where(eq(subscriptions.userId, userId))
+                    .limit(1);
+
+                const subscriptionUpdate = {
+                    planId,
+                    status: 'active' as const,
+                    billingPeriod: billingPeriod,
+                    updatedAt: new Date(),
+                    lastPaymentDate: new Date(),
+                    endDate: sql`NOW() + ${sql.raw(`interval '${interval}'`)}`
+                };
+
+                if (existingSub) {
+                    await database.update(subscriptions)
+                        .set(subscriptionUpdate as any)
+                        .where(eq(subscriptions.userId, userId));
+                } else {
+                    await database.insert(subscriptions).values({
+                        userId,
+                        ...subscriptionUpdate,
+                        startDate: new Date(),
+                        createdAt: new Date(),
+                    } as any);
+                }
 
                 // Atualiza os créditos BASE do plano
                 await database.update(credits)

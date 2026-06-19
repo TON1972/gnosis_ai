@@ -21,6 +21,7 @@ import ScrollToTopButton from "./components/ScrollToTopButton";
 import AdminTools from "./pages/AdminTools";
 import StudyChatPage from "./pages/StudyChatPage";
 import AffiliatePage from "./pages/AffiliatePage";
+import BasicMigrationGate from "./components/BasicMigrationModal";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -64,6 +65,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <BasicMigrationGate />
           <Chatbot />
           <ScrollToTopButton />
         </TooltipProvider>

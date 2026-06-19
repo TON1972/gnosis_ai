@@ -27,9 +27,6 @@ export function useAuth(options?: UseAuthOptions) {
       // Limpa o localStorage
       localStorage.removeItem("manus-runtime-user-info");
 
-      // ✅ Limpa flag da promoção na sessão para aparecer no próximo login
-      sessionStorage.removeItem("upgrade_reminder_shown");
-
       // Redireciona para a home
       window.location.href = "/";
     },
