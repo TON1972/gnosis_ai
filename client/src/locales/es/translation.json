@@ -72,7 +72,17 @@
     "passwordMismatch": "Las contraseñas no coinciden",
     "emailTypo": "Parece que hay un error ortográfico en tu email.",
     "registerSuccess": "¡Cuenta creada exitosamente!",
-    "registerError": "Error al crear la cuenta"
+    "registerError": "Error al crear la cuenta",
+    "choosePlanRequired": "Elige tu plan — prueba de {{days}} días",
+    "trialCardRequired": "Tarjeta obligatoria. Cobro automático después del trial.",
+    "submitRegisterTrial": "Crear cuenta e iniciar trial",
+    "registerCheckoutTrial": "¡Cuenta creada! Registra tu tarjeta para iniciar el trial de {{days}} días.",
+    "paymentRequiredTitle": "Elige tu plan",
+    "paymentRequiredTrialBody": "Activa tu acceso con {{days}} días de prueba gratis. Tus datos de pago se registran ahora; el cobro ocurre solo después del trial.",
+    "paymentRequiredCardNote": "Tarjeta obligatoria para iniciar el trial.",
+    "trialBillingNote": "Después de {{days}} días, se cobrará automáticamente el plan elegido.",
+    "startTrialCheckout": "Iniciar trial de {{days}} días",
+    "subscribeNow": "Suscribirse ahora"
   },
   "dashboard": {
     "welcomeTitle": "¡Gracia y paz, {{name}}!",

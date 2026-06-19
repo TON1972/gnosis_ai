@@ -49,15 +49,17 @@ export async function createStripeCheckout(params: {
 }) {
     const { planId, planName, price, currency = 'brl', billingPeriod, userId, userEmail, customerId, trialDays, fbc, fbp, clientIp, clientUserAgent } = params;
 
+    const unitAmount = Math.round(price * 100);
+    const isYearly = String(billingPeriod).toLowerCase().trim() === 'yearly';
+    const hasTrial = !!(trialDays && trialDays > 0);
+    const useOneTimeYearly = isYearly && !hasTrial;
+
+    console.log(`[Stripe] Creating checkout for ${userEmail}. Mode: ${useOneTimeYearly ? 'PAYMENT (One-time yearly)' : 'SUBSCRIPTION'}${hasTrial ? ` (trial ${trialDays}d)` : ''}`);
+
     try {
-        const unitAmount = Math.round(price * 100);
-        const isYearly = String(billingPeriod).toLowerCase().trim() === 'yearly';
-
-        console.log(`[Stripe] Creating checkout for ${userEmail}. Mode: ${isYearly ? 'PAYMENT (One-time)' : 'SUBSCRIPTION'}`);
-
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
-            mode: isYearly ? 'payment' : 'subscription',
+            mode: useOneTimeYearly ? 'payment' : 'subscription',
             customer: customerId, // ✅ Usamos Customer ID em vez de email
             line_items: [
                 {
@@ -65,19 +67,23 @@ export async function createStripeCheckout(params: {
                         currency,
                         product_data: {
                             name: isYearly ? `Plano ${planName} - GNOSIS AI (Anual)` : `Plano ${planName} - GNOSIS AI`,
-                            description: isYearly ? `Pagamento Único (Acesso por 1 Ano)` : `Assinatura Mensal`,
+                            description: hasTrial
+                                ? `Teste grátis de ${trialDays} dias — cobrança automática após o período`
+                                : isYearly
+                                  ? `Pagamento Único (Acesso por 1 Ano)`
+                                  : `Assinatura Mensal`,
                         },
                         unit_amount: unitAmount,
-                        ...(isYearly ? {} : {
+                        ...(useOneTimeYearly ? {} : {
                             recurring: {
-                                interval: 'month',
+                                interval: isYearly ? 'year' : 'month',
                             }
                         }),
                     },
                     quantity: 1,
                 },
             ],
-            payment_method_options: isYearly ? {
+            payment_method_options: useOneTimeYearly ? {
                 card: {
                     installments: {
                         enabled: true
@@ -95,10 +101,15 @@ export async function createStripeCheckout(params: {
                 clientIp: clientIp || "",
                 clientUserAgent: clientUserAgent || ""
             },
-            subscription_data: (!isYearly && trialDays) ? {
-                trial_period_days: trialDays
+            subscription_data: hasTrial ? {
+                trial_period_days: trialDays,
+                metadata: {
+                    userId: userId.toString(),
+                    planId: planId.toString(),
+                    billingPeriod: billingPeriod,
+                },
             } : undefined,
-            payment_intent_data: isYearly ? {
+            payment_intent_data: useOneTimeYearly ? {
                 description: `Compra de Plano Anual - ${planName}`,
                 metadata: {
                     userId: userId.toString(),

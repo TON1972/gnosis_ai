@@ -13,7 +13,7 @@ import { trpc } from "@/lib/trpc";
 import { getLocalizedString } from "@/lib/i18nHelper";
 import { getPlanPriceDisplay } from "@shared/planPricing";
 import { isBasicPlan } from "@/lib/planHelpers";
-import { BASIC_MIGRATION_SESSION_DISMISS_KEY } from "@shared/planConstants";
+import { BASIC_MIGRATION_SESSION_DISMISS_KEY, NEW_USER_TRIAL_DAYS } from "@shared/planConstants";
 
 export default function Auth() {
   const { t, i18n } = useTranslation();
@@ -30,12 +30,19 @@ export default function Auth() {
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
   const [registerCoupon, setRegisterCoupon] = useState("");
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
   const { data: plansList } = trpc.plans.list.useQuery(undefined, {
     enabled: activeTab === "register",
   });
 
   const basicPlan = plansList?.find((p) => isBasicPlan(p.name));
+
+  useEffect(() => {
+    if (!plansList?.length || selectedPlanId) return;
+    const basic = plansList.find((p) => isBasicPlan(p.name));
+    if (basic) setSelectedPlanId(basic.id);
+  }, [plansList, selectedPlanId]);
 
   const createCheckout = trpc.payments.createCheckoutSession.useMutation({
     onSuccess: (data) => {
@@ -66,6 +73,10 @@ export default function Auth() {
   }, []);
 
   const handleGoogleLogin = () => {
+    if (activeTab === "register" && selectedPlanId) {
+      document.cookie = `pending_plan_id=${selectedPlanId}; path=/; max-age=3600; SameSite=Lax`;
+      document.cookie = `pending_billing_period=${billingPeriod}; path=/; max-age=3600; SameSite=Lax`;
+    }
     window.location.href = "/api/oauth/google";
   };
 
@@ -94,7 +105,7 @@ export default function Auth() {
     }
   };
 
-  const startBasicCheckout = async (planId: number) => {
+  const startPlanCheckout = async (planId: number) => {
     const plan = plansList?.find((p) => p.id === planId) ?? basicPlan;
     if (!plan) {
       window.location.href = "/dashboard?requirePayment=1";
@@ -108,6 +119,7 @@ export default function Auth() {
       title: `Plano ${getLocalizedString(plan, "displayName")} - Gnosis AI`,
       billingPeriod,
       language: i18n.language,
+      startTrial: true,
     });
   };
 
@@ -150,10 +162,10 @@ export default function Auth() {
 
       if (data.success) {
         if (data.requiresCheckout) {
-          toast.success(t("auth.registerCheckout", "Conta criada! Redirecionando para pagamento..."));
-          const planId = data.basicPlanId ?? basicPlan?.id;
+          toast.success(t("auth.registerCheckoutTrial", "Conta criada! Cadastre seu cartão para iniciar o trial de {{days}} dias.", { days: NEW_USER_TRIAL_DAYS }));
+          const planId = selectedPlanId ?? data.basicPlanId ?? basicPlan?.id;
           if (planId) {
-            await startBasicCheckout(planId);
+            await startPlanCheckout(planId);
           } else {
             window.location.href = "/dashboard?requirePayment=1";
           }
@@ -172,8 +184,9 @@ export default function Auth() {
     }
   };
 
-  const basicPrice = basicPlan
-    ? getPlanPriceDisplay(basicPlan, billingPeriod, i18n.language)
+  const selectedPlan = plansList?.find((p) => p.id === selectedPlanId) ?? basicPlan;
+  const basicPrice = selectedPlan
+    ? getPlanPriceDisplay(selectedPlan, billingPeriod, i18n.language)
     : null;
 
   return (
@@ -239,10 +252,29 @@ export default function Auth() {
 
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-3">
-                <div className="rounded-lg border border-[#d4af37]/40 bg-white/60 p-3 text-center">
-                  <p className="text-sm font-bold text-[#1e3a5f] mb-2">
-                    {t("auth.basicPlanRequired", "Plano Basic — assinatura obrigatória")}
+                <div className="rounded-lg border border-[#d4af37]/40 bg-white/60 p-3">
+                  <p className="text-sm font-bold text-[#1e3a5f] mb-1 text-center">
+                    {t("auth.choosePlanRequired", "Escolha seu plano — trial de {{days}} dias", { days: NEW_USER_TRIAL_DAYS })}
                   </p>
+                  <p className="text-xs text-[#8b6f47] mb-3 text-center">
+                    {t("auth.trialCardRequired", "Cartão obrigatório. Cobrança automática após o trial.")}
+                  </p>
+                  <div className="space-y-2 mb-3 max-h-32 overflow-y-auto">
+                    {plansList?.map((plan) => (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        onClick={() => setSelectedPlanId(plan.id)}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm font-semibold transition-all ${
+                          selectedPlanId === plan.id
+                            ? "border-[#1e3a5f] bg-[#1e3a5f] text-white"
+                            : "border-[#d4af37]/40 bg-white text-[#1e3a5f]"
+                        }`}
+                      >
+                        {getLocalizedString(plan, "displayName")}
+                      </button>
+                    ))}
+                  </div>
                   <div className="flex gap-2 justify-center mb-2">
                     <Button
                       type="button"
@@ -305,8 +337,8 @@ export default function Auth() {
                     className="border-[#d4af37]/40 bg-white h-10 uppercase font-bold text-[#1e3a5f]"
                   />
                 </div>
-                <Button type="submit" disabled={loading || createCheckout.isPending} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold mt-2 shadow-lg transition-all active:scale-95">
-                  {loading || createCheckout.isPending ? <Loader2 className="animate-spin" /> : t('auth.submitRegisterPay', 'Criar conta e pagar')}
+                <Button type="submit" disabled={loading || createCheckout.isPending || !selectedPlanId} className="w-full bg-[#1e3a5f] text-white hover:bg-[#2a4a6f] h-12 font-bold mt-2 shadow-lg transition-all active:scale-95">
+                  {loading || createCheckout.isPending ? <Loader2 className="animate-spin" /> : t('auth.submitRegisterTrial', 'Criar conta e iniciar trial')}
                 </Button>
               </form>
             </TabsContent>

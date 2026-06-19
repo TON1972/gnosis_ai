@@ -78,7 +78,17 @@
     "passwordMismatch": "Passwords do not match",
     "emailTypo": "It seems there's a typo in your email (e.g., @gmail.com).",
     "registerSuccess": "Account successfully created!",
-    "registerError": "Error creating account"
+    "registerError": "Error creating account",
+    "choosePlanRequired": "Choose your plan — {{days}}-day trial",
+    "trialCardRequired": "Card required. Automatic billing after the trial.",
+    "submitRegisterTrial": "Create account and start trial",
+    "registerCheckoutTrial": "Account created! Add your card to start your {{days}}-day trial.",
+    "paymentRequiredTitle": "Choose your plan",
+    "paymentRequiredTrialBody": "Activate your access with a {{days}}-day free trial. Your payment details are collected now; you are only charged after the trial ends.",
+    "paymentRequiredCardNote": "Card required to start the trial.",
+    "trialBillingNote": "After {{days}} days, your selected plan will be billed automatically.",
+    "startTrialCheckout": "Start {{days}}-day trial",
+    "subscribeNow": "Subscribe now"
   },
   "dashboard": {
     "welcomeTitle": "Grace and peace, {{name}}!",

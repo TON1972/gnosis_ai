@@ -3,7 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies.js";
 import { systemRouter } from "./_core/systemRouter.js";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc.js";
 import { getAllPlans, getToolsForPlan, getAllTools } from "./db.js";
-import { sortPlansByDisplayOrder } from "../shared/planConstants.js";
+import { sortPlansByDisplayOrder, NEW_USER_TRIAL_DAYS } from "../shared/planConstants.js";
 // Gnosis.log removido - usando OAuth apenas
 import {
   savedStudies,
@@ -1711,6 +1711,7 @@ export const appRouter = router({
         title: z.string(),
         billingPeriod: z.enum(['monthly', 'yearly']).optional(),
         language: z.string().optional(),
+        startTrial: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         try {
@@ -1754,9 +1755,10 @@ export const appRouter = router({
             const billingPeriod = input.billingPeriod || 'monthly';
             const priceQuote = getPlanPriceQuote(targetPlan, billingPeriod, input.language);
             const price = priceQuote.amountCents / 100;
-            const useStripeForYearly = billingPeriod === 'yearly' && priceQuote.currency !== 'brl';
+            const trialDays = input.startTrial ? NEW_USER_TRIAL_DAYS : undefined;
+            const useMercadoPagoYearly = billingPeriod === 'yearly' && priceQuote.currency === 'brl' && !trialDays;
 
-            if (billingPeriod === 'yearly' && !useStripeForYearly) {
+            if (useMercadoPagoYearly) {
               const mpSession = await createManualPaymentCheckout({
                 planId: Number(input.id),
                 planName: planName,
@@ -1799,7 +1801,7 @@ export const appRouter = router({
                 userId: ctx.user.id,
                 userEmail: user.email,
                 customerId: customerId,
-                // trialDays removido para Lumem e Premium
+                trialDays,
                 fbc,
                 fbp,
                 clientIp,

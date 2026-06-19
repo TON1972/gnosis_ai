@@ -36,6 +36,9 @@ export const BASIC_MIGRATION_START_DATE = new Date("2026-06-10T00:00:00-03:00");
 
 export const BASIC_MIGRATION_GRACE_DAYS = 20;
 
+/** Trial gratuito para novos usuários (cartão coletado no checkout Stripe). */
+export const NEW_USER_TRIAL_DAYS = 20;
+
 export const BASIC_MIGRATION_SESSION_DISMISS_KEY = "basic_migration_dismissed_session";
 
 export function getBasicMigrationDeadline(): Date {
