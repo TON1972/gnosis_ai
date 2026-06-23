@@ -91,6 +91,23 @@ function BasicMigrationModalContent({
     enabled: open,
   });
 
+  const { data: toolsData } = trpc.tools.list.useQuery(undefined, { enabled: open });
+
+  const totalToolsCount = toolsData?.length ?? 0;
+
+  const getPlanToolsLabel = (plan: { toolIds?: string[] }) => {
+    if (!totalToolsCount) return null;
+    const validToolsCount =
+      toolsData?.filter((tool) => plan.toolIds?.includes(String(tool.id))).length ?? 0;
+    if (validToolsCount === totalToolsCount) {
+      return t("plans.toolsAll", "(Todas as {{total}} ferramentas)", { total: totalToolsCount });
+    }
+    return t("plans.toolsSome", "({{valid}} de {{total}} ferramentas disponíveis)", {
+      valid: validToolsCount,
+      total: totalToolsCount,
+    });
+  };
+
   const visiblePlans = useMemo(() => {
     if (!plansList?.length) return [];
     const hasBasic = plansList.some((p) => isBasicPlan(p.name) && p.name !== LEGACY_FREE_PLAN_NAME);
@@ -209,7 +226,7 @@ function BasicMigrationModalContent({
         </p>
 
         <div
-          className="relative grid grid-cols-2 rounded-xl bg-[#1e3a5f]/6 p-1 border border-[#d4af37]/25 mb-3"
+          className="relative grid grid-cols-2 rounded-xl bg-[#1e3a5f]/6 p-1 pt-2 border border-[#d4af37]/25 mb-3 overflow-visible"
           role="group"
           aria-label={t("auth.billingToggle", "Período de cobrança")}
         >
@@ -217,13 +234,16 @@ function BasicMigrationModalContent({
             type="button"
             onClick={() => setBillingPeriod("yearly")}
             aria-pressed={billingPeriod === "yearly"}
-            className={`rounded-lg py-2 text-sm font-bold transition-all ${
+            className={`relative rounded-lg py-2 text-sm font-bold transition-all ${
               billingPeriod === "yearly"
                 ? "bg-[#1e3a5f] text-[#d4af37] shadow-sm"
                 : "text-[#1e3a5f]/70 hover:text-[#1e3a5f]"
             }`}
           >
             {t("plans.yearly", "Anual")}
+            <span className="pointer-events-none absolute -top-2 -right-1 rounded-full bg-[#d4af37] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-[#1e3a5f] leading-none whitespace-nowrap">
+              {t("auth.yearlySaveHint", "Melhor valor")}
+            </span>
           </button>
           <button
             type="button"
@@ -237,11 +257,6 @@ function BasicMigrationModalContent({
           >
             {t("plans.monthly", "Mensal")}
           </button>
-          {billingPeriod === "yearly" && (
-            <span className="pointer-events-none absolute -top-2 right-2 rounded-full bg-[#d4af37] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#1e3a5f]">
-              {t("auth.yearlySaveHint", "Melhor valor")}
-            </span>
-          )}
         </div>
 
         <div
@@ -257,12 +272,13 @@ function BasicMigrationModalContent({
         >
           {plansLoading &&
             Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-[4.5rem] rounded-xl bg-[#1e3a5f]/5 animate-pulse" />
+              <div key={i} className="h-[5.5rem] rounded-xl bg-[#1e3a5f]/5 animate-pulse" />
             ))}
 
           {visiblePlans.map((plan) => {
             const isSelected = selectedPlanId === plan.id;
             const planPrice = getPlanPriceDisplay(plan, billingPeriod, i18n.language);
+            const toolsLabel = getPlanToolsLabel(plan);
 
             return (
               <button
@@ -271,13 +287,13 @@ function BasicMigrationModalContent({
                 role="radio"
                 aria-checked={isSelected}
                 onClick={() => setSelectedPlanId(plan.id)}
-                className={`relative flex flex-col items-start rounded-xl border-2 px-2.5 py-2 text-left transition-all cursor-pointer min-h-[4.5rem] ${
+                className={`relative flex flex-col items-start rounded-xl border-2 px-2.5 py-2 text-left transition-all cursor-pointer min-h-[5.5rem] ${
                   isSelected
                     ? "border-[#d4af37] bg-[#1e3a5f] text-white shadow-md"
                     : "border-[#d4af37]/25 bg-white hover:border-[#d4af37]/55"
                 }`}
               >
-                <span className="flex w-full items-center gap-1.5 mb-1">
+                <span className="flex w-full items-center gap-1.5 mb-0.5">
                   <span
                     className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
                       isSelected ? "border-[#d4af37] bg-[#d4af37]" : "border-[#d4af37]/50 bg-white"
@@ -289,6 +305,16 @@ function BasicMigrationModalContent({
                     {getLocalizedString(plan, "displayName")}
                   </span>
                 </span>
+
+                {toolsLabel && (
+                  <span
+                    className={`pl-5 text-[9px] leading-snug mb-0.5 ${
+                      isSelected ? "text-[#FFFACD]/75" : "text-[#8b6f47]"
+                    }`}
+                  >
+                    {toolsLabel}
+                  </span>
+                )}
 
                 <span
                   className={`pl-5 text-xs font-bold tabular-nums leading-tight ${
