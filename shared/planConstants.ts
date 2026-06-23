@@ -32,9 +32,17 @@ export function isPaidTierPlan(name?: string | null): boolean {
 }
 
 /** Início do prazo de migração Free → Basic pago (usuários legados). */
-export const BASIC_MIGRATION_START_DATE = new Date("2026-06-10T00:00:00-03:00");
+export const BASIC_MIGRATION_START_DATE = new Date("2026-06-24T00:00:00-03:00");
 
 export const BASIC_MIGRATION_GRACE_DAYS = 20;
+
+export interface BasicMigrationCountdown {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  expired: boolean;
+}
 
 /** Trial gratuito para novos usuários (cartão coletado no checkout Stripe). */
 export const NEW_USER_TRIAL_DAYS = 20;
@@ -48,6 +56,18 @@ export function getBasicMigrationDeadline(): Date {
 }
 
 export function getBasicMigrationDaysRemaining(now = new Date()): number {
-  const ms = getBasicMigrationDeadline(now).getTime() - now.getTime();
+  const ms = getBasicMigrationDeadline().getTime() - now.getTime();
   return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+}
+
+export function getBasicMigrationCountdown(now = new Date()): BasicMigrationCountdown {
+  const ms = Math.max(0, getBasicMigrationDeadline().getTime() - now.getTime());
+  const totalSeconds = Math.floor(ms / 1000);
+  return {
+    days: Math.floor(totalSeconds / 86400),
+    hours: Math.floor((totalSeconds % 86400) / 3600),
+    minutes: Math.floor((totalSeconds % 3600) / 60),
+    seconds: totalSeconds % 60,
+    expired: ms === 0,
+  };
 }

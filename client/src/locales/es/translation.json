@@ -29,9 +29,18 @@
     "yearly": "Anual"
   },
   "migration": {
-    "title": "¡TU ACCESO GRATUITO TERMINA EN {{days}} DÍAS!",
-    "subtitle": "¡Pero todo va a mejorar mucho!",
-    "body": "Por solo {{yearlyPrice}} en el plan anual o {{monthlyPrice}} al mes, tendrás acceso a 8 de las 20 herramientas increíbles.",
+    "title": "Migra de Free a un plan de pago",
+    "subtitle": "Elige tu plan y sigue estudiando",
+    "body": "Tu acceso gratuito terminará al final del plazo. Suscríbete para mantener el acceso a las herramientas.",
+    "periodHint": "Período de migración: {{start}} hasta {{end}}",
+    "countdownLabel": "Tiempo restante para migrar",
+    "days": "Días",
+    "hours": "Horas",
+    "minutes": "Min",
+    "seconds": "Seg",
+    "selectPlan": "Elige un plan",
+    "upgradeNow": "Suscribir plan seleccionado",
+    "expired": "El plazo de migración terminó. Suscríbete para continuar.",
     "migrateYearly": "MIGRAR AHORA ({{price}}/ANUAL)",
     "migrateMonthly": "MIGRAR AHORA ({{price}}/MENSUAL)",
     "viewPlans": "Ver Otros Planes"

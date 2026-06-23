@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { getLocalizedString } from "@/lib/i18nHelper";
 import { getPlanPriceDisplay } from "@shared/planPricing";
-import { isBasicPlan } from "@/lib/planHelpers";
-import { BASIC_MIGRATION_SESSION_DISMISS_KEY } from "@shared/planConstants";
+import { isBasicPlan, LEGACY_FREE_PLAN_NAME } from "@/lib/planHelpers";
+import {
+  BASIC_MIGRATION_SESSION_DISMISS_KEY,
+  getBasicMigrationCountdown,
+} from "@shared/planConstants";
 import { useLocation } from "wouter";
 
 const MIGRATION_ALLOWED_PREFIXES = ["/dashboard", "/perfil", "/tool/", "/study/", "/admin"];
@@ -19,28 +22,96 @@ function isAuthenticatedAppRoute(path: string): boolean {
 
 type BillingPeriod = "monthly" | "yearly";
 
+function useCountdownTick(deadlineIso?: string) {
+  const [countdown, setCountdown] = useState(() =>
+    deadlineIso
+      ? getBasicMigrationCountdown()
+      : { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true },
+  );
+
+  useEffect(() => {
+    if (!deadlineIso) return;
+
+    const tick = () => {
+      const target = new Date(deadlineIso).getTime();
+      const ms = Math.max(0, target - Date.now());
+      const totalSeconds = Math.floor(ms / 1000);
+      setCountdown({
+        days: Math.floor(totalSeconds / 86400),
+        hours: Math.floor((totalSeconds % 86400) / 3600),
+        minutes: Math.floor((totalSeconds % 3600) / 60),
+        seconds: totalSeconds % 60,
+        expired: ms === 0,
+      });
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [deadlineIso]);
+
+  return countdown;
+}
+
+function CountdownUnit({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center min-w-[2.75rem] sm:min-w-[3.25rem]">
+      <span className="text-xl sm:text-2xl font-black tabular-nums text-[#1e3a5f] leading-none">
+        {String(value).padStart(2, "0")}
+      </span>
+      <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#8b6f47] font-bold mt-0.5">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 interface BasicMigrationModalProps {
   open: boolean;
-  daysRemaining: number;
+  deadlineIso: string;
+  startDateIso: string;
+  defaultPlanId?: number;
   onDismiss: () => void;
-  onViewPlans: () => void;
 }
 
 function BasicMigrationModalContent({
   open,
-  daysRemaining,
+  deadlineIso,
+  startDateIso,
+  defaultPlanId,
   onDismiss,
-  onViewPlans,
 }: BasicMigrationModalProps) {
   const { t, i18n } = useTranslation();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("yearly");
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
-  const { data: plansList } = trpc.plans.list.useQuery(undefined, { enabled: open });
+  const countdown = useCountdownTick(deadlineIso);
+
+  const { data: plansList, isLoading: plansLoading } = trpc.plans.list.useQuery(undefined, {
+    enabled: open,
+  });
+
+  const visiblePlans = useMemo(() => {
+    if (!plansList?.length) return [];
+    const hasBasic = plansList.some((p) => isBasicPlan(p.name) && p.name !== LEGACY_FREE_PLAN_NAME);
+    return plansList.filter((p) => !(hasBasic && p.name === LEGACY_FREE_PLAN_NAME));
+  }, [plansList]);
 
   const basicPlan = useMemo(
-    () => plansList?.find((p) => isBasicPlan(p.name)) ?? null,
-    [plansList],
+    () => visiblePlans.find((p) => isBasicPlan(p.name)) ?? null,
+    [visiblePlans],
   );
+
+  useEffect(() => {
+    if (!visiblePlans.length || selectedPlanId) return;
+    const preferred =
+      (defaultPlanId && visiblePlans.some((p) => p.id === defaultPlanId)
+        ? defaultPlanId
+        : basicPlan?.id) ?? visiblePlans[0]?.id;
+    if (preferred) setSelectedPlanId(preferred);
+  }, [visiblePlans, basicPlan, defaultPlanId, selectedPlanId]);
+
+  const selectedPlan = visiblePlans.find((p) => p.id === selectedPlanId) ?? basicPlan;
 
   const createCheckout = trpc.payments.createCheckoutSession.useMutation({
     onSuccess: (data) => {
@@ -50,114 +121,221 @@ function BasicMigrationModalContent({
     },
   });
 
-  const yearlyDisplay = basicPlan
-    ? getPlanPriceDisplay(basicPlan, "yearly", i18n.language)
-    : null;
-  const monthlyDisplay = basicPlan
-    ? getPlanPriceDisplay(basicPlan, "monthly", i18n.language)
-    : null;
-  const priceDisplay = basicPlan
-    ? getPlanPriceDisplay(basicPlan, billingPeriod, i18n.language)
-    : null;
-
-  const migrateLabel =
-    billingPeriod === "yearly"
-      ? t("migration.migrateYearly", "MIGRAR AGORA ({{price}}/ANUAL)", {
-          price: yearlyDisplay?.main ?? "R$ 3,89",
-        })
-      : t("migration.migrateMonthly", "MIGRAR AGORA ({{price}}/MENSAL)", {
-          price: monthlyDisplay?.main ?? "R$ 4,97",
-        });
-
   const startCheckout = () => {
-    if (!basicPlan || !priceDisplay) return;
+    if (!selectedPlan) return;
+    const priceDisplay = getPlanPriceDisplay(selectedPlan, billingPeriod, i18n.language);
     createCheckout.mutate({
       type: "plan",
-      id: String(basicPlan.id),
+      id: String(selectedPlan.id),
       price: priceDisplay.amountCents / 100,
-      title: `Plano ${getLocalizedString(basicPlan, "displayName")} - Gnosis AI`,
+      title: `Plano ${getLocalizedString(selectedPlan, "displayName")} - Gnosis AI`,
       billingPeriod,
       language: i18n.language,
     });
   };
 
+  const deadlineFormatted = useMemo(
+    () =>
+      new Date(deadlineIso).toLocaleDateString(i18n.language, {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }),
+    [deadlineIso, i18n.language],
+  );
+
+  const startFormatted = useMemo(
+    () =>
+      new Date(startDateIso).toLocaleDateString(i18n.language, {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }),
+    [startDateIso, i18n.language],
+  );
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#1e3a5f]/90 p-4">
-      <div className="w-full max-w-lg rounded-2xl border-4 border-[#d4af37] bg-[#FFFACD] p-6 md:p-8 shadow-2xl text-center relative">
+    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#1e3a5f]/90 p-4 overflow-y-auto">
+      <div className="w-full max-w-2xl rounded-2xl border-4 border-[#d4af37] bg-[#FFFACD] p-5 md:p-7 shadow-2xl relative my-4">
         <button
           type="button"
           onClick={onDismiss}
-          className="absolute top-3 right-3 text-[#8b6f47] hover:text-[#1e3a5f] text-sm font-medium"
+          className="absolute top-3 right-3 p-1.5 rounded-full text-[#8b6f47] hover:text-[#1e3a5f] hover:bg-[#1e3a5f]/5 transition-colors"
           aria-label={t("common.close", "Fechar")}
         >
-          ✕
+          <X className="h-5 w-5" />
         </button>
 
         <div className="flex justify-center mb-3">
-          <Sparkles className="w-10 h-10 text-[#d4af37]" />
+          <Sparkles className="w-9 h-9 text-[#d4af37]" aria-hidden />
         </div>
 
-        <h2 className="text-xl md:text-2xl font-black text-[#1e3a5f] mb-3 uppercase leading-tight">
-          {t("migration.title", "SEU ACESSO FREE TERMINA EM {{days}} DIAS!", {
-            days: daysRemaining,
-          })}
+        <h2 className="text-lg md:text-xl font-black text-[#1e3a5f] mb-1 uppercase leading-tight text-center px-6">
+          {t("migration.title", "Migre do Free para o plano pago")}
         </h2>
 
-        <p className="text-lg font-bold text-[#1e3a5f] mb-2">
-          {t("migration.subtitle", "Mas tudo vai ficar muito melhor!")}
-        </p>
-
-        <p className="text-[#8b6f47] mb-6 leading-relaxed">
-          {t("migration.body", "Por apenas {{yearlyPrice}} no anual ou {{monthlyPrice}} no mensal você vai ter acesso a 8 das 20 ferramentas incríveis!", {
-            yearlyPrice: yearlyDisplay?.main ?? "R$ 3,89",
-            monthlyPrice: monthlyDisplay?.main ?? "R$ 4,97",
+        <p className="text-sm text-[#8b6f47] text-center mb-4 px-2">
+          {t("migration.periodHint", "Período de migração: {{start}} até {{end}}", {
+            start: startFormatted,
+            end: deadlineFormatted,
           })}
         </p>
 
-        <div className="flex gap-2 mb-6 justify-center">
-          <Button
+        <div className="rounded-xl border-2 border-[#d4af37]/40 bg-white/80 px-3 py-3 mb-4">
+          <p className="text-[10px] uppercase tracking-wider font-bold text-[#8b6f47] text-center mb-2">
+            {t("migration.countdownLabel", "Tempo restante para migrar")}
+          </p>
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+            <CountdownUnit value={countdown.days} label={t("migration.days", "Dias")} />
+            <span className="text-lg font-bold text-[#d4af37] pb-3">:</span>
+            <CountdownUnit value={countdown.hours} label={t("migration.hours", "Horas")} />
+            <span className="text-lg font-bold text-[#d4af37] pb-3">:</span>
+            <CountdownUnit value={countdown.minutes} label={t("migration.minutes", "Min")} />
+            <span className="text-lg font-bold text-[#d4af37] pb-3">:</span>
+            <CountdownUnit value={countdown.seconds} label={t("migration.seconds", "Seg")} />
+          </div>
+        </div>
+
+        <p className="text-[#1e3a5f] font-semibold text-center mb-1 text-sm">
+          {t("migration.subtitle", "Escolha seu plano e continue estudando")}
+        </p>
+        <p className="text-xs text-[#8b6f47] text-center mb-3 leading-relaxed">
+          {t(
+            "migration.body",
+            "Seu acesso gratuito será encerrado ao fim do prazo. Assine um plano para manter o acesso às ferramentas.",
+          )}
+        </p>
+
+        <div
+          className="relative grid grid-cols-2 rounded-xl bg-[#1e3a5f]/6 p-1 border border-[#d4af37]/25 mb-3"
+          role="group"
+          aria-label={t("auth.billingToggle", "Período de cobrança")}
+        >
+          <button
             type="button"
-            variant={billingPeriod === "yearly" ? "default" : "outline"}
-            className={billingPeriod === "yearly" ? "bg-[#1e3a5f] text-white" : ""}
             onClick={() => setBillingPeriod("yearly")}
+            aria-pressed={billingPeriod === "yearly"}
+            className={`rounded-lg py-2 text-sm font-bold transition-all ${
+              billingPeriod === "yearly"
+                ? "bg-[#1e3a5f] text-[#d4af37] shadow-sm"
+                : "text-[#1e3a5f]/70 hover:text-[#1e3a5f]"
+            }`}
           >
             {t("plans.yearly", "Anual")}
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
-            variant={billingPeriod === "monthly" ? "default" : "outline"}
-            className={billingPeriod === "monthly" ? "bg-[#1e3a5f] text-white" : ""}
             onClick={() => setBillingPeriod("monthly")}
+            aria-pressed={billingPeriod === "monthly"}
+            className={`rounded-lg py-2 text-sm font-bold transition-all ${
+              billingPeriod === "monthly"
+                ? "bg-[#1e3a5f] text-[#d4af37] shadow-sm"
+                : "text-[#1e3a5f]/70 hover:text-[#1e3a5f]"
+            }`}
           >
             {t("plans.monthly", "Mensal")}
-          </Button>
+          </button>
+          {billingPeriod === "yearly" && (
+            <span className="pointer-events-none absolute -top-2 right-2 rounded-full bg-[#d4af37] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#1e3a5f]">
+              {t("auth.yearlySaveHint", "Melhor valor")}
+            </span>
+          )}
+        </div>
+
+        <div
+          role="radiogroup"
+          aria-label={t("migration.selectPlan", "Escolha um plano")}
+          className={`grid gap-2 mb-4 ${
+            visiblePlans.length >= 4
+              ? "grid-cols-2 sm:grid-cols-4"
+              : visiblePlans.length === 3
+                ? "grid-cols-3"
+                : "grid-cols-2"
+          }`}
+        >
+          {plansLoading &&
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-[4.5rem] rounded-xl bg-[#1e3a5f]/5 animate-pulse" />
+            ))}
+
+          {visiblePlans.map((plan) => {
+            const isSelected = selectedPlanId === plan.id;
+            const planPrice = getPlanPriceDisplay(plan, billingPeriod, i18n.language);
+
+            return (
+              <button
+                key={plan.id}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                onClick={() => setSelectedPlanId(plan.id)}
+                className={`relative flex flex-col items-start rounded-xl border-2 px-2.5 py-2 text-left transition-all cursor-pointer min-h-[4.5rem] ${
+                  isSelected
+                    ? "border-[#d4af37] bg-[#1e3a5f] text-white shadow-md"
+                    : "border-[#d4af37]/25 bg-white hover:border-[#d4af37]/55"
+                }`}
+              >
+                <span className="flex w-full items-center gap-1.5 mb-1">
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+                      isSelected ? "border-[#d4af37] bg-[#d4af37]" : "border-[#d4af37]/50 bg-white"
+                    }`}
+                  >
+                    {isSelected && <Check className="h-2.5 w-2.5 text-[#1e3a5f] stroke-[3]" />}
+                  </span>
+                  <span className="font-bold text-xs leading-tight truncate flex-1">
+                    {getLocalizedString(plan, "displayName")}
+                  </span>
+                </span>
+
+                <span
+                  className={`pl-5 text-xs font-bold tabular-nums leading-tight ${
+                    isSelected ? "text-[#d4af37]" : "text-[#1e3a5f]"
+                  }`}
+                >
+                  {planPrice.main}
+                  <span className="text-[10px] font-semibold">{planPrice.periodLabel}</span>
+                </span>
+                {planPrice.sublabel && (
+                  <span
+                    className={`pl-5 text-[9px] tabular-nums leading-tight mt-0.5 ${
+                      isSelected ? "text-[#FFFACD]/65" : "text-[#8b6f47]"
+                    }`}
+                  >
+                    {planPrice.sublabel}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <Button
           onClick={startCheckout}
-          disabled={!basicPlan || createCheckout.isPending}
-          className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] h-12 font-bold mb-3 uppercase"
+          disabled={!selectedPlan || createCheckout.isPending || countdown.expired}
+          className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] h-12 font-bold uppercase"
         >
-          {createCheckout.isPending ? <Loader2 className="animate-spin mx-auto" /> : migrateLabel}
+          {createCheckout.isPending ? (
+            <Loader2 className="animate-spin mx-auto" />
+          ) : (
+            t("migration.upgradeNow", "Assinar plano selecionado")
+          )}
         </Button>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onViewPlans}
-          className="w-full border-2 border-[#d4af37] text-[#1e3a5f] hover:bg-[#F0E68C] h-11 font-semibold"
-        >
-          {t("migration.viewPlans", "Ver Outros Planos")}
-        </Button>
+        {countdown.expired && (
+          <p className="text-xs text-red-700 text-center mt-2 font-semibold">
+            {t("migration.expired", "O prazo de migração encerrou. Assine para continuar.")}
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
 export default function BasicMigrationGate() {
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const onAuthenticatedRoute = isAuthenticatedAppRoute(location);
 
   const { data: user, isLoading: userLoading } = trpc.auth.me.useQuery(undefined, {
@@ -199,21 +377,15 @@ export default function BasicMigrationGate() {
     setShowModal(false);
   };
 
-  const handleViewPlans = () => {
-    handleDismiss();
-    setLocation("/planos");
-  };
-
   if (!onAuthenticatedRoute || !migrationStatus?.eligible) return null;
 
   return (
-    <>
-      <BasicMigrationModalContent
-        open={showModal}
-        daysRemaining={migrationStatus.daysRemaining}
-        onDismiss={handleDismiss}
-        onViewPlans={handleViewPlans}
-      />
-    </>
+    <BasicMigrationModalContent
+      open={showModal}
+      deadlineIso={migrationStatus.deadline}
+      startDateIso={migrationStatus.startDate}
+      defaultPlanId={migrationStatus.planId}
+      onDismiss={handleDismiss}
+    />
   );
 }

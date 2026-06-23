@@ -5,6 +5,8 @@ import { getUserActivePlan } from "./credits.js";
 import {
   getBasicMigrationDaysRemaining,
   getBasicMigrationDeadline,
+  getBasicMigrationCountdown,
+  BASIC_MIGRATION_START_DATE,
   isBasicPlan,
 } from "../shared/planConstants.js";
 
@@ -51,11 +53,14 @@ export async function getBasicMigrationStatus(userId: number) {
 
   const daysRemaining = getBasicMigrationDaysRemaining();
   const deadline = getBasicMigrationDeadline();
+  const countdown = getBasicMigrationCountdown();
 
   return {
     eligible: true as const,
     daysRemaining,
+    countdown,
     deadline: deadline.toISOString(),
+    startDate: BASIC_MIGRATION_START_DATE.toISOString(),
     planId: active.plan.id,
     planName: active.plan.name,
   };

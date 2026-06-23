@@ -29,9 +29,18 @@
     "yearly": "Yearly"
   },
   "migration": {
-    "title": "YOUR FREE ACCESS ENDS IN {{days}} DAYS!",
-    "subtitle": "But everything is about to get much better!",
-    "body": "For just {{yearlyPrice}} on the annual plan or {{monthlyPrice}} monthly, you get access to 8 of our 20 amazing tools!",
+    "title": "Upgrade from Free to a paid plan",
+    "subtitle": "Choose your plan and keep studying",
+    "body": "Your free access will end when the grace period expires. Subscribe to keep using the tools.",
+    "periodHint": "Migration period: {{start}} to {{end}}",
+    "countdownLabel": "Time left to migrate",
+    "days": "Days",
+    "hours": "Hours",
+    "minutes": "Min",
+    "seconds": "Sec",
+    "selectPlan": "Choose a plan",
+    "upgradeNow": "Subscribe to selected plan",
+    "expired": "The migration period has ended. Please subscribe to continue.",
     "migrateYearly": "UPGRADE NOW ({{price}}/YEARLY)",
     "migrateMonthly": "UPGRADE NOW ({{price}}/MONTHLY)",
     "viewPlans": "See Other Plans"
