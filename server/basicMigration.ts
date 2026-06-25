@@ -1,6 +1,6 @@
-import { and, eq, or } from "drizzle-orm";
+import { and, desc, eq, isNotNull, or } from "drizzle-orm";
 import { getDb } from "./db.js";
-import { payments } from "../drizzle/schema.js";
+import { payments, plans, subscriptions } from "../drizzle/schema.js";
 import { getUserActivePlan } from "./credits.js";
 import {
   getBasicMigrationDaysRemaining,
@@ -11,13 +11,6 @@ import {
 } from "../shared/planConstants.js";
 
 async function userHasConfirmedPlanPayment(userId: number): Promise<boolean> {
-  const active = await getUserActivePlan(userId);
-  if (!active) return false;
-
-  const { subscription } = active;
-  if (subscription.lastPaymentDate) return true;
-  if (subscription.stripeSubscriptionId) return true;
-
   const db = await getDb();
   if (!db) return false;
 
@@ -37,12 +30,45 @@ async function userHasConfirmedPlanPayment(userId: number): Promise<boolean> {
     )
     .limit(1);
 
-  return paid.length > 0;
+  if (paid.length > 0) return true;
+
+  const paidSub = await db
+    .select({ id: subscriptions.id })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.userId, userId),
+        or(isNotNull(subscriptions.lastPaymentDate), isNotNull(subscriptions.stripeSubscriptionId)),
+      ),
+    )
+    .limit(1);
+
+  return paidSub.length > 0;
+}
+
+async function getLegacyBasicPlanContext(userId: number) {
+  const active = await getUserActivePlan(userId);
+  if (active && isBasicPlan(active.plan.name)) {
+    return { plan: active.plan, subscription: active.subscription };
+  }
+
+  const db = await getDb();
+  if (!db) return null;
+
+  const rows = await db
+    .select({ subscription: subscriptions, plan: plans })
+    .from(subscriptions)
+    .innerJoin(plans, eq(subscriptions.planId, plans.id))
+    .where(eq(subscriptions.userId, userId))
+    .orderBy(desc(subscriptions.updatedAt));
+
+  const legacy = rows.find((row) => isBasicPlan(row.plan.name));
+  return legacy ?? null;
 }
 
 export async function getBasicMigrationStatus(userId: number) {
-  const active = await getUserActivePlan(userId);
-  if (!active || !isBasicPlan(active.plan.name)) {
+  const legacyContext = await getLegacyBasicPlanContext(userId);
+  if (!legacyContext) {
     return { eligible: false as const };
   }
 
@@ -61,7 +87,7 @@ export async function getBasicMigrationStatus(userId: number) {
     countdown,
     deadline: deadline.toISOString(),
     startDate: BASIC_MIGRATION_START_DATE.toISOString(),
-    planId: active.plan.id,
-    planName: active.plan.name,
+    planId: legacyContext.plan.id,
+    planName: legacyContext.plan.name,
   };
 }

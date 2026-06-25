@@ -21,6 +21,8 @@ export default function PaymentRequiredGate() {
   const billingParam = params.get("billing") as BillingPeriod | null;
 
   const { data: activePlanResponse, isLoading: planLoading } = trpc.credits.activePlan.useQuery();
+  const { data: migrationStatus, isLoading: migrationLoading } =
+    trpc.credits.basicMigrationStatus.useQuery();
   const { data: plansList, isLoading: plansLoading } = trpc.plans.list.useQuery();
 
   const createCheckout = trpc.payments.createCheckoutSession.useMutation({
@@ -57,9 +59,11 @@ export default function PaymentRequiredGate() {
     return plansList.find((p) => isBasicPlan(p.name)) ?? null;
   }, [plansList, selectedPlanId]);
 
-  const shouldBlock = requirePayment || (!planLoading && !hasActiveSubscription);
+  const isLegacyMigrationUser = migrationStatus?.eligible === true;
+  const shouldBlock =
+    !isLegacyMigrationUser && (requirePayment || (!planLoading && !hasActiveSubscription));
 
-  if (planLoading || plansLoading) return null;
+  if (planLoading || plansLoading || migrationLoading) return null;
   if (!shouldBlock || hasActiveSubscription) return null;
 
   const priceDisplay = targetPlan

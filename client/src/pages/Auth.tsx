@@ -103,7 +103,7 @@ export default function Auth() {
       if (data.success) {
         sessionStorage.removeItem(BASIC_MIGRATION_SESSION_DISMISS_KEY);
         toast.success(t("auth.welcome"));
-        window.location.href = "/dashboard";
+        window.location.href = "/dashboard?freshLogin=1";
       } else {
         toast.error(data.message || t("auth.invalidCredentials"));
       }
