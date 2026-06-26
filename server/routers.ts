@@ -1757,8 +1757,10 @@ export const appRouter = router({
             const price = priceQuote.amountCents / 100;
             const trialDays = input.startTrial === false ? undefined : NEW_USER_TRIAL_DAYS;
             const isBrlYearly = billingPeriod === 'yearly' && priceQuote.currency === 'brl';
+            // MP: somente anual em BRL (com trial = assinatura; sem trial = pagamento único PIX/parcelado).
+            // Mensal (qualquer moeda) → Stripe.
             const useMercadoPagoManualYearly = isBrlYearly && !trialDays;
-            const useMercadoPagoSubscription = isBrlYearly && !!trialDays;
+            const useMercadoPagoSubscriptionYearly = isBrlYearly && !!trialDays;
 
             if (useMercadoPagoManualYearly) {
               const mpSession = await createManualPaymentCheckout({
@@ -1775,13 +1777,13 @@ export const appRouter = router({
                 id: mpSession.id,
                 init_point: mpSession.init_point,
               };
-            } else if (useMercadoPagoSubscription) {
+            } else if (useMercadoPagoSubscriptionYearly) {
               const mpSession = await createSubscriptionCheckout({
                 planId: Number(input.id),
                 planName: planName,
                 price: price,
-                duration: billingPeriod === 'yearly' ? 12 : 1,
-                billingPeriod,
+                duration: 12,
+                billingPeriod: 'yearly',
                 userId: ctx.user.id,
                 userEmail: user.email,
                 trialDays,
