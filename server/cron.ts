@@ -3,6 +3,7 @@ import { emailAutomations, automationLogs, users, subscriptions, credits, plans 
 import { eq, and, sql, lt, gte, lte, inArray, desc } from "drizzle-orm";
 import { Resend } from "resend";
 import { generateBaseEmailHtml } from "./emailTemplate.js";
+import { expandPlanNameFilters } from "../shared/planConstants.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy");
 
@@ -40,7 +41,9 @@ async function processSingleAutomation(db: any, automation: any) {
         }).from(users);
 
         if (automation.targetPlans) {
-            const planNames = automation.targetPlans.split(',').filter(Boolean);
+            const planNames = expandPlanNameFilters(
+                automation.targetPlans.split(',').filter(Boolean),
+            );
             if (planNames.length > 0) {
                 query = query
                     .innerJoin(subscriptions, eq(users.id, subscriptions.userId))

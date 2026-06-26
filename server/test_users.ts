@@ -2,6 +2,7 @@ import "dotenv/config";
 import { getDb } from "./db.js";
 import { emailAutomations, users, subscriptions, plans } from "../drizzle/schema.js";
 import { eq, inArray } from "drizzle-orm";
+import { expandPlanNameFilters } from "../shared/planConstants.js";
 
 async function run() {
   const db = await getDb();
@@ -25,7 +26,9 @@ async function run() {
   }).from(users);
 
   if (automation.targetPlans) {
-      const planNames = automation.targetPlans.split(',').filter(Boolean);
+      const planNames = expandPlanNameFilters(
+          automation.targetPlans.split(',').filter(Boolean),
+      );
       console.log("Looking for plans:", planNames);
       if (planNames.length > 0) {
           query = query

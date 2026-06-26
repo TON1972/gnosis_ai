@@ -148,6 +148,7 @@ function BasicMigrationModalContent({
       title: `Plano ${getLocalizedString(selectedPlan, "displayName")} - Gnosis AI`,
       billingPeriod,
       language: i18n.language,
+      startTrial: true,
     });
   };
 

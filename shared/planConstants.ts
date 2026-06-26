@@ -31,6 +31,16 @@ export function isPaidTierPlan(name?: string | null): boolean {
   return !!name && !isBasicPlan(name);
 }
 
+/** Inclui alias legado (free ↔ basic) ao filtrar audiência por plano. */
+export function expandPlanNameFilters(planNames: string[]): string[] {
+  const expanded = new Set(planNames.filter(Boolean));
+  for (const name of planNames) {
+    if (name === BASIC_PLAN_NAME) expanded.add(LEGACY_FREE_PLAN_NAME);
+    if (name === LEGACY_FREE_PLAN_NAME) expanded.add(BASIC_PLAN_NAME);
+  }
+  return [...expanded];
+}
+
 /** Início do prazo de migração Free → Basic pago (usuários legados). */
 export const BASIC_MIGRATION_START_DATE = new Date("2026-06-24T00:00:00-03:00");
 

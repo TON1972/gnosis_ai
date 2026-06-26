@@ -37,30 +37,47 @@ export async function createSubscriptionCheckout(params: {
   billingPeriod: 'monthly' | 'yearly';
   userId: number;
   userEmail: string;
+  trialDays?: number;
 }) {
-  const { planId, planName, price, billingPeriod, userId, userEmail } = params;
+  const { planId, planName, price, billingPeriod, userId, userEmail, trialDays } = params;
 
   try {
     const { preapproval } = getMercadoPago();
 
     const frequency = billingPeriod === 'yearly' ? 12 : 1;
     const frequencyType = 'months';
+    const hasTrial = !!(trialDays && trialDays > 0);
+
+    const autoRecurring: Record<string, unknown> = {
+      frequency,
+      frequency_type: frequencyType,
+      transaction_amount: price,
+      currency_id: 'BRL',
+    };
+
+    if (hasTrial) {
+      autoRecurring.free_trial = {
+        frequency: trialDays,
+        frequency_type: 'days',
+      };
+    }
 
     const response = await preapproval.create({
       body: {
-        reason: `Assinatura ${planName} - GNOSIS AI`,
-        auto_recurring: {
-          frequency: frequency,
-          frequency_type: frequencyType,
-          transaction_amount: price,
-          currency_id: 'BRL',
-          // billing_day e billing_day_proportional removidos para evitar erro de TS
-          // O padrão é cobrar no momento da criação
+        reason: hasTrial
+          ? `Assinatura ${planName} - GNOSIS AI (${trialDays} dias grátis)`
+          : `Assinatura ${planName} - GNOSIS AI`,
+        auto_recurring: autoRecurring as {
+          frequency: number;
+          frequency_type: string;
+          transaction_amount: number;
+          currency_id: string;
+          free_trial?: { frequency: number; frequency_type: string };
         },
         payer_email: userEmail,
         back_url: `${BASE_URL}/dashboard?payment=success`,
-        external_reference: `sub-${userId}-${planId}-${Date.now()}`,
-        status: 'pending', // Status inicial
+        external_reference: `sub-${userId}-${planId}-${billingPeriod}-${Date.now()}`,
+        status: 'pending',
       }
     });
 

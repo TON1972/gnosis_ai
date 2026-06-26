@@ -4,6 +4,7 @@ import { users, sentEmails, subscriptions, plans, marketingGroups } from "../dri
 import { eq, desc, sql } from "drizzle-orm";
 import { Resend } from "resend";
 import { generateBaseEmailHtml } from "./emailTemplate.js";
+import { expandPlanNameFilters } from "../shared/planConstants.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy");
 
@@ -28,7 +29,9 @@ export async function getTargetAudience(input: z.infer<typeof audienceFilterSche
     const db = await getDb();
     if (!db) throw new Error("Banco de dados indisponível");
 
-    const plansFilter = input.targetPlans ? input.targetPlans.split(",").filter(Boolean) : [];
+    const plansFilter = input.targetPlans
+        ? expandPlanNameFilters(input.targetPlans.split(",").filter(Boolean))
+        : [];
     const rolesFilter = input.targetRoles ? input.targetRoles.split(",").filter(Boolean) : [];
     const subsFilter = input.targetSubscriptions ? input.targetSubscriptions.split(",").filter(Boolean) : [];
     const emailsList = input.targetEmails ? input.targetEmails.split(/[,;\n]+/).map(e => e.trim()).filter(Boolean) : [];

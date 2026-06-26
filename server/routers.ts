@@ -1755,10 +1755,13 @@ export const appRouter = router({
             const billingPeriod = input.billingPeriod || 'monthly';
             const priceQuote = getPlanPriceQuote(targetPlan, billingPeriod, input.language);
             const price = priceQuote.amountCents / 100;
-            const trialDays = input.startTrial ? NEW_USER_TRIAL_DAYS : undefined;
-            const useMercadoPagoYearly = billingPeriod === 'yearly' && priceQuote.currency === 'brl' && !trialDays;
+            const trialDays = input.startTrial === false ? undefined : NEW_USER_TRIAL_DAYS;
+            const useMercadoPagoManualYearly =
+              billingPeriod === 'yearly' && priceQuote.currency === 'brl' && !trialDays;
+            const useMercadoPagoSubscription =
+              priceQuote.currency === 'brl' && !useMercadoPagoManualYearly;
 
-            if (useMercadoPagoYearly) {
+            if (useMercadoPagoManualYearly) {
               const mpSession = await createManualPaymentCheckout({
                 planId: Number(input.id),
                 planName: planName,
@@ -1767,6 +1770,22 @@ export const appRouter = router({
                 billingPeriod: 'yearly',
                 userId: ctx.user.id,
                 userEmail: user.email
+              });
+
+              return {
+                id: mpSession.id,
+                init_point: mpSession.init_point,
+              };
+            } else if (useMercadoPagoSubscription) {
+              const mpSession = await createSubscriptionCheckout({
+                planId: Number(input.id),
+                planName: planName,
+                price: price,
+                duration: billingPeriod === 'yearly' ? 12 : 1,
+                billingPeriod,
+                userId: ctx.user.id,
+                userEmail: user.email,
+                trialDays,
               });
 
               return {

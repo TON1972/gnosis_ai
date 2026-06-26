@@ -75,6 +75,7 @@ export default function PlanosPage() {
           title: `Assinatura Plano ${getLocalizedString(plan, 'displayName')} (${billing === 'yearly' ? 'Anual' : 'Mensal'}) - Gnosis AI`,
           billingPeriod: billing,
           language: i18n.language,
+          startTrial: true,
         });
 
         if (checkout.init_point) {
