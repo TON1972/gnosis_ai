@@ -1756,10 +1756,9 @@ export const appRouter = router({
             const priceQuote = getPlanPriceQuote(targetPlan, billingPeriod, input.language);
             const price = priceQuote.amountCents / 100;
             const trialDays = input.startTrial === false ? undefined : NEW_USER_TRIAL_DAYS;
-            const useMercadoPagoManualYearly =
-              billingPeriod === 'yearly' && priceQuote.currency === 'brl' && !trialDays;
-            const useMercadoPagoSubscription =
-              priceQuote.currency === 'brl' && !useMercadoPagoManualYearly;
+            const isBrlYearly = billingPeriod === 'yearly' && priceQuote.currency === 'brl';
+            const useMercadoPagoManualYearly = isBrlYearly && !trialDays;
+            const useMercadoPagoSubscription = isBrlYearly && !!trialDays;
 
             if (useMercadoPagoManualYearly) {
               const mpSession = await createManualPaymentCheckout({
