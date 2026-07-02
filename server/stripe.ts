@@ -1,7 +1,8 @@
 import Stripe from 'stripe';
+import { resolveAppBaseUrl } from './appUrl.js';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
-const BASE_URL = process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://gnosis-ai-platform.vercel.app');
+const BASE_URL = resolveAppBaseUrl();
 
 if (!STRIPE_SECRET_KEY) {
     console.warn("STRIPE_SECRET_KEY não configurada!");

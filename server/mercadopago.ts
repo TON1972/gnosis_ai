@@ -1,4 +1,5 @@
 import { MercadoPagoConfig, Preference, Payment, PreApproval } from 'mercadopago';
+import { resolveMercadoPagoBaseUrl } from './appUrl.js';
 
 // Inicializar cliente Mercado Pago (Lazy)
 let client: MercadoPagoConfig | null = null;
@@ -6,8 +7,17 @@ let preference: Preference | null = null;
 let payment: Payment | null = null;
 let preapproval: PreApproval | null = null;
 
-// Use APP_URL se definido, senão constrói a URL do Vercel (que vem sem https://), ou fallback para localhost
-const BASE_URL = process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://unobstructed-speculatively-ricky.ngrok-free.dev');
+function mpBaseUrl(): string {
+  return resolveMercadoPagoBaseUrl();
+}
+
+/** MP preapproval: `reason` máximo 40 caracteres. */
+function mpPreapprovalReason(planName: string, trialDays?: number): string {
+  if (trialDays) {
+    return `Gnosis AI (${trialDays}d grátis)`.slice(0, 40);
+  }
+  return `Gnosis AI - ${planName}`.slice(0, 40);
+}
 
 export function getMercadoPago() {
   if (!client) {
@@ -64,9 +74,7 @@ export async function createSubscriptionCheckout(params: {
 
     const response = await preapproval.create({
       body: {
-        reason: hasTrial
-          ? `Assinatura ${planName} - GNOSIS AI (${trialDays} dias grátis)`
-          : `Assinatura ${planName} - GNOSIS AI`,
+        reason: mpPreapprovalReason(planName, hasTrial ? trialDays : undefined),
         auto_recurring: autoRecurring as {
           frequency: number;
           frequency_type: string;
@@ -75,7 +83,7 @@ export async function createSubscriptionCheckout(params: {
           free_trial?: { frequency: number; frequency_type: string };
         },
         payer_email: userEmail,
-        back_url: `${BASE_URL}/dashboard?payment=success`,
+        back_url: `${mpBaseUrl()}/dashboard?payment=success`,
         external_reference: `sub-${userId}-${planId}-${billingPeriod}-${Date.now()}`,
         status: 'pending',
       }
@@ -119,11 +127,11 @@ export async function createCreditsCheckout(params: {
       //   email: userEmail,
       // },
       back_urls: {
-        success: `${BASE_URL}/dashboard?payment=success`,
-        failure: `${BASE_URL}/dashboard?payment=failure`,
-        pending: `${BASE_URL}/dashboard?payment=pending`,
+        success: `${mpBaseUrl()}/dashboard?payment=success`,
+        failure: `${mpBaseUrl()}/dashboard?payment=failure`,
+        pending: `${mpBaseUrl()}/dashboard?payment=pending`,
       },
-      notification_url: `${BASE_URL}/api/webhooks/mercadopago`,
+      notification_url: `${mpBaseUrl()}/api/webhooks/mercadopago`,
       metadata: {
         user_id: userId,
         credits: credits,
@@ -182,11 +190,11 @@ export async function createManualPaymentCheckout(params: {
       //   email: userEmail,
       // },
       back_urls: {
-        success: `${BASE_URL}/dashboard?payment=success`,
-        failure: `${BASE_URL}/dashboard?payment=failure`,
-        pending: `${BASE_URL}/dashboard?payment=pending`,
+        success: `${mpBaseUrl()}/dashboard?payment=success`,
+        failure: `${mpBaseUrl()}/dashboard?payment=failure`,
+        pending: `${mpBaseUrl()}/dashboard?payment=pending`,
       },
-      notification_url: `${BASE_URL}/api/webhooks/mercadopago`,
+      notification_url: `${mpBaseUrl()}/api/webhooks/mercadopago`,
       metadata: {
         user_id: userId,
         plan_id: planId,
