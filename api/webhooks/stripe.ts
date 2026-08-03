@@ -115,6 +115,18 @@ export async function POST(req: Request) {
                             createdAt: new Date()
                         });
                         console.log(`✅ Pagamento registrado para User ${userId} (Stripe: ${session.id})`);
+
+                        try {
+                            const { sendPushToUser } = await import("../../server/push.js");
+                            await sendPushToUser(userId, {
+                                title: "Pagamento confirmado!",
+                                body: `Seu plano ${plan.displayName} foi ativado com sucesso.`,
+                                url: "/perfil",
+                                tag: `payment-${session.id}`,
+                            }, "subscriptionAlerts");
+                        } catch (pushErr) {
+                            console.warn("[Stripe] Push notification failed:", pushErr);
+                        }
                     } catch (paymentErr) {
                         console.error("❌ Erro ao gravar pagamento (Stripe):", paymentErr);
                     }

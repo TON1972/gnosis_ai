@@ -13,6 +13,7 @@ import { User, CreditCard, Package, Zap, Calendar, Gift, Info, TrendingUp, Setti
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
+import NotificationSettings from "@/components/NotificationSettings";
 import { useTranslation } from "react-i18next";
  
 export default function PerfilPage() {
@@ -320,8 +321,11 @@ export default function PerfilPage() {
  
           {/* Histórico de Pagamentos */}
           <PaymentHistory />
- 
- 
+
+          {/* Notificações Push (PWA) */}
+          <NotificationSettings />
+
+
         </div>
       </main>
  

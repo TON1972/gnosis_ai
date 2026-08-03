@@ -9,8 +9,7 @@ interface SendTicketEmailParams {
 }
 
 /**
- * Envia e-mail para o cliente quando admin responde no ticket
- * Usa a API de notificação da Manus para envio
+ * Envia e-mail e push notification para o cliente quando admin responde no ticket
  */
 export async function sendTicketEmail({
   clientEmail,
@@ -20,8 +19,10 @@ export async function sendTicketEmail({
   message,
 }: SendTicketEmailParams): Promise<boolean> {
   try {
-    // URL pública para o cliente acessar o ticket
-    const ticketUrl = `https://3000-i2i70t6xhbrh798gkh8xs-03459e3f.manusvm.computer/ticket/${ticketId}`;
+    const baseUrl = ENV.appUrl.startsWith("http")
+      ? ENV.appUrl.replace(/\/$/, "")
+      : `https://${ENV.appUrl.replace(/\/$/, "")}`;
+    const ticketUrl = `${baseUrl}/ticket/${ticketId}`;
 
     // Corpo do e-mail em HTML
     const emailBody = `
@@ -117,6 +118,23 @@ export async function sendTicketEmail({
     console.log(`[Ticket Email] Enviando e-mail para ${clientEmail}`);
     console.log(`[Ticket Email] Ticket #${ticketId} - Admin: ${adminName}`);
     console.log(`[Ticket Email] URL: ${ticketUrl}`);
+
+    // Push notification para usuário registrado com o mesmo e-mail
+    try {
+      const { sendPushByEmail, buildPushBody } = await import("./push.js");
+      await sendPushByEmail(
+        clientEmail,
+        {
+          title: `Resposta no Ticket #${ticketId}`,
+          body: buildPushBody(`${adminName}: ${message}`),
+          url: `/ticket/${ticketId}`,
+          tag: `ticket-${ticketId}`,
+        },
+        "ticketAlerts"
+      );
+    } catch (pushErr) {
+      console.warn("[Ticket] Push notification failed:", pushErr);
+    }
 
     // TODO: Integrar com serviço de e-mail real
     // Exemplo com SendGrid:

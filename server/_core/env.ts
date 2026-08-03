@@ -65,4 +65,9 @@ export const ENV = {
   sessionSecret: process.env.SESSION_SECRET ?? process.env.JWT_SECRET ?? "session_secret_gnosis",
   cookieSecure: process.env.NODE_ENV === "production",
   cookieMaxAge: 1000 * 60 * 60 * 24 * 7, // 7 dias
+
+  // Web Push (PWA)
+  vapidPublicKey: (process.env.VAPID_PUBLIC_KEY ?? "").trim(),
+  vapidPrivateKey: (process.env.VAPID_PRIVATE_KEY ?? "").trim(),
+  vapidSubject: (process.env.VAPID_SUBJECT ?? "mailto:contato@gnosisai.global").trim(),
 };

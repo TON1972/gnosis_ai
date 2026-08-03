@@ -401,3 +401,38 @@ export const couponUsages = pgTable("coupon_usages", {
   expiresAt: timestamp("expiresAt"), // Data em que as regras do cupom expiram
   isExpired: boolean("isExpired").default(false), // Flag de expirado
 });
+
+/**
+ * Web Push subscriptions (PWA)
+ */
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  userAgent: text("userAgent"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastUsedAt: timestamp("lastUsedAt"),
+});
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
+
+/**
+ * User notification preferences (PWA push)
+ */
+export const notificationPreferences = pgTable("notification_preferences", {
+  userId: integer("userId").primaryKey().references(() => users.id),
+  pushEnabled: boolean("pushEnabled").default(true).notNull(),
+  subscriptionAlerts: boolean("subscriptionAlerts").default(true).notNull(),
+  creditAlerts: boolean("creditAlerts").default(true).notNull(),
+  studyAlerts: boolean("studyAlerts").default(true).notNull(),
+  ticketAlerts: boolean("ticketAlerts").default(true).notNull(),
+  marketingAlerts: boolean("marketingAlerts").default(false).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreferences = typeof notificationPreferences.$inferInsert;

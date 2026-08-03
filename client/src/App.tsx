@@ -22,6 +22,8 @@ import AdminTools from "./pages/AdminTools";
 import StudyChatPage from "./pages/StudyChatPage";
 import AffiliatePage from "./pages/AffiliatePage";
 import BasicMigrationGate from "./components/BasicMigrationModal";
+import PwaInstallPrompt from "./components/PwaInstallPrompt";
+import PwaServiceWorkerBridge from "./components/PwaServiceWorkerBridge";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -66,6 +68,8 @@ function App() {
           <Toaster />
           <Router />
           <BasicMigrationGate />
+          <PwaInstallPrompt />
+          <PwaServiceWorkerBridge />
           <Chatbot />
           <ScrollToTopButton />
         </TooltipProvider>

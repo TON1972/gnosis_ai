@@ -7,10 +7,21 @@ import { isBasicPlan } from "@/lib/planHelpers";
 import { getLocalizedString } from "@/lib/i18nHelper";
 import { getPlanPriceDisplay } from "@shared/planPricing";
 import { NEW_USER_TRIAL_DAYS } from "@shared/planConstants";
+import { usePlanAccess } from "@/hooks/usePlanAccess";
 
 type BillingPeriod = "monthly" | "yearly";
 
-export default function PaymentRequiredGate() {
+type PaymentRequiredGateProps = {
+  forceOpen?: boolean;
+  allowClose?: boolean;
+  onClose?: () => void;
+};
+
+export default function PaymentRequiredGate({
+  forceOpen = false,
+  allowClose = false,
+  onClose,
+}: PaymentRequiredGateProps) {
   const { t, i18n } = useTranslation();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("yearly");
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
@@ -20,9 +31,7 @@ export default function PaymentRequiredGate() {
   const planParam = Number(params.get("plan") || 0);
   const billingParam = params.get("billing") as BillingPeriod | null;
 
-  const { data: activePlanResponse, isLoading: planLoading } = trpc.credits.activePlan.useQuery();
-  const { data: migrationStatus, isLoading: migrationLoading } =
-    trpc.credits.basicMigrationStatus.useQuery();
+  const { data: planAccess, isLoading: accessLoading } = usePlanAccess();
   const { data: plansList, isLoading: plansLoading } = trpc.plans.list.useQuery();
 
   const createCheckout = trpc.payments.createCheckoutSession.useMutation({
@@ -49,8 +58,6 @@ export default function PaymentRequiredGate() {
     if (basic) setSelectedPlanId(basic.id);
   }, [plansList, planParam]);
 
-  const hasActiveSubscription = activePlanResponse?.subscription?.status === "active";
-
   const targetPlan = useMemo(() => {
     if (!plansList?.length) return null;
     if (selectedPlanId) {
@@ -59,12 +66,13 @@ export default function PaymentRequiredGate() {
     return plansList.find((p) => isBasicPlan(p.name)) ?? null;
   }, [plansList, selectedPlanId]);
 
-  const isLegacyMigrationUser = migrationStatus?.eligible === true;
   const shouldBlock =
-    !isLegacyMigrationUser && (requirePayment || (!planLoading && !hasActiveSubscription));
+    forceOpen ||
+    requirePayment ||
+    (planAccess && !planAccess.canUseTools && planAccess.reason === "payment_required");
 
-  if (planLoading || plansLoading || migrationLoading) return null;
-  if (!shouldBlock || hasActiveSubscription) return null;
+  if (accessLoading || plansLoading) return null;
+  if (!shouldBlock || planAccess?.canUseTools) return null;
 
   const priceDisplay = targetPlan
     ? getPlanPriceDisplay(targetPlan, billingPeriod, i18n.language)
@@ -85,7 +93,16 @@ export default function PaymentRequiredGate() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3a5f]/90 p-4">
-      <div className="w-full max-w-lg rounded-2xl border-4 border-[#d4af37] bg-[#FFFACD] p-8 shadow-2xl text-center max-h-[95vh] overflow-y-auto">
+      <div className="w-full max-w-lg rounded-2xl border-4 border-[#d4af37] bg-[#FFFACD] p-8 shadow-2xl text-center max-h-[95vh] overflow-y-auto relative">
+        {allowClose && onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-3 right-3 text-[#8b6f47] hover:text-[#1e3a5f] text-sm font-semibold cursor-pointer"
+          >
+            {t("common.close", "Fechar")}
+          </button>
+        )}
         <h2 className="text-2xl font-bold text-[#1e3a5f] mb-2">
           {t("auth.paymentRequiredTitle", "Escolha seu plano")}
         </h2>
@@ -106,7 +123,7 @@ export default function PaymentRequiredGate() {
               key={plan.id}
               type="button"
               onClick={() => setSelectedPlanId(plan.id)}
-              className={`w-full rounded-xl border-2 px-4 py-3 text-left transition-all ${
+              className={`w-full rounded-xl border-2 px-4 py-3 text-left transition-all cursor-pointer ${
                 selectedPlanId === plan.id
                   ? "border-[#1e3a5f] bg-white shadow-md"
                   : "border-[#d4af37]/40 bg-white/50 hover:bg-white/80"
@@ -142,25 +159,31 @@ export default function PaymentRequiredGate() {
           <p className="text-3xl font-bold text-[#1e3a5f] mb-2">
             {priceDisplay.main}
             {priceDisplay.periodLabel && (
-              <span className="text-lg font-normal text-[#8b6f47] ml-1">{priceDisplay.periodLabel}</span>
+              <span className="text-lg font-normal text-[#8b6f47] ml-1">
+                {priceDisplay.periodLabel}
+              </span>
             )}
           </p>
         )}
         <p className="text-xs text-[#8b6f47] mb-6">
-          {t("auth.trialBillingNote", "Após {{days}} dias, a cobrança do plano escolhido será feita automaticamente.", {
-            days: NEW_USER_TRIAL_DAYS,
-          })}
+          {t(
+            "auth.trialBillingNote",
+            "Após {{days}} dias, a cobrança do plano escolhido será feita automaticamente.",
+            { days: NEW_USER_TRIAL_DAYS },
+          )}
         </p>
 
         <Button
           onClick={startCheckout}
           disabled={!targetPlan || createCheckout.isPending}
-          className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] h-12 font-bold"
+          className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] h-12 font-bold cursor-pointer"
         >
           {createCheckout.isPending ? (
             <Loader2 className="animate-spin" />
           ) : (
-            t("auth.startTrialCheckout", "Iniciar trial de {{days}} dias", { days: NEW_USER_TRIAL_DAYS })
+            t("auth.startTrialCheckout", "Iniciar trial de {{days}} dias", {
+              days: NEW_USER_TRIAL_DAYS,
+            })
           )}
         </Button>
       </div>

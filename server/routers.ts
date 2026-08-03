@@ -27,6 +27,7 @@ import { getDb } from "./db.js";
 import { eq, desc, sql, and, lt, gte, or, asc } from "drizzle-orm";
 import { getUserCredits, useCredits, getUserActivePlan } from "./credits.js";
 import { getBasicMigrationStatus } from "./basicMigration.js";
+import { assertCanUseTools, getPlanAccessStatus } from "./planAccess.js";
 import { checkSubscriptionStatus, markSubscriptionPaid } from "./subscriptionStatus.js";
 import { getUserStats, getFinancialCalendar, getDelinquentUsers, getUsersByPlan, getToolUsageStats } from "./admin.js";
 import { getStripeFinancialData } from "./stripeFinancial.js";
@@ -45,6 +46,7 @@ import {
   automationSchema, getAutomationStats
 } from "./automation.js";
 import { affiliateRouter } from "./affiliate.js";
+import { pushRouter } from "./pushRouter.js";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { getPlanPriceQuote } from "../shared/planPricing.js";
@@ -89,6 +91,7 @@ function calculateDynamicCost(text: string): { words: number; cost: number } {
 export const appRouter = router({
   system: systemRouter,
   affiliate: affiliateRouter,
+  push: pushRouter,
 
 
   settings: router({
@@ -318,6 +321,7 @@ export const appRouter = router({
         language: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        await assertCanUseTools(ctx.user.id);
         const { invokeLLM } = await import("./_core/llm.js");
         const db = await getValidatedDb();
 
@@ -398,9 +402,8 @@ export const appRouter = router({
         wordCount: z.number(),
       }))
       .mutation(async ({ ctx, input }) => {
+        await assertCanUseTools(ctx.user.id);
         const db = await getValidatedDb();
-
-        // 1. Grava o estudo e ARMAZENA na variável 'result'
         const result = await db.insert(savedStudies).values({
           userId: ctx.user.id,
           toolId: input.toolId,
@@ -509,6 +512,7 @@ export const appRouter = router({
         creditCost: z.number(),
       }))
       .mutation(async ({ ctx, input }) => {
+        await assertCanUseTools(ctx.user.id);
         const db = await getValidatedDb(); //
 
         await db.insert(studyMessages).values({
@@ -538,6 +542,10 @@ export const appRouter = router({
 
     basicMigrationStatus: protectedProcedure.query(async ({ ctx }) => {
       return await getBasicMigrationStatus(ctx.user.id);
+    }),
+
+    planAccess: protectedProcedure.query(async ({ ctx }) => {
+      return await getPlanAccessStatus(ctx.user.id);
     }),
 
     use: protectedProcedure

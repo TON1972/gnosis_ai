@@ -17,6 +17,8 @@ import Footer from "@/components/Footer";
 import HeaderCredits from "@/components/HeaderCredits";
 import { isBasicPlan } from "@/lib/planHelpers";
 import { getLocalizedString } from "@/lib/i18nHelper";
+import { usePlanAccess } from "@/hooks/usePlanAccess";
+import PlanRequiredModal from "@/components/PlanRequiredModal";
 import "../dashboard-mobile.css";
 
 export default function ToolPage() {
@@ -29,6 +31,7 @@ export default function ToolPage() {
   const [input, setInput] = useState("");
   const [result, setResult] = useState("");
   const [showNoCreditsModal, setShowNoCreditsModal] = useState(false);
+  const [showPlanRequiredModal, setShowPlanRequiredModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [generatedStudyId, setGeneratedStudyId] = useState<number | null>(null);
 
@@ -46,14 +49,27 @@ export default function ToolPage() {
   const generateMutation = trpc.tools.generate.useMutation();
   const saveStudyMutation = trpc.studies.save.useMutation();
 
+  const { canUseTools, isLoading: planAccessLoading } = usePlanAccess();
+
   const [modalTab, setModalTab] = useState<'plans' | 'credits'>('plans');
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [toolIdFromParams]);
 
+  useEffect(() => {
+    if (!planAccessLoading && !canUseTools) {
+      setShowPlanRequiredModal(true);
+    }
+  }, [planAccessLoading, canUseTools]);
+
   const handleGenerate = async () => {
     if (!dbTool || !input.trim()) return;
+
+    if (!canUseTools) {
+      setShowPlanRequiredModal(true);
+      return;
+    }
 
     // ✅ Validação Antecipada de Créditos
     const currentCredits = credits?.total || 0;
@@ -98,7 +114,9 @@ export default function ToolPage() {
       refetchCredits();
       toast.success(t('toolPage.analysisSuccess'));
     } catch (error: any) {
-      if (error.message?.includes("insuficientes")) {
+      if (error.message?.includes("PLAN_REQUIRED")) {
+        setShowPlanRequiredModal(true);
+      } else if (error.message?.includes("insuficientes")) {
         const isEntryPlan = isBasicPlan(activePlan?.plan?.name);
         setModalTab(isEntryPlan ? 'plans' : 'credits');
         setShowNoCreditsModal(true);
@@ -188,7 +206,7 @@ export default function ToolPage() {
               />
               <Button
                 onClick={handleGenerate}
-                disabled={generateMutation.isPending || !input.trim()}
+                disabled={generateMutation.isPending || !input.trim() || !canUseTools}
                 className="mt-4 w-full bg-[#1e3a5f] text-[#d4af37] font-bold py-6 text-lg transition-all active:scale-95"
               >
                 {generateMutation.isPending ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2" />}
@@ -273,6 +291,10 @@ export default function ToolPage() {
         open={showNoCreditsModal}
         onClose={() => setShowNoCreditsModal(false)}
         initialTab={modalTab}
+      />
+      <PlanRequiredModal
+        open={showPlanRequiredModal}
+        onOpenChange={setShowPlanRequiredModal}
       />
       {/* ✅ CSS para os efeitos de luxo do botão */}
       <style>{`

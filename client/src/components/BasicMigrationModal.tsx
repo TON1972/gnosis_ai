@@ -72,14 +72,16 @@ interface BasicMigrationModalProps {
   startDateIso: string;
   defaultPlanId?: number;
   onDismiss: () => void;
+  allowDismiss?: boolean;
 }
 
-function BasicMigrationModalContent({
+export function BasicMigrationModalContent({
   open,
   deadlineIso,
   startDateIso,
   defaultPlanId,
   onDismiss,
+  allowDismiss = true,
 }: BasicMigrationModalProps) {
   const { t, i18n } = useTranslation();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("yearly");
@@ -177,14 +179,16 @@ function BasicMigrationModalContent({
   return (
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#1e3a5f]/90 p-4 overflow-y-auto">
       <div className="w-full max-w-2xl rounded-2xl border-4 border-[#d4af37] bg-[#FFFACD] p-5 md:p-7 shadow-2xl relative my-4">
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="absolute top-3 right-3 p-1.5 rounded-full text-[#8b6f47] hover:text-[#1e3a5f] hover:bg-[#1e3a5f]/5 transition-colors"
-          aria-label={t("common.close", "Fechar")}
-        >
-          <X className="h-5 w-5" />
-        </button>
+        {allowDismiss && (
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="absolute top-3 right-3 p-1.5 rounded-full text-[#8b6f47] hover:text-[#1e3a5f] hover:bg-[#1e3a5f]/5 transition-colors cursor-pointer"
+            aria-label={t("common.close", "Fechar")}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
 
         <div className="flex justify-center mb-3">
           <Sparkles className="w-9 h-9 text-[#d4af37]" aria-hidden />
@@ -364,14 +368,14 @@ function BasicMigrationModalContent({
 export default function BasicMigrationGate() {
   const [location] = useLocation();
   const onAuthenticatedRoute = isAuthenticatedAppRoute(location);
+  const { data: planAccess, isLoading: accessLoading } =
+    trpc.credits.planAccess.useQuery(undefined, {
+      enabled: onAuthenticatedRoute,
+    });
 
   const { data: user, isLoading: userLoading } = trpc.auth.me.useQuery(undefined, {
     enabled: onAuthenticatedRoute,
   });
-  const { data: migrationStatus, isLoading: statusLoading } =
-    trpc.credits.basicMigrationStatus.useQuery(undefined, {
-      enabled: onAuthenticatedRoute && !!user,
-    });
 
   const [showModal, setShowModal] = useState(false);
 
@@ -390,29 +394,38 @@ export default function BasicMigrationGate() {
       setShowModal(false);
       return;
     }
-    if (userLoading || statusLoading || !user || !migrationStatus?.eligible) {
+    if (userLoading || accessLoading || !user || !planAccess) {
       setShowModal(false);
       return;
     }
 
-    const dismissed = sessionStorage.getItem(BASIC_MIGRATION_SESSION_DISMISS_KEY);
-    setShowModal(!dismissed);
-  }, [onAuthenticatedRoute, user, userLoading, statusLoading, migrationStatus]);
+    // Auto-exibe no dashboard para usuários em migração (sem dismiss)
+    const onDashboard =
+      location === "/dashboard" || location.startsWith("/dashboard/");
+    setShowModal(
+      !planAccess.canUseTools &&
+        planAccess.reason === "migration" &&
+        onDashboard,
+    );
+  }, [onAuthenticatedRoute, user, userLoading, accessLoading, planAccess, location]);
 
-  const handleDismiss = () => {
-    sessionStorage.setItem(BASIC_MIGRATION_SESSION_DISMISS_KEY, "1");
-    setShowModal(false);
-  };
-
-  if (!onAuthenticatedRoute || !migrationStatus?.eligible) return null;
+  if (
+    !onAuthenticatedRoute ||
+    !planAccess ||
+    planAccess.canUseTools ||
+    planAccess.reason !== "migration"
+  ) {
+    return null;
+  }
 
   return (
     <BasicMigrationModalContent
       open={showModal}
-      deadlineIso={migrationStatus.deadline}
-      startDateIso={migrationStatus.startDate}
-      defaultPlanId={migrationStatus.planId}
-      onDismiss={handleDismiss}
+      allowDismiss={false}
+      deadlineIso={planAccess.migrationDeadline ?? ""}
+      startDateIso={planAccess.migrationStartDate ?? ""}
+      defaultPlanId={planAccess.defaultPlanId}
+      onDismiss={() => setShowModal(false)}
     />
   );
 }

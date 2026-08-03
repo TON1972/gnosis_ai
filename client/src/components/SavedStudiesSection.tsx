@@ -6,12 +6,16 @@ import { Download, Trash2, Clock, BookText, FileText, MessageSquare, Trash } fro
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { usePlanAccess } from "@/hooks/usePlanAccess";
+import PlanRequiredModal from "@/components/PlanRequiredModal";
  
 export default function SavedStudiesSection() {
   const { t, i18n } = useTranslation();
   const { data: savedStudies, refetch } = trpc.studies.list.useQuery();
   const deleteStudyMutation = trpc.studies.delete.useMutation();
   const [, setLocation] = useLocation();
+  const { canUseTools, isLoading: planAccessLoading } = usePlanAccess();
+  const [showPlanRequiredModal, setShowPlanRequiredModal] = useState(false);
  
   const currentLocale = i18n.language === 'en' ? 'en-US' : i18n.language === 'es' ? 'es-ES' : 'pt-BR';
  
@@ -38,6 +42,14 @@ export default function SavedStudiesSection() {
     URL.revokeObjectURL(url);
   };
  
+  const handleContinueStudy = (studyId: number) => {
+    if (!planAccessLoading && !canUseTools) {
+      setShowPlanRequiredModal(true);
+      return;
+    }
+    setLocation(`/study/${studyId}`);
+  };
+
   if (!savedStudies || savedStudies.length === 0) return null;
  
   return (
@@ -62,7 +74,7 @@ export default function SavedStudiesSection() {
             <div className="flex gap-1">
               {/* ✅ NOVO: Botão que leva para a página de chat */}
               <Button
-                onClick={() => setLocation(`/study/${study.id}`)}
+                onClick={() => handleContinueStudy(study.id)}
                 className="flex-1 h-8 bg-[#1e3a5f] text-white hover:bg-[#d4af37] text-xs"
               >
                 <MessageSquare className="w-3 h-3 mr-1" />
@@ -88,6 +100,10 @@ export default function SavedStudiesSection() {
           </div>
         ))}
       </div>
+      <PlanRequiredModal
+        open={showPlanRequiredModal}
+        onOpenChange={setShowPlanRequiredModal}
+      />
     </div>
   );
 }

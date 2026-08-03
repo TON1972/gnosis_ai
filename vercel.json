@@ -9,6 +9,22 @@
       "schedule": "*/15 * * * *"
     }
   ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "Service-Worker-Allowed", "value": "/" }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/trpc/:trpc",
@@ -19,7 +35,7 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/((?!api/|sw\\.js|registerSW\\.js|manifest\\.webmanifest|icons/).*)",
       "destination": "/index.html"
     }
   ]

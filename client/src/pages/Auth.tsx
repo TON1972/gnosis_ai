@@ -14,6 +14,7 @@ import { getLocalizedString } from "@/lib/i18nHelper";
 import { getPlanPriceDisplay } from "@shared/planPricing";
 import { isBasicPlan } from "@/lib/planHelpers";
 import { BASIC_MIGRATION_SESSION_DISMISS_KEY, NEW_USER_TRIAL_DAYS } from "@shared/planConstants";
+import PwaInstallButton from "@/components/PwaInstallButton";
 
 const inputClass =
   "border-[#d4af37]/40 bg-white h-11 focus-visible:ring-[#d4af37]/50 focus-visible:border-[#d4af37]";
@@ -636,6 +637,13 @@ export default function Auth() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Instalar app — visível no mobile (iOS não tem botão nativo no browser) */}
+      <div className="fixed bottom-[5.5rem] left-4 right-4 z-20 mx-auto max-w-md sm:max-w-lg pointer-events-none">
+        <div className="pointer-events-auto">
+          <PwaInstallButton />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,33 @@
+{
+  "name": "GNOSIS AI - Estudos Bíblicos Profundos",
+  "short_name": "GNOSIS AI",
+  "description": "Estudos bíblicos profundos com inteligência artificial",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFFACD",
+  "theme_color": "#d4af37",
+  "lang": "pt-BR",
+  "categories": ["education", "books"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

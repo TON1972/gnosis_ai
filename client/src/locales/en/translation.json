@@ -293,5 +293,120 @@
     "deleteSuccess": "Study deleted!",
     "deleteError": "Error deleting",
     "continueBtn": "Continue Study"
+  },
+  "pwa": {
+    "prompt": {
+      "title": "Install GNOSIS AI",
+      "subtitle": "Bible studies on your home screen, with alerts and notifications.",
+      "close": "Close",
+      "later": "Not now"
+    },
+    "entry": {
+      "bannerTitle": "Install app on your phone",
+      "bannerDesc": "On iPhone: Safari → Share → Add to Home Screen",
+      "bannerDescIos": "Safari → Share → Add to Home Screen",
+      "bannerDescAndroid": "Chrome → menu → Install app or Add to Home screen",
+      "bannerCta": "How to",
+      "link": "How to install the app on your phone"
+    },
+    "guide": {
+      "badge": "Mobile app",
+      "title": "How to install the app",
+      "subtitle": "Follow the steps below to add GNOSIS AI to your phone's home screen.",
+      "tabAndroid": "Android",
+      "tabIos": "iPhone / iPad",
+      "platformPicker": "Choose your device",
+      "detectedIos": "iPhone or iPad detected — Safari guide below",
+      "detectedAndroid": "Android detected — Chrome guide below",
+      "stepLabel": "Step {{step}}",
+      "scrollRegion": "Installation steps",
+      "scrollHint": "Scroll to see all steps",
+      "androidNote": "Use Google Chrome. If Install appears, tap it. Otherwise follow the steps below.",
+      "iosNote": "Use Safari (required on iPhone). Tap Share in the bottom bar — not the ⋯ menu.",
+      "installBtn": "Install now",
+      "installing": "Installing...",
+      "installSuccess": "App installed successfully!",
+      "footer": "After installing, go to Profile and enable push notifications to receive alerts."
+    },
+    "steps": {
+      "android": {
+        "title": "Android installation",
+        "openChrome": {
+          "title": "Open the site in Chrome",
+          "desc": "Visit gnosisai.global using Google Chrome on your phone."
+        },
+        "openMenu": {
+          "title": "Tap the Chrome menu",
+          "desc": "Three-dot icon in the top-right corner of the bar."
+        },
+        "tapInstall": {
+          "title": "Select \"Install app\"",
+          "desc": "Or \"Add to Home screen\" on some Android models."
+        },
+        "confirm": {
+          "title": "Confirm installation",
+          "desc": "Tap Install. The GNOSIS AI icon will appear on your home screen."
+        },
+        "tapAddHome": {
+          "title": "Add to Home screen",
+          "desc": "In the menu, choose \"Add to Home screen\" or \"Install app\"."
+        },
+        "enablePush": {
+          "title": "Enable notifications",
+          "desc": "In Profile, enable push notifications for credits, subscription and support alerts."
+        }
+      },
+      "ios": {
+        "title": "iPhone/iPad installation",
+        "openSafari": {
+          "title": "Open the site in Safari",
+          "desc": "Safari is required on iPhone. Do not use Chrome or other browsers."
+        },
+        "tapShare": {
+          "title": "Tap Share",
+          "desc": "Icon in Safari's bottom bar (square with arrow up). Do not use the ⋯ menu."
+        },
+        "tapAddHome": {
+          "title": "Add to Home Screen",
+          "desc": "Scroll the list and tap \"Add to Home Screen\"."
+        },
+        "confirm": {
+          "title": "Confirm with Add",
+          "desc": "Optionally edit the name and tap Add in the top corner."
+        },
+        "enablePush": {
+          "title": "Enable notifications",
+          "desc": "With the app installed, open Profile and enable push (iOS 16.4+)."
+        }
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "installed": "App installed on home screen",
+      "installFirst": "Install the app on your phone to receive alerts even when the app is closed.",
+      "notSupported": "Your browser does not support push notifications on this device.",
+      "serverNotConfigured": "Push notifications are not configured on the server yet.",
+      "pushLabel": "Push notifications",
+      "denied": "Blocked — re-enable in browser settings",
+      "active": "Active on this device",
+      "inactive": "Receive alerts even when the app is closed",
+      "typesTitle": "Alert types",
+      "subscription": "Subscription",
+      "subscriptionDesc": "Alerts about plan expiration",
+      "credits": "Credits",
+      "creditsDesc": "Warning when credits are low",
+      "studies": "Studies",
+      "studiesDesc": "News and study reminders",
+      "tickets": "Support",
+      "ticketsDesc": "Replies to your support tickets",
+      "marketing": "Promotions",
+      "marketingDesc": "Offers and special announcements",
+      "enabled": "Notifications enabled!",
+      "disabled": "Notifications disabled.",
+      "error": "Error changing notifications.",
+      "prefError": "Error saving preference.",
+      "reactivateBtn": "How to re-enable notifications",
+      "reactivateHint": "Open browser settings and allow notifications for this site."
+    }
   }
 }

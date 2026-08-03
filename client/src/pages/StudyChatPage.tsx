@@ -14,6 +14,8 @@ import jsPDF from "jspdf";
 import ShareButton from "@/components/ShareButton";
 import NoCreditsModal from "@/components/NoCreditsModal";
 import { isBasicPlan } from "@/lib/planHelpers";
+import { usePlanAccess } from "@/hooks/usePlanAccess";
+import PlanRequiredModal from "@/components/PlanRequiredModal";
 
 export default function StudyChatPage() {
   const { i18n } = useTranslation();
@@ -37,7 +39,15 @@ export default function StudyChatPage() {
   const { data: activePlan } = trpc.credits.activePlan.useQuery();
 
   const [showNoCreditsModal, setShowNoCreditsModal] = useState(false);
+  const [showPlanRequiredModal, setShowPlanRequiredModal] = useState(false);
   const [modalTab, setModalTab] = useState<'plans' | 'credits'>('plans');
+  const { canUseTools, isLoading: planAccessLoading } = usePlanAccess();
+
+  useEffect(() => {
+    if (!planAccessLoading && !canUseTools) {
+      setShowPlanRequiredModal(true);
+    }
+  }, [planAccessLoading, canUseTools]);
 
   // ✅ Inicializa o chat combinando o estudo pai COM as mensagens históricas
   useEffect(() => {
@@ -128,6 +138,11 @@ export default function StudyChatPage() {
   const handleSendMessage = async () => {
     if (!input.trim() || !studyData || !studyData.study.id) return;
 
+    if (!canUseTools) {
+      setShowPlanRequiredModal(true);
+      return;
+    }
+
     // ✅ Validação Antecipada de Créditos
     const currentCredits = credits?.total || 0;
     // Custo estimado por mensagem (geralmente menor que ferramenta completa, mas precisa ser > 0)
@@ -176,7 +191,9 @@ export default function StudyChatPage() {
       setMessages(prev => [...prev, { role: "assistant", content: response.content }]);
       refetchCredits();
     } catch (error: any) {
-      if (error.message?.includes("insuficientes")) {
+      if (error.message?.includes("PLAN_REQUIRED")) {
+        setShowPlanRequiredModal(true);
+      } else if (error.message?.includes("insuficientes")) {
         const isEntryPlan = isBasicPlan(activePlan?.plan?.name);
         setModalTab(isEntryPlan ? 'plans' : 'credits');
         setShowNoCreditsModal(true);
@@ -303,7 +320,7 @@ export default function StudyChatPage() {
             />
             <Button
               onClick={handleSendMessage}
-              disabled={generateMutation.isPending || !input.trim()}
+              disabled={generateMutation.isPending || !input.trim() || !canUseTools}
               className="bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] h-15 w-15 md:w-auto md:px-8 transition-all active:scale-95 shadow-lg rounded-xl shrink-0"
             >
               {generateMutation.isPending ? <Loader2 className="animate-spin w-6 h-6" /> : <Send className="w-6 h-6" />}
@@ -318,6 +335,10 @@ export default function StudyChatPage() {
         open={showNoCreditsModal}
         onClose={() => setShowNoCreditsModal(false)}
         initialTab={modalTab}
+      />
+      <PlanRequiredModal
+        open={showPlanRequiredModal}
+        onOpenChange={setShowPlanRequiredModal}
       />
     </div>
   );

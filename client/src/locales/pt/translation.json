@@ -293,5 +293,120 @@
     "deleteSuccess": "Estudo excluído!",
     "deleteError": "Erro ao excluir",
     "continueBtn": "Continuar Estudo"
+  },
+  "pwa": {
+    "prompt": {
+      "title": "Instale o GNOSIS AI",
+      "subtitle": "Estudos bíblicos na tela inicial, com alertas e notificações.",
+      "close": "Fechar",
+      "later": "Agora não"
+    },
+    "entry": {
+      "bannerTitle": "Instalar app no celular",
+      "bannerDesc": "No iPhone: Safari → Compartilhar → Adicionar à Tela de Início",
+      "bannerDescIos": "Safari → Compartilhar → Adicionar à Tela de Início",
+      "bannerDescAndroid": "Chrome → menu → Instalar app ou Adicionar à tela inicial",
+      "bannerCta": "Ver como",
+      "link": "Como instalar o app no celular"
+    },
+    "guide": {
+      "badge": "App para celular",
+      "title": "Como instalar o app",
+      "subtitle": "Siga os passos abaixo para adicionar o GNOSIS AI à tela inicial do seu celular.",
+      "tabAndroid": "Android",
+      "tabIos": "iPhone / iPad",
+      "platformPicker": "Escolha seu dispositivo",
+      "detectedIos": "Detectamos iPhone ou iPad — guia Safari abaixo",
+      "detectedAndroid": "Detectamos Android — guia Chrome abaixo",
+      "stepLabel": "Passo {{step}}",
+      "scrollRegion": "Passos de instalação",
+      "scrollHint": "Role para ver todos os passos",
+      "androidNote": "Use o Google Chrome. Se aparecer o botão Instalar, toque nele. Caso contrário, siga os passos abaixo.",
+      "iosNote": "Use o Safari (obrigatório no iPhone). Toque Compartilhar na barra inferior — não use o menu ⋯.",
+      "installBtn": "Instalar agora",
+      "installing": "Instalando...",
+      "installSuccess": "App instalado com sucesso!",
+      "footer": "Após instalar, volte ao Perfil e ative as notificações push para receber alertas."
+    },
+    "steps": {
+      "android": {
+        "title": "Instalação Android",
+        "openChrome": {
+          "title": "Abra o site no Chrome",
+          "desc": "Acesse gnosisai.global pelo Google Chrome no seu celular."
+        },
+        "openMenu": {
+          "title": "Toque no menu do Chrome",
+          "desc": "Ícone de três pontos no canto superior direito da barra."
+        },
+        "tapInstall": {
+          "title": "Selecione \"Instalar app\"",
+          "desc": "Ou \"Adicionar à tela inicial\" em alguns modelos Android."
+        },
+        "confirm": {
+          "title": "Confirme a instalação",
+          "desc": "Toque em Instalar. O ícone do GNOSIS AI aparecerá na tela inicial."
+        },
+        "tapAddHome": {
+          "title": "Adicionar à tela inicial",
+          "desc": "No menu, escolha \"Adicionar à tela inicial\" ou \"Instalar app\"."
+        },
+        "enablePush": {
+          "title": "Ative as notificações",
+          "desc": "No Perfil, ative notificações push para receber alertas de créditos, assinatura e suporte."
+        }
+      },
+      "ios": {
+        "title": "Instalação iPhone/iPad",
+        "openSafari": {
+          "title": "Abra o site no Safari",
+          "desc": "O Safari é obrigatório no iPhone. Não use Chrome ou outros navegadores."
+        },
+        "tapShare": {
+          "title": "Toque em Compartilhar",
+          "desc": "Ícone na barra inferior do Safari (quadrado com flecha para cima). Não use o menu ⋯."
+        },
+        "tapAddHome": {
+          "title": "Adicionar à Tela de Início",
+          "desc": "Role a lista e toque em \"Adicionar à Tela de Início\"."
+        },
+        "confirm": {
+          "title": "Confirme com Adicionar",
+          "desc": "Opcionalmente edite o nome e toque em Adicionar no canto superior."
+        },
+        "enablePush": {
+          "title": "Ative as notificações",
+          "desc": "Com o app instalado, abra o Perfil e ative push (iOS 16.4+)."
+        }
+      }
+    },
+    "notifications": {
+      "title": "Notificações",
+      "installed": "App instalado na tela inicial",
+      "installFirst": "Instale o app no celular para receber alertas mesmo com o app fechado.",
+      "notSupported": "Seu navegador não suporta notificações push neste dispositivo.",
+      "serverNotConfigured": "Notificações push ainda não configuradas no servidor.",
+      "pushLabel": "Notificações push",
+      "denied": "Bloqueadas — reative nas configurações do navegador",
+      "active": "Ativas neste dispositivo",
+      "inactive": "Receba alertas mesmo com o app fechado",
+      "typesTitle": "Tipos de alerta",
+      "subscription": "Assinatura",
+      "subscriptionDesc": "Alertas sobre vencimento do plano",
+      "credits": "Créditos",
+      "creditsDesc": "Aviso quando os créditos estiverem baixos",
+      "studies": "Estudos",
+      "studiesDesc": "Novidades e lembretes de estudos",
+      "tickets": "Suporte",
+      "ticketsDesc": "Respostas nos seus chamados de suporte",
+      "marketing": "Promoções",
+      "marketingDesc": "Ofertas e comunicados especiais",
+      "enabled": "Notificações ativadas!",
+      "disabled": "Notificações desativadas.",
+      "error": "Erro ao alterar notificações.",
+      "prefError": "Erro ao salvar preferência.",
+      "reactivateBtn": "Como reativar notificações",
+      "reactivateHint": "Abra as configurações do navegador e permita notificações para este site."
+    }
   }
 }

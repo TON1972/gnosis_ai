@@ -180,6 +180,30 @@ async function processSingleAutomation(db: any, automation: any) {
 
             await resend.batch.send(emailData);
 
+            // Enviar push notifications em paralelo ao e-mail
+            try {
+              const { sendPushToUser, buildPushBody, AUTOMATION_PUSH_CATEGORY } =
+                await import("./push.js");
+              const category = AUTOMATION_PUSH_CATEGORY[automation.triggerType];
+
+              for (const user of batch) {
+                await sendPushToUser(
+                  user.id,
+                  {
+                    title: automation.subject,
+                    body: buildPushBody(
+                      automation.content.replace(/{{name}}/g, user.name || "Usuário")
+                    ),
+                    url: "/dashboard",
+                    tag: `automation-${automation.id}`,
+                  },
+                  category
+                );
+              }
+            } catch (pushErr) {
+              console.warn(`[Cron] Push batch failed for automation ${automation.id}:`, pushErr);
+            }
+
             // 2. Update status to sent
             await db.update(automationLogs)
                 .set({ status: 'sent' })

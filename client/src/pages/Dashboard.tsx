@@ -11,6 +11,8 @@ import SubscriptionWarningBanner from "@/components/SubscriptionWarningBanner";
 import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import { trpc } from "@/lib/trpc";
 import PaymentRequiredGate from "@/components/PaymentRequiredGate";
+import PlanRequiredModal from "@/components/PlanRequiredModal";
+import { usePlanAccess } from "@/hooks/usePlanAccess";
 import * as LucideIcons from "lucide-react";
 import { User, Lock, BookOpen } from "lucide-react";
 import Footer from "@/components/Footer";
@@ -33,7 +35,10 @@ export default function Dashboard() {
   const { user: authUser, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [showNoCreditsModal, setShowNoCreditsModal] = useState(false);
+  const [showPlanRequiredModal, setShowPlanRequiredModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
+
+  const { canUseTools, isLoading: planAccessLoading } = usePlanAccess();
 
   const { data: dbUser } = trpc.auth.me.useQuery(undefined, {
     enabled: !!authUser,
@@ -75,6 +80,10 @@ export default function Dashboard() {
     });
 
   const handleToolClick = (toolId: number) => {
+    if (!planAccessLoading && !canUseTools) {
+      setShowPlanRequiredModal(true);
+      return;
+    }
     if (!allowedToolIds.has(toolId)) {
       setShowNoCreditsModal(true);
       return;
@@ -284,7 +293,10 @@ export default function Dashboard() {
       </div>
       <Footer />
       <NoCreditsModal open={showNoCreditsModal} onClose={() => setShowNoCreditsModal(false)} />
-      <PaymentRequiredGate />
+      <PlanRequiredModal
+        open={showPlanRequiredModal}
+        onOpenChange={setShowPlanRequiredModal}
+      />
     </div>
   );
 }
