@@ -47,9 +47,10 @@ export default function MobileMenu({ isAuthenticated, onLogout, loginUrl, user }
 
       {/* Menu lateral */}
       <div
-        className={`fixed top-0 right-0 h-full w-64 bg-[#1e3a5f] shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+        className={`pwa-top-inset fixed top-0 right-0 h-full w-64 bg-[#1e3a5f] shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0 pointer-events-auto" : "translate-x-full pointer-events-none"
         }`}
+        aria-hidden={!isOpen}
       >
         <div className="flex flex-col h-full p-6">
           {/* Botão fechar */}

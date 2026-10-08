@@ -38,9 +38,10 @@ export default function DashboardMobileMenu({ user, onLogout }: DashboardMobileM
  
       {/* Menu lateral */}
       <div
-        className={`fixed top-0 right-0 h-full w-64 bg-[#1e3a5f] shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+        className={`pwa-top-inset fixed top-0 right-0 h-full w-64 bg-[#1e3a5f] shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0 pointer-events-auto" : "translate-x-full pointer-events-none"
         }`}
+        aria-hidden={!isOpen}
       >
         <div className="flex flex-col h-full p-6">
           {/* Botão fechar */}
@@ -81,6 +82,12 @@ export default function DashboardMobileMenu({ user, onLogout }: DashboardMobileM
             <Link href="/dashboard" onClick={closeMenu}>
               <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
                 {t('menu.dashboard')}
+              </span>
+            </Link>
+
+            <Link href="/perfil" onClick={closeMenu}>
+              <span className="block px-4 py-3 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors cursor-pointer">
+                {t('profile.title')}
               </span>
             </Link>
  

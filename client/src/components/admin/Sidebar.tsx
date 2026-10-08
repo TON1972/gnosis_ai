@@ -1,7 +1,7 @@
 import { APP_LOGO, APP_TITLE } from "@/const";
 import {
   LayoutDashboard, DollarSign,
-  Mail, ShieldCheck, Wrench, Home, LogOut, Users, Video, Send, Zap, Percent, Ticket
+  Mail, ShieldCheck, Wrench, Home, LogOut, Users, Video, Send, Zap, Percent, Ticket, BookOpen
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
  
@@ -22,6 +22,7 @@ export function Sidebar({ isOpen, activeTab, setActiveTab, role, logout, setLoca
  
   const menuItems = [
     { id: 'overview', label: t('sidebar.overview'), icon: LayoutDashboard, adminOnly: true },
+    { id: 'lp-vendas', label: 'LP de vendas', icon: BookOpen, path: '/lp-vendas', adminOnly: true },
     { id: 'financial', label: t('sidebar.financial'), icon: DollarSign, adminOnly: true },
     { id: 'user-list', label: t('sidebar.userList'), icon: Users, adminOnly: true },
     { id: 'support', label: t('sidebar.support'), icon: Mail, adminOnly: true },

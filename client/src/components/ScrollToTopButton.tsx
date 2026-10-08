@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function ScrollToTopButton() {
+  const [location] = useLocation();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function ScrollToTopButton() {
     });
   };
 
-  if (!isVisible) {
+  if (!isVisible || location === "/lp-vendas") {
     return null;
   }
 

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
-const BONUS_CREDITS = [
+export const BONUS_CREDITS = [
   { amount: 1000, price: 9.9, label: "R$ 9,90", featured: false },
   { amount: 3000, price: 24.9, label: "R$ 24,90", featured: false },
   { amount: 6000, price: 39.9, label: "R$ 39,90", featured: true },

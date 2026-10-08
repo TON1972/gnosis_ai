@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "wouter";
 import { MessageCircle, X, Send, User, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -163,6 +164,7 @@ const KNOWLEDGE_BASE = {
 };
 
 export default function Chatbot() {
+  const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -389,6 +391,8 @@ export default function Chatbot() {
       handleSendMessage();
     }
   };
+
+  if (location === "/lp-vendas") return null;
 
   return (
     <>

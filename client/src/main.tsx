@@ -6,8 +6,13 @@ import "./i18n";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
+import { isPwaInstalled } from "./lib/pwa";
 import "./index.css";
 import "./scroll-animations.css";
+
+if (isPwaInstalled()) {
+  document.documentElement.classList.add("pwa-standalone");
+}
 
 const queryClient = new QueryClient();
 

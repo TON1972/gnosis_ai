@@ -228,3 +228,34 @@
     }
   }
 }
+
+/* PWA / iOS standalone: keep headers below the device status bar */
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+  header.sticky,
+  header.fixed,
+  .pwa-top-inset {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+html.pwa-standalone header.sticky,
+html.pwa-standalone header.fixed,
+html.pwa-standalone .pwa-top-inset {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+@media (max-width: 1024px) {
+  @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+    header.sticky,
+    header.fixed,
+    .pwa-top-inset {
+      padding-top: max(env(safe-area-inset-top, 0px), 3.25rem) !important;
+    }
+  }
+
+  html.pwa-standalone header.sticky,
+  html.pwa-standalone header.fixed,
+  html.pwa-standalone .pwa-top-inset {
+    padding-top: max(env(safe-area-inset-top, 0px), 3.25rem) !important;
+  }
+}

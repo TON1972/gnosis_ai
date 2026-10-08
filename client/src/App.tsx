@@ -21,6 +21,7 @@ import ScrollToTopButton from "./components/ScrollToTopButton";
 import AdminTools from "./pages/AdminTools";
 import StudyChatPage from "./pages/StudyChatPage";
 import AffiliatePage from "./pages/AffiliatePage";
+import SalesLandingPage from "./pages/sales/SalesLandingPage";
 import PwaInstallPrompt from "./components/PwaInstallPrompt";
 import PwaServiceWorkerBridge from "./components/PwaServiceWorkerBridge";
 
@@ -44,6 +45,7 @@ function Router() {
       {/* ✅ ADICIONE ESTA LINHA */}
       <Route path="/study/:studyId" component={StudyChatPage} />
       <Route path="/afiliados" component={AffiliatePage} />
+      <Route path="/lp-vendas" component={SalesLandingPage} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

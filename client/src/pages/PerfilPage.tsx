@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { isPaidTierPlan } from "@/lib/planHelpers";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 export default function PerfilPage() {
   const { t, i18n } = useTranslation();
   const { user, logout, loading } = useAuth();
+  const [, setLocation] = useLocation();
   const [showModal, setShowModal] = useState(false);
  
   const { data: credits } = trpc.credits.balance.useQuery();
@@ -83,11 +84,18 @@ export default function PerfilPage() {
  
             {/* Ícone de Perfil e Menu Hambúrguer */}
             <div className="flex items-center gap-1.5 md:gap-3">
-              <Link href="/perfil">
-                <button className="p-1.5 md:p-2 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors" aria-label={t('profile.title')}>
-                  <User className="w-5 h-5 md:w-6 md:h-6" />
-                </button>
-              </Link>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setLocation("/perfil");
+                }}
+                className="flex items-center justify-center min-h-11 min-w-11 p-1.5 md:p-2 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors"
+                aria-label={t("profile.title")}
+              >
+                <User className="w-5 h-5 md:w-6 md:h-6" />
+              </button>
  
               <DashboardMobileMenu
                 user={user}

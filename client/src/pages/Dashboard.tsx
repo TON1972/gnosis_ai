@@ -116,11 +116,18 @@ export default function Dashboard() {
                   </span>
                 </Link>
               )}
-              <Link href="/perfil">
-                <button className="p-1.5 md:p-2 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors">
-                  <User className="w-5 h-5 md:w-6 md:h-6" />
-                </button>
-              </Link>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setLocation("/perfil");
+                }}
+                className="flex items-center justify-center min-h-11 min-w-11 p-1.5 md:p-2 text-[#d4af37] hover:bg-[#2a4a7f] rounded-lg transition-colors"
+                aria-label={t("profile.title")}
+              >
+                <User className="w-5 h-5 md:w-6 md:h-6" />
+              </button>
 
               <DashboardMobileMenu user={user} onLogout={() => { logout(); setLocation("/"); }} />
             </div>
