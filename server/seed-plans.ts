@@ -15,6 +15,17 @@ const calculateYearlyPrice = (monthly: number) => {
 
 const PLANS_DATA = [
   {
+    name: "free",
+    displayName: "Plano Free",
+    displayNameEn: "Free Plan",
+    priceMonthly: 0,
+    priceYearly: 0,
+    creditsInitial: 500,
+    creditsDaily: 50,
+    toolsCount: 18,
+    description: "Acesso a todas as ferramentas. 500 créditos iniciais + 50 por dia.",
+  },
+  {
     name: "basic",
     displayName: "Plano Basic",
     displayNameEn: "Basic Plan",

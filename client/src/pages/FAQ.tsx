@@ -117,19 +117,19 @@ const faqData: FAQCategory[] = [
     items: [
       {
         question: "Como funciona o sistema de créditos da GNOSIS AI?",
-        answer: "A GNOSIS AI utiliza três tipos de créditos: (1) Créditos Iniciais - cumulativos que são renovados a cada 30 dias, recebidos na assinatura e renovação mensal; (2) Créditos Diários - não-cumulativos, renovados diariamente; (3) Créditos Avulsos - permanentes, comprados separadamente e que nunca expiram."
+        answer: "A GNOSIS AI utiliza três tipos de créditos: (1) Créditos Iniciais — 500 no cadastro, uma vez, não renovam; (2) Créditos Diários — 50 por dia, não acumulam; (3) Créditos Avulsos — comprados à parte e que nunca expiram. Toda conta usa todas as ferramentas. O que acaba é o saldo."
       },
       {
         question: "Os créditos diários acumulam se eu não usar?",
-        answer: "Não, os créditos diários são não-cumulativos. Eles são renovados diariamente no valor correspondente ao seu plano, mas não se acumulam de um dia para o outro. Já os créditos iniciais e avulsos são cumulativos."
+        answer: "Não. Os 50 créditos diários renovam todo dia e o que sobrou do dia anterior se perde. Os 500 iniciais não renovam. Os avulsos comprados ficam no saldo e nunca expiram."
       },
       {
         question: "Por quanto tempo os créditos iniciais são válidos?",
-        answer: "Os créditos iniciais dos planos pagos (Aliança, Lumen e Premium) são renovados a cada 30 dias na renovação da assinatura. Você recebe novamente a quantidade completa de créditos iniciais do seu plano a cada ciclo mensal. Para o plano FREE, os 500 créditos iniciais NÃO são renováveis."
+        answer: "No plano Free, os 500 créditos iniciais NÃO renovam. Eles valem até acabar. Os 50 diários renovam no dia seguinte. Os avulsos não vencem."
       },
       {
         question: "O que acontece quando meus créditos acabam?",
-        answer: "Quando seus créditos acabam, você pode: (1) aguardar a renovação dos créditos diários no dia seguinte; (2) fazer upgrade para um plano superior; (3) comprar créditos avulsos que são permanentes e nunca expiram."
+        answer: "Quando o saldo acaba, você pode esperar os 50 créditos do dia seguinte ou comprar créditos avulsos. Os avulsos não vencem. Não é preciso assinar plano para continuar usando as ferramentas."
       },
       {
         question: "Em que ordem os créditos são utilizados?",
@@ -138,28 +138,24 @@ const faqData: FAQCategory[] = [
     ]
   },
   {
-    title: "Planos de Assinatura",
+    title: "Conta e créditos",
     icon: <CreditCard className="w-5 h-5" />,
     items: [
       {
-        question: "Quais são os planos disponíveis e seus preços?",
-        answer: "Oferecemos 4 planos: FREE (gratuito), Aliança (R$ 19,98/mês), Lumen (R$ 36,98/mês) e GNOSIS Premium (R$ 68,98/mês). Cada plano oferece diferentes quantidades de créditos e acesso a ferramentas específicas."
+        question: "Preciso assinar um plano para usar as ferramentas?",
+        answer: "Não. Toda conta nasce Free e tem acesso a todas as ferramentas. O que limita o uso é o saldo de créditos, não o plano."
       },
       {
-        question: "Qual a diferença entre os planos?",
-        answer: "FREE: 1000 créditos iniciais (não-renováveis) + 50/dia, 6 ferramentas básicas. Aliança: 3.000 iniciais + 100/dia, 10 ferramentas. Lumen: 6.000 iniciais + 200/dia, todas as 19 ferramentas. Premium: 12.000 iniciais + 400/dia, todas as 19 ferramentas."
+        question: "Quanto de crédito eu recebo de graça?",
+        answer: "500 créditos no cadastro (uma vez) + 50 créditos por dia. Os diários não acumulam. Se acabar o saldo, compre créditos avulsos."
       },
       {
-        question: "Quais ferramentas NÃO estão disponíveis no plano Aliança?",
-        answer: "O plano Aliança não inclui 9 ferramentas avançadas: Exegese, Patrística, Linha do Tempo Teológica, Apologética Avançada, Gerador de Referências ABNT/APA, Redação Acadêmica, Dados Demográficos. Ele oferece 10 das 19 ferramentas disponíveis."
+        question: "Como compro mais créditos?",
+        answer: "No painel, em Comprar créditos, ou na página de créditos. Pacotes: 1.000 (R$ 9,90), 3.000 (R$ 24,90), 6.000 (R$ 39,90) e 10.000 (R$ 69,90). Os avulsos não vencem."
       },
       {
-        question: "Posso testar antes de assinar?",
-        answer: "Sim! O plano FREE permite testar 6 ferramentas básicas com 500 créditos iniciais e 50 créditos diários. É uma excelente forma de conhecer a plataforma antes de fazer upgrade para um plano pago."
-      },
-      {
-        question: "Como funciona a renovação dos planos?",
-        answer: "Os planos são renovados automaticamente a cada mês. A cada renovação, você recebe novamente os créditos iniciais do seu plano (renovados a cada 30 dias), além de continuar recebendo os créditos diários. Os créditos avulsos comprados permanecem sempre disponíveis."
+        question: "Posso criar conta sem cartão?",
+        answer: "Sim. O cadastro é gratuito, sem cartão. Você entra direto no painel com todas as ferramentas liberadas."
       }
     ]
   },
@@ -272,7 +268,7 @@ export default function FAQ() {
             Perguntas Frequentes
           </h2>
           <p className="text-xl text-[#8b6f47] max-w-3xl mx-auto">
-            Encontre respostas para as principais dúvidas sobre a GNOSIS AI, suas ferramentas, planos e sistema de créditos.
+            Encontre respostas para as principais dúvidas sobre a GNOSIS AI, suas ferramentas e o sistema de créditos.
           </p>
         </div>
 

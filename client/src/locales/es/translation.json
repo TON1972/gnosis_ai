@@ -118,7 +118,8 @@
     "loading": "Cargando herramientas desde la base de datos...",
     "availableOnHigherPlans": "Disponible en planes superiores",
     "featureVideo": "Destacado de la Semana",
-    "upgradePlanBtn": "Mejora de plan o créditos extras",
+    "upgradePlanBtn": "Comprar créditos",
+    "buyCreditsBtn": "Comprar créditos",
     "allCategories": "Todos",
     "generalCategory": "General"
   },
@@ -137,9 +138,9 @@
     "yearly": "Anual",
     "creditRenewMsg": "* Los créditos iniciales de los planes pagos se renuevan cada 30 días",
     "promoMsg": "🎉 ¡ESTOS SON VALORES PROMOCIONALES DE LANZAMIENTO, APROVECHA LA OPORTUNIDAD! 🎉",
-    "btnPlans": "PLANES Y PRECIOS",
+    "btnPlans": "COMPRAR CRÉDITOS",
     "mobilePlanText": "Consulta todos los detalles de nuestros planes y elige el ideal para tu ministerio.",
-    "btnSeePlans": "Ver Planes y Precios",
+    "btnSeePlans": "Comprar créditos",
     "mostPopular": "MÁS POPULAR",
     "popular": "POPULAR",
     "premium": "PREMIUM",
@@ -206,7 +207,10 @@
       "btnSubscribe": "SUSCRIBIRSE AHORA",
       "later": "Tal vez más tarde",
       "pkgSubtitle": "Créditos",
-      "paymentError": "Error al iniciar el pago: "
+      "paymentError": "Error al iniciar el pago: ",
+      "emptyTitle": "Saldo insuficiente",
+      "emptyBody": "Esta herramienta necesita créditos. Recarga ahora: los sueltos no vencen.",
+      "buyBody": "500 al registrarte + 50 al día en Free. ¿Necesitas más? Elige un paquete. Los sueltos no vencen."
     },
     "reminder": {
       "offerExtension": "EXTENSIÓN DE OFERTA",
@@ -240,7 +244,8 @@
     "title": "Mi Perfil",
     "loading": "Cargando...",
     "loginRequired": "Necesitas iniciar sesión para acceder a esta página.",
-    "btnPlans": "Planes y Créditos",
+    "btnPlans": "Comprar créditos",
+    "btnBuyCredits": "Comprar créditos",
     "btnBackDashboard": "Volver al Dashboard",
     "btnManageSubscription": "Gestionar Suscripción (Stripe)",
     "managedByStripe": "Gestionar Suscripción",

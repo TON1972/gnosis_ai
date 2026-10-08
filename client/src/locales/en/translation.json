@@ -124,7 +124,8 @@
     "loading": "Loading tools from database...",
     "availableOnHigherPlans": "Available on higher plans",
     "featureVideo": "Highlight of the Week",
-    "upgradePlanBtn": "Plan Upgrade or Buy Credits",
+    "upgradePlanBtn": "Buy credits",
+    "buyCreditsBtn": "Buy credits",
     "allCategories": "All",
     "generalCategory": "General"
   },
@@ -143,9 +144,9 @@
     "yearly": "Yearly",
     "creditRenewMsg": "* Initial credits for paid plans renew every 30 days",
     "promoMsg": "🎉 THESE ARE PROMOTIONAL LAUNCH PRICES, TAKE ADVANTAGE! 🎉",
-    "btnPlans": "PLANS AND PRICING",
+    "btnPlans": "BUY CREDITS",
     "mobilePlanText": "Check out all the details of our plans and choose the ideal one for your ministry.",
-    "btnSeePlans": "See Plans and Pricing",
+    "btnSeePlans": "Buy credits",
     "mostPopular": "MOST POPULAR",
     "popular": "POPULAR",
     "premium": "PREMIUM",
@@ -211,7 +212,10 @@
       "btnSubscribe": "SUBSCRIBE NOW",
       "later": "Maybe later",
       "pkgSubtitle": "Credits",
-      "paymentError": "Error initiating payment: "
+      "paymentError": "Error initiating payment: ",
+      "emptyTitle": "Not enough credits",
+      "emptyBody": "This tool needs credits. Top up now — purchased credits never expire.",
+      "buyBody": "500 at signup + 50 per day on Free. Need more? Choose a pack. Extra credits never expire."
     },
     "reminder": {
       "offerExtension": "OFFER EXTENSION",
@@ -245,7 +249,8 @@
     "title": "My Profile",
     "loading": "Loading...",
     "loginRequired": "You need to login to access this page.",
-    "btnPlans": "Plans and Credits",
+    "btnPlans": "Buy credits",
+    "btnBuyCredits": "Buy credits",
     "btnBackDashboard": "Back to Dashboard",
     "btnManageSubscription": "Manage Subscription (Stripe)",
     "managedByStripe": "Manage Subscription",

@@ -18,7 +18,6 @@ const KNOWLEDGE_BASE = {
   greeting: {
     message: "Olá! 👋 Sou a Rebeca, assistente virtual da GNOSIS AI. Como posso ajudá-lo(a) hoje?",
     options: [
-      { label: "📋 Informações sobre Planos", action: "planos" },
       { label: "💰 Dúvidas sobre Créditos", action: "creditos" },
       { label: "🔧 Como usar as Ferramentas", action: "ferramentas" },
       { label: "❓ Outras Dúvidas", action: "outras" },
@@ -26,17 +25,16 @@ const KNOWLEDGE_BASE = {
     ],
   },
   planos: {
-    message: "Temos 4 planos disponíveis:\n\n**FREE** - Gratuito com 6 de 19 ferramentas disponíveis\n**ALIANÇA** - R$ 19,98/mês com 10 de 19 ferramentas disponíveis\n**LUMEN** - R$ 36,98/mês com todas as 19 ferramentas\n**GNOSIS PREMIUM** - R$ 68,98/mês com todas as 19 ferramentas\n\nO que você gostaria de saber?",
+    message: "Conta Free: todas as ferramentas. 500 créditos no cadastro + 50 por dia. Acabou o saldo? Compre créditos avulsos. Os avulsos não vencem.\n\nNão vendemos mais assinatura de planos. O que você paga é só recarga de créditos.",
     options: [
-      { label: "Diferenças entre planos", action: "diferencas_planos" },
-      { label: "Como fazer upgrade", action: "upgrade" },
-      { label: "Formas de pagamento", action: "pagamento" },
+      { label: "Comprar créditos avulsos", action: "creditos_avulsos" },
+      { label: "Ver pacotes", action: "ver_planos" },
       { label: "Voltar ao menu", action: "menu" },
       { label: "👋 Encerrar conversa", action: "encerrar" },
     ],
   },
   creditos: {
-    message: "Sobre o sistema de créditos:\n\n• Cada ferramenta consome créditos ao ser usada\n• Planos pagos recebem créditos iniciais + créditos diários\n• FREE: 500 iniciais + 50/dia\n• ALIANÇA: 1500 iniciais + 100/dia\n• LUMEN: 3000 iniciais + 200/dia\n• PREMIUM: 6000 iniciais + 300/dia\n\nQual sua dúvida específica?",
+    message: "Sobre o sistema de créditos:\n\n• Cada ferramenta consome créditos ao ser usada\n• Toda conta é Free e usa todas as ferramentas\n• 500 créditos iniciais no cadastro (não renovam)\n• 50 créditos por dia (não acumulam)\n• Créditos avulsos comprados nunca expiram\n\nQual sua dúvida específica?",
     options: [
       { label: "Como ganhar mais créditos", action: "ganhar_creditos" },
       { label: "Créditos expiram?", action: "expiracao_creditos" },
@@ -46,7 +44,7 @@ const KNOWLEDGE_BASE = {
     ],
   },
   ferramentas: {
-    message: "A GNOSIS AI oferece 19 ferramentas poderosas:\n\n**Básicas (FREE):**\n• Hermenêutica\n• Traduções\n• Resumos\n• Enfoques de Pregação\n• Estudos Doutrinários\n• Análise Teológica Comparada\n\n**Avançadas (planos pagos):**\n• Exegese\n• Teologia Sistemática\n• Patrística\n• Linha do Tempo Teológica\n• Apologética Avançada\n• E mais 7 ferramentas!\n\nSobre qual ferramenta você tem dúvida?",
+    message: "A GNOSIS AI oferece o catálogo completo de ferramentas para toda conta Free:\n\nHermenêutica, Traduções, Resumos, Enfoques de Pregação, Estudos Doutrinários, Exegese, Teologia Sistemática, Patrística, Apologética e as demais do painel.\n\nO que limita o uso é o saldo de créditos, não o plano.",
     options: [
       { label: "Como usar uma ferramenta", action: "usar_ferramenta" },
       { label: "Custo em créditos", action: "custo_ferramentas" },
@@ -56,54 +54,53 @@ const KNOWLEDGE_BASE = {
     ],
   },
   outras: {
-    message: "Outras dúvidas frequentes:\n\n• Posso testar antes de assinar?\n• Como funciona o período de graça?\n• Posso cancelar a qualquer momento?\n• Como entrar em contato com suporte?\n\nSelecione uma opção ou digite sua dúvida:",
+    message: "Outras dúvidas frequentes:\n\n• Preciso de cartão para criar conta?\n• Como comprar créditos?\n• Como entrar em contato com suporte?\n\nSelecione uma opção ou digite sua dúvida:",
     options: [
-      { label: "Testar gratuitamente", action: "testar_gratis" },
-      { label: "Cancelamento", action: "cancelamento" },
+      { label: "Criar conta grátis", action: "testar_gratis" },
       { label: "Falar com suporte", action: "suporte" },
       { label: "Voltar ao menu", action: "menu" },
       { label: "👋 Encerrar conversa", action: "encerrar" },
     ],
   },
   diferencas_planos: {
-    message: "**Principais diferenças:**\n\n**FREE** - 6 de 19 ferramentas disponíveis, 500+50 créditos\n**ALIANÇA** - 10 de 19 ferramentas disponíveis, 1500+100 créditos\n**LUMEN** - Todas as 19 ferramentas, 3000+200 créditos\n**PREMIUM** - Todas as 19 ferramentas, 6000+300 créditos\n\nPlanos pagos incluem ferramentas avançadas como Exegese, Patrística, Linha do Tempo Teológica, Apologética Avançada e muito mais.",
+    message: "Não há mais diferença de ferramentas por plano. Toda conta Free usa o catálogo inteiro. O que muda é o saldo: 500 iniciais + 50/dia, e recarga avulsa quando precisar.",
     options: [
-      { label: "Ver página de planos", action: "ver_planos" },
+      { label: "Ver créditos avulsos", action: "ver_planos" },
       { label: "Voltar ao menu", action: "menu" },
     ],
   },
   upgrade: {
-    message: "Para fazer upgrade:\n\n1. Faça login na plataforma\n2. Acesse seu Painel de Controle\n3. Clique em 'Escolher Plano' na seção de créditos\n4. Selecione o plano desejado\n5. Complete o pagamento via Mercado Pago\n\nO upgrade é instantâneo após confirmação do pagamento!",
+    message: "Não há upgrade de plano. Para continuar gerando estudos, recarregue créditos avulsos no painel (botão Comprar créditos).",
     options: [
-      { label: "Fazer login agora", action: "login" },
+      { label: "Ver créditos avulsos", action: "ver_planos" },
       { label: "Voltar ao menu", action: "menu" },
     ],
   },
   pagamento: {
-    message: "Aceitamos pagamento via **Mercado Pago**:\n\n• Cartão de crédito\n• PIX\n• Boleto bancário\n\nTodos os pagamentos são processados de forma segura. Você receberá confirmação por email.",
+    message: "A compra de créditos avulsos aceita **Mercado Pago** e **Stripe**:\n\n• Cartão de crédito\n• PIX\n\nOs avulsos entram no saldo e nunca expiram.",
     options: [
-      { label: "Ver planos", action: "ver_planos" },
+      { label: "Ver créditos avulsos", action: "ver_planos" },
       { label: "Voltar ao menu", action: "menu" },
     ],
   },
   ganhar_creditos: {
-    message: "Formas de ganhar créditos:\n\n1. **Créditos diários** - Renovam automaticamente todo dia\n2. **Upgrade de plano** - Planos superiores têm mais créditos\n3. **Compra avulsa** - Pacotes de créditos que nunca expiram\n4. **Renovação mensal** - Créditos iniciais renovam a cada 30 dias",
+    message: "Formas de ganhar créditos:\n\n1. **Cadastro** — 500 créditos iniciais (uma vez)\n2. **Créditos diários** — 50 por dia, não acumulam\n3. **Compra avulsa** — pacotes que nunca expiram",
     options: [
       { label: "Comprar créditos avulsos", action: "creditos_avulsos" },
       { label: "Voltar ao menu", action: "menu" },
     ],
   },
   expiracao_creditos: {
-    message: "**Sobre expiração:**\n\n✅ **Créditos diários** - Renovam todo dia (não acumulam)\n✅ **Créditos iniciais** - Renovam a cada 30 dias\n✅ **Créditos avulsos** - NUNCA expiram!\n\nOs créditos avulsos são permanentes e podem ser usados a qualquer momento.",
+    message: "**Sobre expiração:**\n\n✅ **Créditos diários** — 50 por dia (não acumulam)\n✅ **Créditos iniciais** — 500 no cadastro, não renovam\n✅ **Créditos avulsos** — NUNCA expiram",
     options: [
       { label: "Comprar créditos avulsos", action: "creditos_avulsos" },
       { label: "Voltar ao menu", action: "menu" },
     ],
   },
   creditos_avulsos: {
-    message: "Pacotes de créditos avulsos disponíveis:\n\n• 500 créditos - R$ 9,90\n• 1000 créditos - R$ 18,90\n• 2500 créditos - R$ 44,90\n\n**Vantagens:**\n✅ Nunca expiram\n✅ Podem ser usados em qualquer ferramenta\n✅ Complementam seus créditos do plano",
+    message: "Pacotes de créditos avulsos:\n\n• 1.000 créditos — R$ 9,90\n• 3.000 créditos — R$ 24,90\n• 6.000 créditos — R$ 39,90\n• 10.000 créditos — R$ 69,90\n\n**Vantagens:**\n✅ Nunca expiram\n✅ Servem em qualquer ferramenta",
     options: [
-      { label: "Comprar agora", action: "login" },
+      { label: "Comprar agora", action: "ver_planos" },
       { label: "Voltar ao menu", action: "menu" },
     ],
   },
@@ -122,21 +119,21 @@ const KNOWLEDGE_BASE = {
     ],
   },
   salvar_estudos: {
-    message: "Você pode salvar até **100 estudos** no seu histórico!\n\n✅ Acesso rápido aos estudos salvos\n✅ Download em PDF a qualquer momento\n✅ Organização automática por data\n✅ Scroll completo para visualizar todos\n\nTodos os planos (incluindo FREE) têm esse benefício!",
+    message: "Você pode salvar até **100 estudos** no seu histórico!\n\n✅ Acesso rápido aos estudos salvos\n✅ Download em PDF a qualquer momento\n✅ Organização automática por data\n✅ Scroll completo para visualizar todos\n\nToda conta Free tem esse benefício.",
     options: [
       { label: "Acessar meu histórico", action: "login" },
       { label: "Voltar ao menu", action: "menu" },
     ],
   },
   testar_gratis: {
-    message: "Sim! Você pode testar gratuitamente:\n\n✅ Crie uma conta FREE (sem cartão)\n✅ Acesse 6 de 19 ferramentas disponíveis\n✅ Receba 500 créditos iniciais + 50/dia\n✅ Experimente todas as funcionalidades\n\nSem compromisso, sem cobrança automática!",
+    message: "Sim! Crie uma conta Free sem cartão:\n\n✅ Todas as ferramentas liberadas\n✅ 500 créditos iniciais + 50 por dia\n✅ Sem cobrança automática\n\nAcabou o saldo? Compre créditos avulsos.",
     options: [
       { label: "Criar conta grátis", action: "login" },
       { label: "Voltar ao menu", action: "menu" },
     ],
   },
   cancelamento: {
-    message: "Sobre cancelamento:\n\n✅ Pode cancelar a qualquer momento\n✅ Sem multas ou taxas\n✅ Acesso até o fim do período pago\n✅ Créditos avulsos permanecem disponíveis\n\nPara cancelar, acesse Configurações > Assinatura no seu painel.",
+    message: "Não há assinatura à venda no cadastro. Sua conta Free continua ativa. Créditos avulsos já comprados permanecem no saldo.",
     options: [
       { label: "Acessar painel", action: "login" },
       { label: "Voltar ao menu", action: "menu" },
@@ -150,7 +147,7 @@ const KNOWLEDGE_BASE = {
     ],
   },
   ver_planos: {
-    message: "Redirecionando você para a página de planos...",
+    message: "Redirecionando você para a página de créditos avulsos...",
     options: [],
   },
   login: {
@@ -268,7 +265,7 @@ export default function Chatbot() {
       } else if (action === "ver_planos") {
         addMessage("bot", response.message);
         setTimeout(() => {
-          window.location.href = "/#planos";
+          window.location.href = "/planos";
         }, 1000);
       } else if (action === "login") {
         addMessage("bot", response.message);
@@ -312,7 +309,7 @@ export default function Chatbot() {
     // Simple keyword matching for free-form questions
     const lowerInput = inputValue.toLowerCase();
 
-    if (lowerInput.includes("plano") || lowerInput.includes("preço") || lowerInput.includes("custo")) {
+    if (lowerInput.includes("plano") || lowerInput.includes("preço") || lowerInput.includes("custo") || lowerInput.includes("assinatura") || lowerInput.includes("upgrade")) {
       handleBotResponse("planos");
     } else if (lowerInput.includes("crédito") || lowerInput.includes("credito")) {
       handleBotResponse("creditos");
@@ -348,7 +345,7 @@ export default function Chatbot() {
     const deptMessages: Record<string, string> = {
       tecnico: "🔧 **Suporte Técnico**\n\nEntendo que você está com dificuldades técnicas. Nossa equipe de suporte técnico está pronta para ajudar com problemas de login, ferramentas, bugs ou qualquer questão técnica.\n\nPor favor, preencha os campos abaixo para que possamos entrar em contato:",
       financeiro: "💰 **Financeiro**\n\nVou te conectar com nosso departamento financeiro. Eles podem ajudar com questões sobre pagamentos, faturas, reembolsos, alteração de plano ou qualquer dúvida relacionada a cobranças.\n\nPor favor, preencha os campos abaixo para que possamos entrar em contato:",
-      comercial: "📊 **Comercial**\n\nÓtimo! Nosso time comercial está preparado para apresentar nossos planos, explicar benefícios, fazer upgrades e responder todas as suas dúvidas sobre nossos serviços.\n\nPor favor, preencha os campos abaixo para que possamos entrar em contato:",
+      comercial: "📊 **Comercial**\n\nÓtimo! Nosso time comercial pode explicar créditos avulsos, pacotes e formas de pagamento.\n\nPor favor, preencha os campos abaixo para que possamos entrar em contato:",
       outros: "📋 **Outros Assuntos**\n\nEntendi! Vou encaminhar sua solicitação para a equipe adequada. Por favor, descreva sua necessidade no formulário abaixo para que possamos direcionar corretamente.\n\nPreencha os campos abaixo:"
     };
     

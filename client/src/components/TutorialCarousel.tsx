@@ -36,14 +36,14 @@ const slides: Slide[] = [
   },
   {
     icon: <TrendingUp className="w-16 h-16 text-[#d4af37]" />,
-    title: "Upgrade de Plano 🚀",
-    description: "Precisa de mais ferramentas? Clique em 'Upgrade de Plano' no Painel de Controle. Escolha entre Aliança (10 de 19 ferramentas disponíveis), Lumen (todas as 19 ferramentas) ou Premium (todas as 19 ferramentas + mais créditos).",
-    highlight: "Planos anuais têm 16,5% de desconto!"
+    title: "Comprar créditos 🚀",
+    description: "Todas as ferramentas já estão liberadas na conta Free. Se o saldo acabar, clique em 'Comprar créditos' no Painel de Controle e recarregue avulsos.",
+    highlight: "Créditos avulsos nunca expiram."
   },
   {
     icon: <CreditCard className="w-16 h-16 text-[#d4af37]" />,
     title: "Créditos Avulsos 💳",
-    description: "Acabaram seus créditos? Sem problemas! Clique em 'Comprar Créditos' no botão que fica ao lado esquerdo no Painel de Controle, abaixo do botão 'Upgrade de Plano', ou na página principal, abaixo da parte que fala sobre os planos da GNOSIS AI. Lá você tem a opção de escolher pacotes com (500, 1.500, 2.500 ou 5.000 créditos) podendo pagar via PIX ou Cartão.",
+    description: "Acabaram seus créditos? Clique em 'Comprar créditos' no Painel de Controle. Pacotes: 1.000, 3.000, 6.000 ou 10.000 créditos, via PIX ou cartão.",
     highlight: "Créditos avulsos nunca expiram!"
   }
 ];

@@ -8,6 +8,7 @@ import {
 import { eq, desc, and, asc, sql } from "drizzle-orm";
 import { requireMobileAuth } from "./_core/mobileAuth.js";
 import { getUserCredits, useCredits, getUserActivePlan } from "./credits.js";
+import { ensureUserFreeAccess } from "./freeAccess.js";
 import { sortPlansByDisplayOrder } from "../shared/planConstants.js";
 
 export const mobileRouter = express.Router();
@@ -20,6 +21,10 @@ export const mobileRouter = express.Router();
 mobileRouter.get("/auth/me", requireMobileAuth, async (req, res) => {
   try {
     const user = (req as any).user;
+    const db = await getDb();
+    if (db) {
+      await ensureUserFreeAccess(db, user.id);
+    }
     
     // Atualiza/Valida créditos diários
     await getUserCredits(user.id);

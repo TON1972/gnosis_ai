@@ -4,19 +4,16 @@ import { useTranslation } from "react-i18next";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import CreditsPanel from "@/components/CreditsPanel";
 import NoCreditsModal from "@/components/NoCreditsModal";
 import SavedStudiesSection from "@/components/SavedStudiesSection";
 import SubscriptionWarningBanner from "@/components/SubscriptionWarningBanner";
 import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import { trpc } from "@/lib/trpc";
-import PaymentRequiredGate from "@/components/PaymentRequiredGate";
-import PlanRequiredModal from "@/components/PlanRequiredModal";
-import { usePlanAccess } from "@/hooks/usePlanAccess";
 import * as LucideIcons from "lucide-react";
-import { User, Lock, BookOpen } from "lucide-react";
+import { User, BookOpen } from "lucide-react";
 import Footer from "@/components/Footer";
 import HeaderCredits from "@/components/HeaderCredits";
+import BuyCreditsCta from "@/components/BuyCreditsCta";
 import { getLocalizedString } from "@/lib/i18nHelper";
 import "../dashboard-mobile.css";
 
@@ -28,6 +25,7 @@ interface ToolFromDb {
   category: string | null; // Usando a coluna category do banco
   icon: string | null;
   isActive: boolean;
+  creditCost?: number | null;
 }
 
 export default function Dashboard() {
@@ -35,10 +33,8 @@ export default function Dashboard() {
   const { user: authUser, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [showNoCreditsModal, setShowNoCreditsModal] = useState(false);
-  const [showPlanRequiredModal, setShowPlanRequiredModal] = useState(false);
+  const [creditsModalReason, setCreditsModalReason] = useState<"empty" | "buy">("buy");
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
-
-  const { canUseTools, isLoading: planAccessLoading } = usePlanAccess();
 
   const { data: dbUser } = trpc.auth.me.useQuery(undefined, {
     enabled: !!authUser,
@@ -50,18 +46,13 @@ export default function Dashboard() {
   }, []);
 
   const { data: activePlanResponse } = trpc.credits.activePlan.useQuery();
+  const { data: credits, isLoading: creditsLoading } = trpc.credits.balance.useQuery();
   const { data: dashboardConfig } = trpc.settings.getDashboardConfig.useQuery();
-  const currentPlanId = activePlanResponse?.plan?.id || 1;
-
-  const { data: planTools } = trpc.plans.getTools.useQuery(
-    { planId: currentPlanId },
-    { enabled: !!currentPlanId }
-  );
+  const creditBalance = credits?.total ?? 0;
+  const isLowCredits = !creditsLoading && creditBalance < 50;
 
   const { data: allToolsRaw, isLoading } = trpc.tools.list.useQuery();
   const allTools = (allToolsRaw as unknown as ToolFromDb[]) || [];
-
-  const allowedToolIds = new Set(planTools?.map(t => t.id) || []);
 
   const getCategory = (t: any) => getLocalizedString(t, 'category');
   // ✅ Categorias dinâmicas baseadas na coluna 'category' traduzida
@@ -69,26 +60,22 @@ export default function Dashboard() {
 
   const filteredTools = allTools
     .filter(tool => selectedCategory === "Todos" || getCategory(tool) === selectedCategory)
-    .sort((a, b) => {
-      const aAllowed = allowedToolIds.has(a.id);
-      const bAllowed = allowedToolIds.has(b.id);
-      
-      if (aAllowed && !bAllowed) return -1;
-      if (!aAllowed && bAllowed) return 1;
-      
-      return (getLocalizedString(a, 'displayName') || "").localeCompare(getLocalizedString(b, 'displayName') || "");
-    });
+    .sort((a, b) =>
+      (getLocalizedString(a, 'displayName') || "").localeCompare(getLocalizedString(b, 'displayName') || "")
+    );
 
-  const handleToolClick = (toolId: number) => {
-    if (!planAccessLoading && !canUseTools) {
-      setShowPlanRequiredModal(true);
+  const openCreditsModal = (reason: "empty" | "buy" = "buy") => {
+    setCreditsModalReason(reason);
+    setShowNoCreditsModal(true);
+  };
+
+  const handleToolClick = (tool: ToolFromDb) => {
+    const cost = Number(tool.creditCost ?? 50);
+    if (!creditsLoading && creditBalance < cost) {
+      openCreditsModal("empty");
       return;
     }
-    if (!allowedToolIds.has(toolId)) {
-      setShowNoCreditsModal(true);
-      return;
-    }
-    setLocation(`/tool/${toolId}`);
+    setLocation(`/tool/${tool.id}`);
   };
 
   return (
@@ -104,18 +91,15 @@ export default function Dashboard() {
             <div className="flex items-center gap-1.5 md:gap-3">
               {/* ✅ Novo display de créditos no header - Agora em primeiro */}
               <div className="mr-1 md:mr-2">
-                <HeaderCredits />
+                <HeaderCredits onClick={() => openCreditsModal(isLowCredits ? "empty" : "buy")} />
               </div>
 
-              {/* ✅ Botão de Upgrade no Header (Desktop apenas) */}
               <div className="hidden md:block mr-2">
-                <Button
-                  onClick={() => setShowNoCreditsModal(true)}
-                  className="bg-[#d4af37] text-[#1e3a5f] hover:bg-[#B8860B] font-bold shadow-md h-9 px-4 text-sm"
-                >
-                  <LucideIcons.TrendingUp className="w-4 h-4 mr-2" />
-                  {t('dashboard.upgradePlanBtn')}
-                </Button>
+                <BuyCreditsCta
+                  size="sm"
+                  urgent={isLowCredits}
+                  onClick={() => openCreditsModal(isLowCredits ? "empty" : "buy")}
+                />
               </div>
 
               {user && (user.role === 'admin' || user.role === 'super_admin' || user.role === 'editor') && (
@@ -171,13 +155,11 @@ export default function Dashboard() {
         </div>
         {/* ✅ Novo botão mobile acima do card de boas vindas */}
         <div className="block md:hidden mb-6">
-          <Button
-            onClick={() => setShowNoCreditsModal(true)}
-            className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#152944] h-14 shadow-lg font-black flex items-center justify-center gap-2 text-sm rounded-xl border-2 border-[#d4af37]"
-          >
-            <LucideIcons.TrendingUp className="w-5 h-5" />
-            {t('dashboard.upgradePlanBtn')}
-          </Button>
+          <BuyCreditsCta
+            size="full"
+            urgent={isLowCredits}
+            onClick={() => openCreditsModal(isLowCredits ? "empty" : "buy")}
+          />
         </div>
 
         <div className="bg-white/90 rounded-2xl p-6 md:p-8 shadow-xl border-4 border-[#d4af37] mb-8">
@@ -192,7 +174,7 @@ export default function Dashboard() {
               <strong>{t('dashboard.planLabel')}</strong> <span className="uppercase">{activePlanResponse?.plan?.displayName || t('dashboard.freePlan')}</span>
               {" • "}
               {/* ✅ Contagem de ferramentas restaurada */}
-              <strong>{t('dashboard.availableTools')}</strong> {allowedToolIds.size} {t('dashboard.of')} {allTools.length}
+              <strong>{t('dashboard.availableTools')}</strong> {allTools.length} {t('dashboard.of')} {allTools.length}
             </p>
           </div>
 
@@ -258,18 +240,24 @@ export default function Dashboard() {
                 </div>
               ) : filteredTools.map((tool) => {
                 const IconComponent = (LucideIcons as any)[tool.icon || ""] || BookOpen;
-                const isAvailable = allowedToolIds.has(tool.id);
 
                 return (
                   <div
                     key={tool.id}
-                    onClick={() => handleToolClick(tool.id)}
-                    className={`bg-white/90 rounded-2xl p-6 shadow-xl border-4 border-[#d4af37] transition-all duration-200 cursor-pointer ${isAvailable ? 'hover:scale-105' : 'opacity-60 cursor-not-allowed'} relative`}
+                    onClick={() => handleToolClick(tool)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleToolClick(tool);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="bg-white/90 rounded-2xl p-6 shadow-xl border-4 border-[#d4af37] transition-colors duration-200 cursor-pointer hover:border-[#1e3a5f] relative"
                   >
-                    {!isAvailable && <div className="absolute top-4 right-4"><Lock className="w-6 h-6 text-red-600" /></div>}
                     <div className="flex items-start gap-4">
-                      <div className={`p-4 rounded-lg ${isAvailable ? 'bg-[#1e3a5f]' : 'bg-gray-400'}`}>
-                        <IconComponent className={`w-8 h-8 ${isAvailable ? 'text-[#d4af37]' : 'text-gray-200'}`} />
+                      <div className="p-4 rounded-lg bg-[#1e3a5f]">
+                        <IconComponent className="w-8 h-8 text-[#d4af37]" />
                       </div>
                       <div className="flex-1">
                         <h3 className="text-xl font-bold text-[#1e3a5f] mb-2">{getLocalizedString(tool, 'displayName')}</h3>
@@ -277,11 +265,9 @@ export default function Dashboard() {
                         <span className="inline-block px-3 py-1 bg-[#FFFACD] border border-[#d4af37] rounded-full text-xs font-semibold text-[#1e3a5f]">
                           {getLocalizedString(tool, 'category') || t('dashboard.generalCategory')}
                         </span>
-                        {!isAvailable && (
-                          <p className="mt-2 text-xs text-red-600 font-semibold">
-                            {t('dashboard.availableOnHigherPlans')}
-                          </p>
-                        )}
+                        <span className="ml-2 inline-block px-3 py-1 bg-[#1e3a5f]/5 border border-[#d4af37]/40 rounded-full text-xs font-semibold text-[#8b6f47]">
+                          {Number(tool.creditCost ?? 50)} {t("home.creditsLbl")}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -292,10 +278,10 @@ export default function Dashboard() {
         </div>
       </div>
       <Footer />
-      <NoCreditsModal open={showNoCreditsModal} onClose={() => setShowNoCreditsModal(false)} />
-      <PlanRequiredModal
-        open={showPlanRequiredModal}
-        onOpenChange={setShowPlanRequiredModal}
+      <NoCreditsModal
+        open={showNoCreditsModal}
+        onClose={() => setShowNoCreditsModal(false)}
+        reason={creditsModalReason}
       />
     </div>
   );

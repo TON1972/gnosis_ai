@@ -1,12 +1,12 @@
 import { getDb } from "../server/db.js";
-import { users, credits, plans, subscriptions } from "../drizzle/schema.js";
+import { users, credits } from "../drizzle/schema.js";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { COOKIE_NAME } from "../shared/const.js";
 import { serialize } from "cookie";
 import { supabaseAdmin } from "../server/_core/supabaseAdmin.js";
-import { getBasicPlan } from "../server/planHelpers.js";
+import { ensureUserFreeAccess } from "../server/freeAccess.js";
 
 export const runtime = 'nodejs';
 
@@ -27,11 +27,6 @@ export async function POST(req: Request) {
 
         if (authError) return new Response(JSON.stringify({ success: false, message: authError.message }), { status: 400 });
 
-        const basicPlan = await getBasicPlan(db);
-        if (!basicPlan) {
-            return new Response(JSON.stringify({ success: false, message: "Plano Basic não configurado." }), { status: 500 });
-        }
-
         const hashedPassword = await bcrypt.hash(password, 10);
         const openId = `supabase:${authData.user.id}`;
 
@@ -45,52 +40,40 @@ export async function POST(req: Request) {
             role: "user"
         } as any).returning({ id: users.id, email: users.email, role: users.role });
 
-        let grantAccessWithoutPayment = false;
-        let targetPlan = basicPlan;
-        let subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        const freePlan = await ensureUserFreeAccess(db, newUser.id);
 
         if (coupon) {
             const { coupons, couponUsages } = await import("../shared/schema.js");
             const [couponRecord] = await db.select().from(coupons).where(eq(coupons.code, coupon)).limit(1);
+            const now = new Date();
+            const isExpired = couponRecord?.expirationDate && new Date(couponRecord.expirationDate) < now;
 
-            if (couponRecord?.isActive && couponRecord.grantPlanId) {
-                const [grantedPlan] = await db.select().from(plans).where(eq(plans.id, couponRecord.grantPlanId)).limit(1);
-                if (grantedPlan) {
-                    grantAccessWithoutPayment = true;
-                    targetPlan = grantedPlan;
-                    subscriptionEndDate = new Date(Date.now() + couponRecord.discountDays * 24 * 60 * 60 * 1000);
-
-                    await db.insert(couponUsages).values({
-                        couponId: couponRecord.id,
-                        userId: newUser.id,
-                        usedAt: new Date(),
-                        expiresAt: subscriptionEndDate,
-                        isExpired: false,
-                    });
-                }
+            if (!couponRecord) {
+                return new Response(JSON.stringify({ success: false, message: "Cupom não encontrado." }), { status: 400 });
             }
-        }
+            if (!couponRecord.isActive || isExpired) {
+                return new Response(JSON.stringify({ success: false, message: "Cupom inválido ou expirado." }), { status: 400 });
+            }
 
-        if (grantAccessWithoutPayment) {
-            await db.insert(subscriptions).values({
+            const couponExpiresAt = new Date(Date.now() + couponRecord.discountDays * 24 * 60 * 60 * 1000);
+            await db.insert(couponUsages).values({
+                couponId: couponRecord.id,
                 userId: newUser.id,
-                planId: targetPlan.id,
-                status: "active",
-                startDate: new Date(),
-                endDate: subscriptionEndDate
+                usedAt: new Date(),
+                expiresAt: couponExpiresAt,
+                isExpired: false,
             });
 
-            const initial = Number(targetPlan.creditsInitial ?? 0);
-            const daily = Number(targetPlan.creditsDaily ?? 0);
-
-            await db.insert(credits).values({
-                userId: newUser.id,
-                amount: (initial + daily).toString(),
-                creditsInitial: initial.toString(),
-                creditsDaily: daily.toString(),
-                type: 'initial',
-                createdAt: new Date(),
-            } as any);
+            const bonusFromCoupon = Number(couponRecord.bonusCredits ?? 0);
+            if (bonusFromCoupon > 0) {
+                const [row] = await db.select().from(credits).where(eq(credits.userId, newUser.id)).limit(1);
+                if (row) {
+                    await db.update(credits).set({
+                        creditsBonus: (Number(row.creditsBonus) || 0) + bonusFromCoupon,
+                        amount: (Number(row.amount) || 0) + bonusFromCoupon,
+                    }).where(eq(credits.id, row.id));
+                }
+            }
         }
 
         const secret = process.env.JWT_SECRET || "sua_chave_secreta_aqui";
@@ -108,11 +91,11 @@ export async function POST(req: Request) {
             maxAge: 7 * 24 * 60 * 60,
         });
 
-        console.log(`✅ Registro concluído: ${email} (checkout=${!grantAccessWithoutPayment})`);
+        console.log(`✅ Registro Free concluído: ${email}`);
         return new Response(JSON.stringify({
             success: true,
-            requiresCheckout: !grantAccessWithoutPayment,
-            basicPlanId: basicPlan.id,
+            requiresCheckout: false,
+            basicPlanId: freePlan.id,
         }), {
             status: 200,
             headers: {

@@ -1730,6 +1730,13 @@ export const appRouter = router({
           const [user] = await db.select().from(users).where(eq(users.id, ctx.user.id));
           if (!user || !user.email) throw new Error("Usuário não encontrado");
 
+          if (input.type === 'plan') {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Venda de assinatura desativada. Use créditos avulsos.",
+            });
+          }
+
           if (input.type === 'credits') {
             // Delegate to shared helper
             return await createCreditsCheckout({

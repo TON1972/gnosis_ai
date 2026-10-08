@@ -17,14 +17,14 @@ import { serveStatic, setupVite } from "./vite.js";
 import { handleMercadoPagoWebhook } from "./webhookHandler.js";
 import { handleStripeWebhook } from "../stripeWebhook.js";
 import { handleResendWebhook } from "../resendWebhook.js";
-import { getBasicPlan } from "../planHelpers.js";
 import { COOKIE_NAME } from "../../shared/const.js";
 import { getSessionCookieOptions } from "./cookies.js";
 import { mobileRouter } from "../mobileApi.js";
+import { ensureUserFreeAccess } from "../freeAccess.js";
 
 // Integração com Banco de Dados e Schema
 import { getDb } from "../db.js";
-import { users, credits, plans, subscriptions } from "../../shared/schema.js";
+import { users, credits } from "../../shared/schema.js";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
@@ -98,7 +98,7 @@ app.post("/api/register", async (req, res) => {
       });
     }
 
-    const { name, email, password, planId, affiliateCode } = parseResult.data;
+    const { name, email, password, affiliateCode } = parseResult.data;
     const db = await getDb();
 
     if (!db) return res.status(500).json({ success: false, message: "Banco indisponível." });
@@ -113,18 +113,10 @@ app.post("/api/register", async (req, res) => {
 
     if (authError) return res.status(400).json({ success: false, message: authError.message });
 
-    // 2. Plano Basic (entrada paga — sem trial gratuito)
-    const basicPlan = await getBasicPlan(db);
-    if (!basicPlan) {
-      return res.status(500).json({ success: false, message: "Plano Basic não configurado." });
-    }
-
-    // 3. Persistência no Banco Local com openId para evitar erro de constraint
     const hashedPassword = await bcrypt.hash(password, 10);
     const openId = `supabase:${authData.user.id}`;
-    const sessionId = crypto.randomUUID(); // ✅ Gerar Session ID
+    const sessionId = crypto.randomUUID();
 
-    // 2.5 Verificar Afiliado
     let referredById = null;
     if (affiliateCode) {
       const [affiliate] = await db.select({ id: users.id }).from(users).where(eq(users.affiliateCode, affiliateCode)).limit(1);
@@ -142,20 +134,12 @@ app.post("/api/register", async (req, res) => {
       openId: openId,
       loginMethod: "password",
       role: "user",
-      currentSessionId: sessionId, // ✅ Salvar Session ID
+      currentSessionId: sessionId,
       referredBy: referredById
     } as any).returning({ id: users.id, email: users.email, role: users.role });
 
-    // 4. Ativação de Assinatura e Créditos
-    console.log(`>>> DEBUG REGISTER: Processing Registration for User ${newUser.id}`);
+    const freePlan = await ensureUserFreeAccess(db, newUser.id);
 
-    let grantAccessWithoutPayment = false;
-    let targetPlanId = basicPlan.id;
-    let targetPlan = basicPlan;
-    let subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    let usedCouponId = null;
-
-    // Cupom com plano vinculado concede acesso sem checkout
     if (parseResult.data.coupon) {
       const { coupons, couponUsages } = await import("../../shared/schema.js");
       const [couponRecord] = await db
@@ -164,103 +148,57 @@ app.post("/api/register", async (req, res) => {
         .where(eq(coupons.code, parseResult.data.coupon))
         .limit(1);
 
-      if (couponRecord) {
-        const now = new Date();
-        const isExpired = couponRecord.expirationDate && new Date(couponRecord.expirationDate) < now;
-        
-        if (couponRecord.isActive && !isExpired) {
-          // Calcular data de expiração do cupom para o usuário
-          const couponExpiresAt = new Date(Date.now() + couponRecord.discountDays * 24 * 60 * 60 * 1000);
-          
-          // Se o cupom tem um plano vinculado, usar esse plano
-          if (couponRecord.grantPlanId) {
-            const [grantedPlan] = await db.select().from(plans).where(eq(plans.id, couponRecord.grantPlanId)).limit(1);
-            if (grantedPlan) {
-              grantAccessWithoutPayment = true;
-              targetPlanId = grantedPlan.id;
-              targetPlan = grantedPlan as typeof basicPlan;
-              subscriptionEndDate = couponExpiresAt;
-              console.log(`>>> DEBUG REGISTER: Coupon ${couponRecord.code} granting plan "${grantedPlan.displayName}" for ${couponRecord.discountDays} days.`);
-            }
-          } else {
-            console.log(`>>> DEBUG REGISTER: Coupon ${couponRecord.code} valid but requires paid Basic subscription at checkout.`);
-          }
-          
-          usedCouponId = couponRecord.id;
-          
-          // Guardar dados do cupom para registrar uso com expiração
-          (req as any)._couponExpiresAt = couponExpiresAt;
-          (req as any)._couponBonusCredits = couponRecord.bonusCredits || 0;
-        } else {
-          console.log(`>>> DEBUG REGISTER: Coupon ${parseResult.data.coupon} is inactive or expired.`);
-          return res.status(400).json({ success: false, message: "Cupom inválido ou expirado." });
-        }
-      } else {
-        console.log(`>>> DEBUG REGISTER: Coupon ${parseResult.data.coupon} not found.`);
+      if (!couponRecord) {
         return res.status(400).json({ success: false, message: "Cupom não encontrado." });
       }
-    }
 
-    if (grantAccessWithoutPayment && targetPlan) {
-      await db.insert(subscriptions).values({
+      const now = new Date();
+      const isExpired = couponRecord.expirationDate && new Date(couponRecord.expirationDate) < now;
+      if (!couponRecord.isActive || isExpired) {
+        return res.status(400).json({ success: false, message: "Cupom inválido ou expirado." });
+      }
+
+      const couponExpiresAt = new Date(Date.now() + couponRecord.discountDays * 24 * 60 * 60 * 1000);
+      await db.insert(couponUsages).values({
+        couponId: couponRecord.id,
         userId: newUser.id,
-        planId: targetPlanId,
-        status: "active",
-        startDate: new Date(),
-        endDate: subscriptionEndDate
+        usedAt: new Date(),
+        expiresAt: couponExpiresAt,
+        isExpired: false,
       });
 
-      if (usedCouponId) {
-        const { couponUsages } = await import("../../shared/schema.js");
-        await db.insert(couponUsages).values({
-          couponId: usedCouponId,
-          userId: newUser.id,
-          usedAt: new Date(),
-          expiresAt: (req as any)._couponExpiresAt || null,
-          isExpired: false,
-        });
-      }
-
-      const initial = Number(targetPlan.creditsInitial ?? 0);
-      const daily = Number(targetPlan.creditsDaily ?? 0);
-      const bonusFromCoupon = Number((req as any)._couponBonusCredits ?? 0);
-
-      await db.insert(credits).values({
-        userId: newUser.id,
-        amount: (initial + daily + bonusFromCoupon).toString(),
-        creditsInitial: initial.toString(),
-        creditsDaily: daily.toString(),
-        creditsBonus: bonusFromCoupon.toString(),
-        type: 'initial',
-        createdAt: new Date(),
-      } as any);
-
+      const bonusFromCoupon = Number(couponRecord.bonusCredits ?? 0);
       if (bonusFromCoupon > 0) {
-        console.log(`>>> DEBUG REGISTER: Applied ${bonusFromCoupon} bonus credits from coupon.`);
+        const [row] = await db.select().from(credits).where(eq(credits.userId, newUser.id)).limit(1);
+        if (row) {
+          await db.update(credits).set({
+            creditsBonus: (Number(row.creditsBonus) || 0) + bonusFromCoupon,
+            amount: (Number(row.amount) || 0) + bonusFromCoupon,
+          }).where(eq(credits.id, row.id));
+        }
+        console.log(`>>> DEBUG REGISTER: Applied ${bonusFromCoupon} bonus credits from coupon ${couponRecord.code}.`);
       }
     }
 
-    // ✅ 5. LOGAR AUTOMATICAMENTE: Gerar Token JWT imediatamente
     const token = jwt.sign(
-      { userId: newUser.id, email: newUser.email, role: newUser.role, sessionId }, // ✅ Incluir Session ID
+      { userId: newUser.id, email: newUser.email, role: newUser.role, sessionId },
       process.env.JWT_SECRET || "sua_chave_secreta_aqui",
       { expiresIn: "7d" }
     );
 
-    // Definir o cookie de sessão
     const cookieOptions = getSessionCookieOptions(req);
     res.cookie(COOKIE_NAME, token, {
       ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    console.log(`✅ Registro e Login Automático concluídos: ${email}`);
-    return res.status(200).json({ 
-      success: true, 
-      token, 
+    console.log(`✅ Registro Free e login automático: ${email}`);
+    return res.status(200).json({
+      success: true,
+      token,
       user: { id: newUser.id, email: newUser.email, role: newUser.role },
-      requiresCheckout: !grantAccessWithoutPayment,
-      basicPlanId: basicPlan.id,
+      requiresCheckout: false,
+      basicPlanId: freePlan.id,
     });
 
   } catch (error: any) {
@@ -292,6 +230,12 @@ app.post("/api/login", async (req, res) => {
     const user = userResults[0];
 
     if (!user) return res.status(404).json({ success: false, message: "Usuário não sincronizado." });
+
+    try {
+      await ensureUserFreeAccess(db, user.id);
+    } catch (err) {
+      console.error("[login] ensureUserFreeAccess failed:", err);
+    }
 
     // ✅ NOVO: Gerar e salvar Session ID para invalidar logins anteriores
     const sessionId = crypto.randomUUID();

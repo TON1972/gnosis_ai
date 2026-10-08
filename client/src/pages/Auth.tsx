@@ -1,30 +1,23 @@
-import { useState, useEffect, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, CreditCard, Loader2, ShieldCheck, Sparkles } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { toast } from "sonner";
-import { trpc } from "@/lib/trpc";
-import { getLocalizedString } from "@/lib/i18nHelper";
-import { getPlanPriceDisplay } from "@shared/planPricing";
-import { isBasicPlan } from "@/lib/planHelpers";
-import { BASIC_MIGRATION_SESSION_DISMISS_KEY, NEW_USER_TRIAL_DAYS } from "@shared/planConstants";
+import { BASIC_MIGRATION_SESSION_DISMISS_KEY } from "@shared/planConstants";
 import PwaInstallButton from "@/components/PwaInstallButton";
 
 const inputClass =
   "border-[#d4af37]/40 bg-white h-11 focus-visible:ring-[#d4af37]/50 focus-visible:border-[#d4af37]";
 
 export default function Auth() {
-  const { t, i18n } = useTranslation();
-  const [, setLocation] = useLocation();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly");
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -34,47 +27,11 @@ export default function Auth() {
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
   const [registerCoupon, setRegisterCoupon] = useState("");
-  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
-
-  const { data: plansList, isLoading: plansLoading } = trpc.plans.list.useQuery(undefined, {
-    enabled: activeTab === "register",
-  });
-
-  const basicPlan = plansList?.find((p) => isBasicPlan(p.name));
-
-  useEffect(() => {
-    if (!plansList?.length || selectedPlanId) return;
-    const params = new URLSearchParams(window.location.search);
-    const planParam = Number(params.get("plan") || 0);
-    if (planParam > 0 && plansList.some((p) => p.id === planParam)) {
-      setSelectedPlanId(planParam);
-      return;
-    }
-    const basic = plansList.find((p) => isBasicPlan(p.name));
-    if (basic) setSelectedPlanId(basic.id);
-  }, [plansList, selectedPlanId]);
-
-  const createCheckout = trpc.payments.createCheckoutSession.useMutation({
-    onSuccess: (data) => {
-      if (data.init_point) {
-        window.location.href = data.init_point;
-      }
-    },
-    onError: () => {
-      toast.error(t("auth.checkoutError", "Erro ao iniciar pagamento. Tente novamente."));
-      setLocation("/dashboard?requirePayment=1");
-    },
-  });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get("tab");
     if (tabParam === "register") setActiveTab("register");
-
-    const billingParam = params.get("billing");
-    if (billingParam === "monthly" || billingParam === "yearly") {
-      setBillingPeriod(billingParam);
-    }
 
     const affiliateParam = params.get("ref") || params.get("aff");
     if (affiliateParam) {
@@ -83,10 +40,6 @@ export default function Auth() {
   }, []);
 
   const handleGoogleLogin = () => {
-    if (activeTab === "register" && selectedPlanId) {
-      document.cookie = `pending_plan_id=${selectedPlanId}; path=/; max-age=3600; SameSite=Lax`;
-      document.cookie = `pending_billing_period=${billingPeriod}; path=/; max-age=3600; SameSite=Lax`;
-    }
     window.location.href = "/api/oauth/google";
   };
 
@@ -113,24 +66,6 @@ export default function Auth() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const startPlanCheckout = async (planId: number) => {
-    const plan = plansList?.find((p) => p.id === planId) ?? basicPlan;
-    if (!plan) {
-      window.location.href = "/dashboard?requirePayment=1";
-      return;
-    }
-    const priceDisplay = getPlanPriceDisplay(plan, billingPeriod, i18n.language);
-    await createCheckout.mutateAsync({
-      type: "plan",
-      id: String(plan.id),
-      price: priceDisplay.amountCents / 100,
-      title: `Plano ${getLocalizedString(plan, "displayName")} - Gnosis AI`,
-      billingPeriod,
-      language: i18n.language,
-      startTrial: true,
-    });
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -174,22 +109,13 @@ export default function Auth() {
       const data = await response.json();
 
       if (data.success) {
-        if (data.requiresCheckout) {
-          toast.success(
-            t("auth.registerCheckoutTrial", "Conta criada! Cadastre seu cartão para iniciar o trial de {{days}} dias.", {
-              days: NEW_USER_TRIAL_DAYS,
-            }),
-          );
-          const planId = selectedPlanId ?? data.basicPlanId ?? basicPlan?.id;
-          if (planId) {
-            await startPlanCheckout(planId);
-          } else {
-            window.location.href = "/dashboard?requirePayment=1";
-          }
-        } else {
-          toast.success(t("auth.registerSuccess"));
-          window.location.href = "/dashboard";
-        }
+        toast.success(
+          t(
+            "auth.registerSuccessFree",
+            "Conta criada. Você tem 500 créditos iniciais + 50 por dia. Todas as ferramentas estão liberadas.",
+          ),
+        );
+        window.location.href = "/dashboard";
       } else {
         toast.error(data.message || t("auth.registerError"));
       }
@@ -200,22 +126,6 @@ export default function Auth() {
       setLoading(false);
     }
   };
-
-  const selectedPlan = plansList?.find((p) => p.id === selectedPlanId) ?? basicPlan;
-  const selectedPrice = selectedPlan
-    ? getPlanPriceDisplay(selectedPlan, billingPeriod, i18n.language)
-    : null;
-
-  const trialBenefits = useMemo(
-    () => [
-      t("auth.trialBenefit1", "Acesso completo às ferramentas do plano escolhido"),
-      t("auth.trialBenefit2", "Cancele antes do fim do trial sem cobrança"),
-      t("auth.trialBenefit3", "Pagamento seguro via Stripe"),
-    ],
-    [t],
-  );
-
-  const isRegister = activeTab === "register";
 
   return (
     <div className="min-h-screen bg-[#1e3a5f] relative flex items-center justify-center p-4 py-8 overflow-hidden">
@@ -229,17 +139,13 @@ export default function Auth() {
       />
       <div className="pointer-events-none absolute inset-0 opacity-[0.04] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+PHBhdGggZD0iTTAgMGg2MHY2MEgweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZDRhZjM3IiBzdHJva2Utd2lkdGg9IjAuNSIvPjwvc3ZnPg==')]" aria-hidden />
 
-      <Card
-        className={`relative z-10 w-full border-[#d4af37]/40 bg-[#FFFACD] shadow-2xl shadow-black/20 transition-[max-width] duration-300 ${
-          isRegister ? "max-w-5xl" : "max-w-md"
-        }`}
-      >
-        <CardHeader className={`text-center ${isRegister ? "pb-4 lg:pb-2" : "pb-2"}`}>
+      <Card className="relative z-10 w-full max-w-md border-[#d4af37]/40 bg-[#FFFACD] shadow-2xl shadow-black/20">
+        <CardHeader className="text-center pb-2">
           <div className="flex justify-center mb-3">
             <img
               src={APP_LOGO}
               alt={APP_TITLE}
-              className={`object-contain drop-shadow-sm ${isRegister ? "h-20 w-20 lg:h-24 lg:w-24" : "h-28 w-28"}`}
+              className="object-contain drop-shadow-sm h-28 w-28"
               loading="lazy"
             />
           </div>
@@ -332,313 +238,93 @@ export default function Auth() {
               </form>
             </TabsContent>
 
-            <TabsContent value="register" className="mt-0">
-              <form onSubmit={handleRegister}>
-                <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-10">
-                  {/* Coluna esquerda: card unificado de planos */}
-                  <div className="lg:sticky lg:top-4 lg:self-start">
-                    <section
-                      className="rounded-2xl border-2 border-[#d4af37]/45 bg-white shadow-md overflow-hidden"
-                      aria-labelledby="register-plan-heading"
-                    >
-                      <header className="bg-gradient-to-r from-[#1e3a5f] via-[#243f66] to-[#2a4a6f] px-4 py-4 sm:px-5">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <h2
-                              id="register-plan-heading"
-                              className="text-base sm:text-lg font-bold text-[#FFFACD] leading-snug"
-                            >
-                              {t("auth.choosePlanRequired", "Escolha seu plano — trial de {{days}} dias", {
-                                days: NEW_USER_TRIAL_DAYS,
-                              })}
-                            </h2>
-                            <p className="text-xs sm:text-sm text-[#FFFACD]/75 mt-1 leading-relaxed">
-                              {t(
-                                "auth.trialCardRequired",
-                                "Cartão obrigatório. Cobrança automática após o trial.",
-                              )}
-                            </p>
-                          </div>
-                          <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/40 px-2.5 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-[#d4af37]">
-                            <Sparkles className="h-3.5 w-3.5" aria-hidden />
-                            {NEW_USER_TRIAL_DAYS}d
-                          </span>
-                        </div>
-                      </header>
-
-                      <div className="p-4 sm:p-5 space-y-4 bg-gradient-to-b from-white to-[#FFFACD]/40">
-                        <div
-                          className="relative grid grid-cols-2 rounded-xl bg-[#1e3a5f]/6 p-1 border border-[#d4af37]/25"
-                          role="group"
-                          aria-label={t("auth.billingToggle", "Período de cobrança")}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => setBillingPeriod("monthly")}
-                            aria-pressed={billingPeriod === "monthly"}
-                            className={`relative z-10 rounded-lg py-2.5 text-sm font-bold transition-all duration-200 ${
-                              billingPeriod === "monthly"
-                                ? "bg-[#1e3a5f] text-[#d4af37] shadow-sm"
-                                : "text-[#1e3a5f]/70 hover:text-[#1e3a5f]"
-                            }`}
-                          >
-                            {t("plans.monthly", "Mensal")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setBillingPeriod("yearly")}
-                            aria-pressed={billingPeriod === "yearly"}
-                            className={`relative z-10 rounded-lg py-2.5 text-sm font-bold transition-all duration-200 ${
-                              billingPeriod === "yearly"
-                                ? "bg-[#1e3a5f] text-[#d4af37] shadow-sm"
-                                : "text-[#1e3a5f]/70 hover:text-[#1e3a5f]"
-                            }`}
-                          >
-                            {t("plans.yearly", "Anual")}
-                          </button>
-                          {billingPeriod === "yearly" && (
-                            <span className="pointer-events-none absolute -top-2 right-2 rounded-full bg-[#d4af37] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#1e3a5f] shadow-sm">
-                              {t("auth.yearlySaveHint", "Melhor valor")}
-                            </span>
-                          )}
-                        </div>
-
-                        <div
-                          role="radiogroup"
-                          aria-label={t("auth.planOptions", "Planos disponíveis")}
-                          className="space-y-2"
-                        >
-                          {plansLoading &&
-                            Array.from({ length: 3 }).map((_, i) => (
-                              <div
-                                key={i}
-                                className="h-[3.25rem] rounded-xl border border-[#d4af37]/15 bg-[#1e3a5f]/5 animate-pulse"
-                              />
-                            ))}
-
-                          {plansList?.map((plan) => {
-                            const isSelected = selectedPlanId === plan.id;
-                            const planPrice = getPlanPriceDisplay(plan, billingPeriod, i18n.language);
-                            const toolCount = Array.isArray(plan.toolIds) ? plan.toolIds.length : 0;
-
-                            return (
-                              <button
-                                key={plan.id}
-                                type="button"
-                                role="radio"
-                                aria-checked={isSelected}
-                                onClick={() => setSelectedPlanId(plan.id)}
-                                className={`group flex w-full items-center gap-3 rounded-xl border-2 px-3 py-2.5 sm:px-4 sm:py-3 text-left transition-all duration-200 cursor-pointer min-h-[3.25rem] ${
-                                  isSelected
-                                    ? "border-[#d4af37] bg-[#1e3a5f] text-white shadow-md"
-                                    : "border-[#d4af37]/25 bg-white hover:border-[#d4af37]/55 hover:bg-[#FFFACD]/60"
-                                }`}
-                              >
-                                <span
-                                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                                    isSelected
-                                      ? "border-[#d4af37] bg-[#d4af37]"
-                                      : "border-[#d4af37]/50 bg-white group-hover:border-[#d4af37]"
-                                  }`}
-                                  aria-hidden
-                                >
-                                  {isSelected && <Check className="h-3 w-3 text-[#1e3a5f] stroke-[3]" />}
-                                </span>
-
-                                <span className="flex-1 min-w-0">
-                                  <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                                    <span className="font-bold text-sm sm:text-base leading-tight truncate">
-                                      {getLocalizedString(plan, "displayName")}
-                                    </span>
-                                    {isBasicPlan(plan.name) && (
-                                      <span
-                                        className={`text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded ${
-                                          isSelected
-                                            ? "bg-[#d4af37] text-[#1e3a5f]"
-                                            : "bg-[#d4af37]/15 text-[#8b6f47]"
-                                        }`}
-                                      >
-                                        {t("auth.recommendedPlan", "Recomendado")}
-                                      </span>
-                                    )}
-                                  </span>
-                                  {toolCount > 0 && (
-                                    <span
-                                      className={`block text-[11px] mt-0.5 ${
-                                        isSelected ? "text-[#FFFACD]/70" : "text-[#8b6f47]"
-                                      }`}
-                                    >
-                                      {t("auth.planToolsCount", "{{count}} ferramentas", { count: toolCount })}
-                                    </span>
-                                  )}
-                                </span>
-
-                                <span className="shrink-0 text-right leading-tight">
-                                  <span
-                                    className={`block text-sm sm:text-base font-bold tabular-nums ${
-                                      isSelected ? "text-[#d4af37]" : "text-[#1e3a5f]"
-                                    }`}
-                                  >
-                                    {planPrice.main}
-                                    <span className="text-xs font-semibold">{planPrice.periodLabel}</span>
-                                  </span>
-                                  {planPrice.sublabel && (
-                                    <span
-                                      className={`block text-[10px] mt-0.5 tabular-nums ${
-                                        isSelected ? "text-[#FFFACD]/65" : "text-[#8b6f47]"
-                                      }`}
-                                    >
-                                      {planPrice.sublabel}
-                                    </span>
-                                  )}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {selectedPlan && selectedPrice && (
-                          <footer className="rounded-xl border border-[#d4af37]/35 bg-[#1e3a5f]/5 px-3 py-3 sm:px-4 flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="text-[10px] uppercase tracking-wider font-bold text-[#8b6f47]">
-                                {t("auth.afterTrialPrice", "Após o trial")}
-                              </p>
-                              <p className="text-sm font-semibold text-[#1e3a5f] truncate">
-                                {getLocalizedString(selectedPlan, "displayName")}
-                                {" · "}
-                                {billingPeriod === "yearly"
-                                  ? t("plans.yearly", "Anual")
-                                  : t("plans.monthly", "Mensal")}
-                              </p>
-                            </div>
-                            <p className="text-lg sm:text-xl font-bold text-[#1e3a5f] tabular-nums shrink-0">
-                              {selectedPrice.main}
-                              <span className="text-xs font-medium text-[#8b6f47]">{selectedPrice.periodLabel}</span>
-                            </p>
-                          </footer>
-                        )}
-                      </div>
-                    </section>
-
-                    <ul className="mt-4 space-y-2 hidden sm:block">
-                      {trialBenefits.map((benefit) => (
-                        <li key={benefit} className="flex items-start gap-2.5 text-sm text-[#1e3a5f]">
-                          <ShieldCheck className="h-4 w-4 text-[#d4af37] shrink-0 mt-0.5" aria-hidden />
-                          <span>{benefit}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Coluna direita: dados da conta */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-1 border-b border-[#d4af37]/25">
-                      <CreditCard className="h-4 w-4 text-[#8b6f47]" aria-hidden />
-                      <h2 className="text-sm font-bold uppercase tracking-wider text-[#1e3a5f]">
-                        {t("auth.accountDetails", "Seus dados")}
-                      </h2>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="register-name" className="text-[#1e3a5f] font-semibold">
-                        {t("auth.nameLabel")}
-                      </Label>
-                      <Input
-                        id="register-name"
-                        autoComplete="name"
-                        value={registerName}
-                        onChange={(e) => setRegisterName(e.target.value)}
-                        className={inputClass}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="register-email" className="text-[#1e3a5f] font-semibold">
-                        {t("auth.emailLabel")}
-                      </Label>
-                      <Input
-                        id="register-email"
-                        type="email"
-                        autoComplete="email"
-                        value={registerEmail}
-                        onChange={(e) => setRegisterEmail(e.target.value)}
-                        className={inputClass}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="register-password" className="text-[#1e3a5f] font-semibold">
-                          {t("auth.passwordLabel")}
-                        </Label>
-                        <Input
-                          id="register-password"
-                          type="password"
-                          autoComplete="new-password"
-                          value={registerPassword}
-                          onChange={(e) => setRegisterPassword(e.target.value)}
-                          className={inputClass}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="register-confirm" className="text-[#1e3a5f] font-semibold">
-                          {t("auth.confirmLabel")}
-                        </Label>
-                        <Input
-                          id="register-confirm"
-                          type="password"
-                          autoComplete="new-password"
-                          value={registerConfirmPassword}
-                          onChange={(e) => setRegisterConfirmPassword(e.target.value)}
-                          className={inputClass}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="register-coupon" className="text-[#1e3a5f] font-semibold">
-                        {t("auth.couponLabel")}{" "}
-                        <span className="text-[#8b6f47] font-normal text-xs">
-                          ({t("auth.optional", "opcional")})
-                        </span>
-                      </Label>
-                      <Input
-                        id="register-coupon"
-                        placeholder={t("auth.couponPlaceholder")}
-                        value={registerCoupon}
-                        onChange={(e) => setRegisterCoupon(e.target.value.toUpperCase())}
-                        className={`${inputClass} uppercase font-semibold`}
-                      />
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={loading || createCheckout.isPending || !selectedPlanId}
-                      className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] min-h-12 h-12 font-bold shadow-lg transition-colors mt-2"
-                    >
-                      {loading || createCheckout.isPending ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        t("auth.submitRegisterTrial", "Criar conta e iniciar trial")
-                      )}
-                    </Button>
-
-                    <p className="text-xs text-center text-[#8b6f47] leading-relaxed px-1">
-                      {t(
-                        "auth.trialBillingNote",
-                        "Após {{days}} dias, a cobrança do plano escolhido será feita automaticamente.",
-                        { days: NEW_USER_TRIAL_DAYS },
-                      )}
-                    </p>
-                  </div>
+            <TabsContent value="register" className="space-y-4 mt-0">
+              <form onSubmit={handleRegister} className="space-y-4">
+                <p className="text-sm text-[#1e3a5f] bg-white/70 border border-[#d4af37]/40 rounded-lg p-3 leading-relaxed">
+                  {t(
+                    "auth.freeAccessNote",
+                    "Conta Free: todas as ferramentas. 500 créditos no cadastro + 50 por dia. Acabou o saldo? Compre créditos avulsos. Os avulsos não vencem.",
+                  )}
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="register-name" className="text-[#1e3a5f] font-semibold">
+                    {t("auth.nameLabel")}
+                  </Label>
+                  <Input
+                    id="register-name"
+                    autoComplete="name"
+                    value={registerName}
+                    onChange={(e) => setRegisterName(e.target.value)}
+                    className={inputClass}
+                  />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-email" className="text-[#1e3a5f] font-semibold">
+                    {t("auth.emailLabel")}
+                  </Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    autoComplete="email"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-password" className="text-[#1e3a5f] font-semibold">
+                    {t("auth.passwordLabel")}
+                  </Label>
+                  <Input
+                    id="register-password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-confirm" className="text-[#1e3a5f] font-semibold">
+                    {t("auth.confirmLabel")}
+                  </Label>
+                  <Input
+                    id="register-confirm"
+                    type="password"
+                    autoComplete="new-password"
+                    value={registerConfirmPassword}
+                    onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-coupon" className="text-[#1e3a5f] font-semibold">
+                    {t("auth.couponLabel")}{" "}
+                    <span className="text-[#8b6f47] font-normal text-xs">
+                      ({t("auth.optional", "opcional")})
+                    </span>
+                  </Label>
+                  <Input
+                    id="register-coupon"
+                    placeholder={t("auth.couponPlaceholder")}
+                    value={registerCoupon}
+                    onChange={(e) => setRegisterCoupon(e.target.value.toUpperCase())}
+                    className={`${inputClass} uppercase font-semibold`}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#1e3a5f] text-[#d4af37] hover:bg-[#2a4a7f] h-12 font-bold shadow-lg transition-colors"
+                >
+                  {loading ? <Loader2 className="animate-spin" /> : t("auth.submitRegister")}
+                </Button>
               </form>
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
 
-      {/* Instalar app — visível no mobile (iOS não tem botão nativo no browser) */}
       <div className="fixed bottom-[5.5rem] left-4 right-4 z-20 mx-auto max-w-md sm:max-w-lg pointer-events-none">
         <div className="pointer-events-auto">
           <PwaInstallButton />

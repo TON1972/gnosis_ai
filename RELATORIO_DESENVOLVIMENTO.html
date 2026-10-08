@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GNOSIS AI — Relatório de Desenvolvimento</title>
+  <style>
+    :root {
+      --navy: #1e3a5f;
+      --gold: #b8942a;
+      --text: #1c2430;
+      --muted: #5c6570;
+      --line: #e4e0d6;
+      --bg: #fafaf7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--bg);
+      font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 40px 24px 80px; }
+    header { border-bottom: 2px solid var(--navy); padding-bottom: 20px; margin-bottom: 28px; }
+    .kicker { color: var(--gold); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 8px; }
+    h1 { font-size: 28px; line-height: 1.2; margin: 0 0 8px; color: var(--navy); font-weight: 700; }
+    .sub { color: var(--muted); margin: 0; }
+    .totals {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin: 24px 0 8px;
+    }
+    .totals div {
+      border: 1px solid var(--line);
+      padding: 14px 16px;
+      background: #fff;
+    }
+    .totals b { display: block; font-size: 22px; color: var(--navy); }
+    .totals span { color: var(--muted); font-size: 13px; }
+    h2 {
+      font-size: 18px;
+      color: var(--navy);
+      margin: 36px 0 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+    }
+    h3 { font-size: 15px; margin: 20px 0 8px; }
+    p, li { color: #2a3340; }
+    p { margin: 0 0 10px; }
+    ul, ol { margin: 0 0 12px; padding-left: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0 16px; background: #fff; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: 12px; color: var(--muted); font-weight: 600; background: #f3f1ea; }
+    td.n, th.n { text-align: right; white-space: nowrap; }
+    .muted { color: var(--muted); font-size: 14px; }
+    .actions { margin-top: 8px; }
+    .actions button {
+      border: 1px solid var(--navy);
+      background: var(--navy);
+      color: #fff;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    footer { margin-top: 40px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+    @media (max-width: 640px) {
+      .totals { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .actions { display: none; }
+      body { background: #fff; }
+      .wrap { padding: 0; max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="kicker">GNOSIS AI · 31 de agosto de 2026</p>
+      <h1>Relatório de desenvolvimento</h1>
+      <p class="sub">Plataforma de estudos bíblicos com IA. Valor-hora: R$ 60,00. Período: out/2025 a ago/2026.</p>
+      <div class="totals">
+        <div><b>856 h</b><span>Esforço estimado</span></div>
+        <div><b>R$ 51.360</b><span>Investimento total</span></div>
+        <div><b>163</b><span>Commits no Git</span></div>
+      </div>
+      <p class="actions"><button type="button" onclick="window.print()">Imprimir / salvar PDF</button></p>
+    </header>
+
+    <h2>1. O que foi entregue</h2>
+    <p>SaaS completo: cadastro, planos, créditos, 18 ferramentas de IA, estudos salvos, chat de continuidade, Stripe e Mercado Pago, suporte, e-mail marketing, afiliados, cupons, PWA e API para app nativo. O admin opera o negócio pelo painel, sem alterar código.</p>
+    <ul>
+      <li>16 rotas de aplicação + 12 módulos no admin</li>
+      <li>25+ tabelas no PostgreSQL (Supabase)</li>
+      <li>~80 endpoints tRPC + REST na Vercel</li>
+      <li>Idiomas PT/EN (preços também em USD e EUR)</li>
+    </ul>
+
+    <h2>2. Como o aluno usa</h2>
+    <ol>
+      <li>Cadastra, escolhe o plano (trial de 20 dias) e paga.</li>
+      <li>Entra no Painel, vê créditos e as ferramentas do plano.</li>
+      <li>Gera o estudo com IA. Créditos saem conforme o tamanho do texto.</li>
+      <li>Salva, continua em chat, copia, baixa PDF e compartilha.</li>
+      <li>Sem crédito: compra avulsa ou faz upgrade. Assinatura atrasada avisa e bloqueia após 72 h.</li>
+      <li>Dúvidas: chat Rebeca ou ticket com a equipe.</li>
+    </ol>
+
+    <h2>3. Telas</h2>
+    <h3>Públicas</h3>
+    <table>
+      <thead><tr><th>Rota</th><th>Tela</th></tr></thead>
+      <tbody>
+        <tr><td>/ e /auth</td><td>Login, cadastro, plano, cupom, afiliado, checkout</td></tr>
+        <tr><td>/planos</td><td>Preços e ferramentas por plano</td></tr>
+        <tr><td>/sobre e /faq</td><td>Institucional e 30+ perguntas</td></tr>
+        <tr><td>/ticket/:id</td><td>Cliente responde o chamado</td></tr>
+      </tbody>
+    </table>
+    <h3>Aluno</h3>
+    <table>
+      <thead><tr><th>Rota</th><th>Tela</th></tr></thead>
+      <tbody>
+        <tr><td>/dashboard</td><td>Créditos, estudos, grade de ferramentas</td></tr>
+        <tr><td>/tool/:id</td><td>Gerar estudo, PDF, compartilhar</td></tr>
+        <tr><td>/study/:id</td><td>Continuar o estudo em chat</td></tr>
+        <tr><td>/perfil</td><td>Plano, uso, portal Stripe, notificações</td></tr>
+        <tr><td>/afiliados</td><td>Link de indicação e comissões</td></tr>
+      </tbody>
+    </table>
+    <h3>Admin</h3>
+    <p>Visão geral, financeiro, usuários, inadimplentes, tickets, marketing, automações, catálogo de ferramentas, planos, vídeo do painel, afiliados, cupons, papéis (user / editor / admin / super_admin).</p>
+
+    <h2>4. Planos e ferramentas</h2>
+    <table>
+      <thead><tr><th>Plano</th><th class="n">Ferramentas</th><th class="n">Créditos</th><th class="n">/dia</th><th class="n">Mensal</th></tr></thead>
+      <tbody>
+        <tr><td>Basic</td><td class="n">6</td><td class="n">500</td><td class="n">50</td><td class="n">R$ 4,97</td></tr>
+        <tr><td>Aliança</td><td class="n">10</td><td class="n">1.500</td><td class="n">150</td><td class="n">R$ 19,98</td></tr>
+        <tr><td>Lumen</td><td class="n">18</td><td class="n">3.000</td><td class="n">300</td><td class="n">R$ 36,98</td></tr>
+        <tr><td>Premium</td><td class="n">18</td><td class="n">8.000</td><td class="n">400</td><td class="n">R$ 68,98</td></tr>
+      </tbody>
+    </table>
+    <p>Créditos: diários → iniciais → avulsos. Anual com ~16,5% de desconto.</p>
+    <p><strong>Ferramentas:</strong> Hermenêutica, Exegese, Traduções, Resumos, Esboços de Pregação, Estudos Doutrinários, Análise Teológica Comparada, Teologia Sistemática, Religiões Comparadas, Contextualização Brasileira, Referências ABNT/APA, Linguagem Ministerial, Redação Acadêmica, Dados Demográficos, Transcrição, Patrística, Linha do Tempo Teológica, Apologética Avançada.</p>
+
+    <h2>5. Stack</h2>
+    <p>React 19, TypeScript, Vite, tRPC, Node, PostgreSQL/Supabase, Drizzle, Vercel, Stripe, Mercado Pago, Resend, PWA, i18next.</p>
+
+    <h2>6. Investimento (R$ 60,00 / hora)</h2>
+    <table>
+      <thead><tr><th>Módulo</th><th class="n">Horas</th><th class="n">Valor</th></tr></thead>
+      <tbody>
+        <tr><td>Arquitetura e banco</td><td class="n">56</td><td class="n">R$ 3.360</td></tr>
+        <tr><td>Autenticação</td><td class="n">44</td><td class="n">R$ 2.640</td></tr>
+        <tr><td>Páginas públicas</td><td class="n">52</td><td class="n">R$ 3.120</td></tr>
+        <tr><td>Painel, perfil e créditos (UI)</td><td class="n">40</td><td class="n">R$ 2.400</td></tr>
+        <tr><td>Motor de IA e catálogo</td><td class="n">80</td><td class="n">R$ 4.800</td></tr>
+        <tr><td>Estudos e chat</td><td class="n">32</td><td class="n">R$ 1.920</td></tr>
+        <tr><td>Mercado Pago</td><td class="n">44</td><td class="n">R$ 2.640</td></tr>
+        <tr><td>Stripe</td><td class="n">52</td><td class="n">R$ 3.120</td></tr>
+        <tr><td>Ciclo da assinatura</td><td class="n">32</td><td class="n">R$ 1.920</td></tr>
+        <tr><td>Painel administrativo</td><td class="n">88</td><td class="n">R$ 5.280</td></tr>
+        <tr><td>Tickets e Rebeca</td><td class="n">36</td><td class="n">R$ 2.160</td></tr>
+        <tr><td>Marketing e automações</td><td class="n">48</td><td class="n">R$ 2.880</td></tr>
+        <tr><td>Afiliados e cupons</td><td class="n">36</td><td class="n">R$ 2.160</td></tr>
+        <tr><td>Internacionalização</td><td class="n">32</td><td class="n">R$ 1.920</td></tr>
+        <tr><td>PWA, push e API mobile</td><td class="n">44</td><td class="n">R$ 2.640</td></tr>
+        <tr><td>Layout mobile</td><td class="n">36</td><td class="n">R$ 2.160</td></tr>
+        <tr><td>Deploy Vercel</td><td class="n">48</td><td class="n">R$ 2.880</td></tr>
+        <tr><td>QA e iterações</td><td class="n">56</td><td class="n">R$ 3.360</td></tr>
+        <tr><td><strong>Total</strong></td><td class="n"><strong>856</strong></td><td class="n"><strong>R$ 51.360</strong></td></tr>
+      </tbody>
+    </table>
+    <p class="muted">Estimativa por módulo com base no código, no backlog e no Git. Inclui análise, implementação, ajustes e correção em produção. Não inclui tokens de IA nem taxas dos gateways.</p>
+
+    <h2>7. Por frente</h2>
+    <table>
+      <thead><tr><th>Frente</th><th class="n">Horas</th><th class="n">Valor</th><th class="n">%</th></tr></thead>
+      <tbody>
+        <tr><td>Plataforma (auth, i18n, PWA, API, deploy)</td><td class="n">236</td><td class="n">R$ 14.160</td><td class="n">28%</td></tr>
+        <tr><td>Produto do aluno</td><td class="n">228</td><td class="n">R$ 13.680</td><td class="n">27%</td></tr>
+        <tr><td>Operação (admin, tickets, marketing)</td><td class="n">172</td><td class="n">R$ 10.320</td><td class="n">20%</td></tr>
+        <tr><td>Monetização (planos, Stripe, MP, cupom, afiliado)</td><td class="n">164</td><td class="n">R$ 9.840</td><td class="n">19%</td></tr>
+        <tr><td>Qualidade e iteração</td><td class="n">56</td><td class="n">R$ 3.360</td><td class="n">7%</td></tr>
+      </tbody>
+    </table>
+
+    <h2>8. Pendências</h2>
+    <ul>
+      <li>Reembolso além do portal da Stripe.</li>
+      <li>Algumas copies da Rebeca ainda citam o plano Free (hoje é Basic).</li>
+      <li>A home institucional existe, mas a rota / abre o cadastro.</li>
+      <li>Espanhol no banco; a interface usa PT e EN.</li>
+      <li>Transcrição de mídia depende do serviço de áudio/vídeo configurado.</li>
+    </ul>
+
+    <h2>9. Demo (ordem)</h2>
+    <ol>
+      <li>/auth → /planos → /faq e Rebeca</li>
+      <li>/dashboard → ferramenta → estudo em chat → /perfil</li>
+      <li>/admin (financeiro, usuários, tickets, catálogo, marketing)</li>
+      <li>PWA no celular e checkout (sandbox)</li>
+    </ol>
+
+    <footer>
+      Fonte: código, schema, rotas, backlog e Git do repositório gnosis_ai. Sem chaves, tokens ou dados pessoais.
+      Texto completo: RELATORIO_DESENVOLVIMENTO.md
+    </footer>
+  </div>
+</body>
+</html>

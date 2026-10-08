@@ -8,8 +8,9 @@ import { Card } from "@/components/ui/card";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import NoCreditsModal from "@/components/NoCreditsModal";
+import BuyCreditsCta from "@/components/BuyCreditsCta";
 import PaymentHistory from "@/components/PaymentHistory";
-import { User, CreditCard, Package, Zap, Calendar, Gift, Info, TrendingUp, Settings } from "lucide-react";
+import { User, CreditCard, Zap, Calendar, Gift, Info, TrendingUp, Settings } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
@@ -105,13 +106,12 @@ export default function PerfilPage() {
           {/* Botões de Ação */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             {/* Botão Planos e Preços / Compra de Créditos */}
-            <Button
+            <BuyCreditsCta
+              size="full"
+              urgent={isLowCredits}
               onClick={() => setShowModal(true)}
-              className="bg-[#d4af37] hover:bg-[#b8941f] text-[#1e3a5f] font-bold py-6 text-lg flex items-center justify-center gap-3"
-            >
-              <Package className="w-6 h-6" />
-              {t('profile.btnPlans')}
-            </Button>
+              className="h-16 text-lg"
+            />
  
             {/* Botão Voltar ao Dashboard */}
             <Link href="/dashboard">
@@ -335,6 +335,7 @@ export default function PerfilPage() {
       <NoCreditsModal
         open={showModal}
         onClose={() => setShowModal(false)}
+        initialTab="credits"
       />
     </div>
   );

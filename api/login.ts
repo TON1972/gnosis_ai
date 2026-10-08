@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { COOKIE_NAME } from "../shared/const.js";
 import { serialize } from "cookie";
 import { supabaseAdmin } from "../server/_core/supabaseAdmin.js";
+import { ensureUserFreeAccess } from "../server/freeAccess.js";
 
 export const runtime = 'nodejs';
 
@@ -29,6 +30,12 @@ export async function POST(req: Request) {
         const user = userResults[0];
 
         if (!user) return new Response(JSON.stringify({ success: false, message: "Usuário não sincronizado." }), { status: 404 });
+
+        try {
+            await ensureUserFreeAccess(db, user.id);
+        } catch (err) {
+            console.error("[login] ensureUserFreeAccess failed:", err);
+        }
 
         const secret = process.env.JWT_SECRET || "chave_padrao_gnosis";
         const token = jwt.sign(

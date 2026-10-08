@@ -8,17 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from 'react-markdown';
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Send, Loader2, Download, Copy, CheckCircle, BookOpen, ExternalLink } from "lucide-react";
-import CreditsPanel from "@/components/CreditsPanel";
 import NoCreditsModal from "@/components/NoCreditsModal";
 import { toast } from "sonner";
 import SubscriptionWarningBanner from "@/components/SubscriptionWarningBanner";
 import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import Footer from "@/components/Footer";
 import HeaderCredits from "@/components/HeaderCredits";
-import { isBasicPlan } from "@/lib/planHelpers";
+import BuyCreditsCta from "@/components/BuyCreditsCta";
 import { getLocalizedString } from "@/lib/i18nHelper";
-import { usePlanAccess } from "@/hooks/usePlanAccess";
-import PlanRequiredModal from "@/components/PlanRequiredModal";
 import "../dashboard-mobile.css";
 
 export default function ToolPage() {
@@ -31,7 +28,7 @@ export default function ToolPage() {
   const [input, setInput] = useState("");
   const [result, setResult] = useState("");
   const [showNoCreditsModal, setShowNoCreditsModal] = useState(false);
-  const [showPlanRequiredModal, setShowPlanRequiredModal] = useState(false);
+  const [creditsModalReason, setCreditsModalReason] = useState<"empty" | "buy">("empty");
   const [copied, setCopied] = useState(false);
   const [generatedStudyId, setGeneratedStudyId] = useState<number | null>(null);
 
@@ -44,40 +41,22 @@ export default function ToolPage() {
   const { data: dbUser } = trpc.auth.me.useQuery(undefined, { enabled: !!authUser });
   const user = dbUser || authUser;
   const { data: credits, refetch: refetchCredits } = trpc.credits.balance.useQuery();
-  const { data: activePlan } = trpc.credits.activePlan.useQuery();
 
   const generateMutation = trpc.tools.generate.useMutation();
   const saveStudyMutation = trpc.studies.save.useMutation();
-
-  const { canUseTools, isLoading: planAccessLoading } = usePlanAccess();
-
-  const [modalTab, setModalTab] = useState<'plans' | 'credits'>('plans');
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [toolIdFromParams]);
 
-  useEffect(() => {
-    if (!planAccessLoading && !canUseTools) {
-      setShowPlanRequiredModal(true);
-    }
-  }, [planAccessLoading, canUseTools]);
-
   const handleGenerate = async () => {
     if (!dbTool || !input.trim()) return;
 
-    if (!canUseTools) {
-      setShowPlanRequiredModal(true);
-      return;
-    }
-
-    // ✅ Validação Antecipada de Créditos
     const currentCredits = credits?.total || 0;
     const estimatedCost = dbTool.creditCost || 50;
 
     if (currentCredits < estimatedCost) {
-      const isEntryPlan = isBasicPlan(activePlan?.plan?.name);
-      setModalTab(isEntryPlan ? 'plans' : 'credits');
+      setCreditsModalReason("empty");
       setShowNoCreditsModal(true);
       return;
     }
@@ -114,11 +93,8 @@ export default function ToolPage() {
       refetchCredits();
       toast.success(t('toolPage.analysisSuccess'));
     } catch (error: any) {
-      if (error.message?.includes("PLAN_REQUIRED")) {
-        setShowPlanRequiredModal(true);
-      } else if (error.message?.includes("insuficientes")) {
-        const isEntryPlan = isBasicPlan(activePlan?.plan?.name);
-        setModalTab(isEntryPlan ? 'plans' : 'credits');
+      if (error.message?.includes("insuficientes")) {
+        setCreditsModalReason("empty");
         setShowNoCreditsModal(true);
       } else {
         toast.error(t('toolPage.analysisError'));
@@ -166,7 +142,22 @@ export default function ToolPage() {
           <div className="flex items-center gap-1.5 md:gap-4">
             {/* ✅ Novo display de créditos no header */}
             <div className="mr-1 md:mr-2">
-              <HeaderCredits />
+              <HeaderCredits
+                onClick={() => {
+                  setCreditsModalReason((credits?.total ?? 0) < 50 ? "empty" : "buy");
+                  setShowNoCreditsModal(true);
+                }}
+              />
+            </div>
+            <div className="hidden md:block">
+              <BuyCreditsCta
+                size="sm"
+                urgent={(credits?.total ?? 0) < 50}
+                onClick={() => {
+                  setCreditsModalReason((credits?.total ?? 0) < 50 ? "empty" : "buy");
+                  setShowNoCreditsModal(true);
+                }}
+              />
             </div>
 
             {/* ✅ Botão Voltar movido para o header */}
@@ -204,14 +195,26 @@ export default function ToolPage() {
                 placeholder={getLocalizedString(dbTool, 'inputPlaceholder') || t('toolPage.inputPlaceholder')}
                 className="min-h-50 border-2 border-[#d4af37] rounded-lg p-4 bg-white"
               />
-              <Button
-                onClick={handleGenerate}
-                disabled={generateMutation.isPending || !input.trim() || !canUseTools}
-                className="mt-4 w-full bg-[#1e3a5f] text-[#d4af37] font-bold py-6 text-lg transition-all active:scale-95"
-              >
-                {generateMutation.isPending ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2" />}
-                {generateMutation.isPending ? t('common.processing') : t('toolPage.btnGenerate', { name: getLocalizedString(dbTool, 'displayName') })}
-              </Button>
+              {(credits?.total ?? 0) < Number(dbTool?.creditCost ?? 50) ? (
+                <BuyCreditsCta
+                  size="full"
+                  urgent
+                  className="mt-4"
+                  onClick={() => {
+                    setCreditsModalReason("empty");
+                    setShowNoCreditsModal(true);
+                  }}
+                />
+              ) : (
+                <Button
+                  onClick={handleGenerate}
+                  disabled={generateMutation.isPending || !input.trim()}
+                  className="mt-4 w-full bg-[#1e3a5f] text-[#d4af37] font-bold py-6 text-lg"
+                >
+                  {generateMutation.isPending ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2" />}
+                  {generateMutation.isPending ? t('common.processing') : t('toolPage.btnGenerate', { name: getLocalizedString(dbTool, 'displayName') })}
+                </Button>
+              )}
             </div>
 
             {result && (
@@ -290,11 +293,7 @@ export default function ToolPage() {
       <NoCreditsModal
         open={showNoCreditsModal}
         onClose={() => setShowNoCreditsModal(false)}
-        initialTab={modalTab}
-      />
-      <PlanRequiredModal
-        open={showPlanRequiredModal}
-        onOpenChange={setShowPlanRequiredModal}
+        reason={creditsModalReason}
       />
       {/* ✅ CSS para os efeitos de luxo do botão */}
       <style>{`

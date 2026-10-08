@@ -7,6 +7,7 @@ import { ENV } from "./_core/env.js";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies.js";
 import { supabaseAdmin } from "./_core/supabaseAdmin.js";
+import { ensureUserFreeAccess } from "./freeAccess.js";
 
 const router = Router();
 
@@ -128,23 +129,16 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
 
     setSessionCookie(res, req, generateJWT(authUser));
 
-    const pendingPlanId = Number(req.cookies?.pending_plan_id || 0);
-    const pendingBilling = req.cookies?.pending_billing_period || 'yearly';
-
     res.clearCookie('pending_plan_id');
     res.clearCookie('pending_billing_period');
 
-    if (isNewUser) {
-      if (pendingPlanId > 0) {
-        res.redirect(`/dashboard?requirePayment=1&plan=${pendingPlanId}&billing=${pendingBilling}`);
-      } else {
-        res.redirect("/dashboard?requirePayment=1");
-      }
-    } else if (pendingPlanId > 0) {
-      res.redirect(`/auth?google_checkout=true&plan=${pendingPlanId}&billing=${pendingBilling}`);
-    } else {
-      res.redirect("/dashboard?freshLogin=1");
+    try {
+      await ensureUserFreeAccess(db, authUser.id);
+    } catch (err) {
+      console.error("[OAuth] ensureUserFreeAccess failed:", err);
     }
+
+    res.redirect("/dashboard?freshLogin=1");
 
   } catch (error: any) {
     console.error("[OAuth Error]:", error);

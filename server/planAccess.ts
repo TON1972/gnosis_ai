@@ -1,10 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq, isNotNull, or } from "drizzle-orm";
 import { getDb } from "./db.js";
-import { payments, plans, subscriptions, users } from "../drizzle/schema.js";
-import { getUserActivePlan } from "./credits.js";
-import { getBasicMigrationStatus } from "./basicMigration.js";
-import { isBasicPlan, isPaidTierPlan } from "../shared/planConstants.js";
+import { users } from "../drizzle/schema.js";
+import { eq } from "drizzle-orm";
+import { ensureUserFreeAccess } from "./freeAccess.js";
 
 export type PlanAccessReason =
   | "admin"
@@ -12,7 +10,8 @@ export type PlanAccessReason =
   | "subscription"
   | "trial"
   | "migration"
-  | "payment_required";
+  | "payment_required"
+  | "free";
 
 export type PlanAccessStatus = {
   canUseTools: boolean;
@@ -23,57 +22,10 @@ export type PlanAccessStatus = {
   defaultPlanId?: number;
 };
 
-export async function userHasConfirmedPlanPayment(userId: number): Promise<boolean> {
-  const db = await getDb();
-  if (!db) return false;
-
-  const paid = await db
-    .select({ id: payments.id })
-    .from(payments)
-    .where(
-      and(
-        eq(payments.userId, userId),
-        eq(payments.status, "approved"),
-        or(
-          eq(payments.type, "plan_monthly"),
-          eq(payments.type, "plan_yearly"),
-          eq(payments.type, "plan_manual"),
-        ),
-      ),
-    )
-    .limit(1);
-
-  if (paid.length > 0) return true;
-
-  const paidSub = await db
-    .select({ id: subscriptions.id })
-    .from(subscriptions)
-    .where(
-      and(
-        eq(subscriptions.userId, userId),
-        or(
-          isNotNull(subscriptions.lastPaymentDate),
-          isNotNull(subscriptions.stripeSubscriptionId),
-        ),
-      ),
-    )
-    .limit(1);
-
-  return paidSub.length > 0;
-}
-
-function hasStripePaidAccess(
-  stripeStatus: string | null | undefined,
-  stripeSubscriptionId: string | null | undefined,
-): boolean {
-  if (!stripeSubscriptionId) return false;
-  return stripeStatus === "active" || stripeStatus === "trialing";
-}
-
 export async function getPlanAccessStatus(userId: number): Promise<PlanAccessStatus> {
   const db = await getDb();
   if (!db) {
-    return { canUseTools: false, reason: "payment_required" };
+    return { canUseTools: true, reason: "free" };
   }
 
   const userRows = await db
@@ -87,56 +39,26 @@ export async function getPlanAccessStatus(userId: number): Promise<PlanAccessSta
     return { canUseTools: true, reason: "admin" };
   }
 
-  if (await userHasConfirmedPlanPayment(userId)) {
-    return { canUseTools: true, reason: "paid" };
+  try {
+    await ensureUserFreeAccess(db, userId);
+  } catch (err) {
+    console.error("[planAccess] ensureUserFreeAccess failed:", err);
   }
 
-  const active = await getUserActivePlan(userId);
-
-  if (
-    active &&
-    isPaidTierPlan(active.plan.name) &&
-    active.subscription.status === "active"
-  ) {
-    return { canUseTools: true, reason: "subscription" };
-  }
-
-  if (
-    active &&
-    hasStripePaidAccess(
-      active.subscription.stripeStatus,
-      active.subscription.stripeSubscriptionId,
-    )
-  ) {
-    return { canUseTools: true, reason: "trial" };
-  }
-
-  const migration = await getBasicMigrationStatus(userId);
-  if (migration.eligible) {
-    return {
-      canUseTools: false,
-      reason: "migration",
-      migrationEligible: true,
-      migrationDeadline: migration.deadline,
-      migrationStartDate: migration.startDate,
-      defaultPlanId: migration.planId,
-    };
-  }
-
-  // Basic/free sem pagamento confirmado
-  if (active && isBasicPlan(active.plan.name)) {
-    return { canUseTools: false, reason: "payment_required" };
-  }
-
-  return { canUseTools: false, reason: "payment_required" };
+  return { canUseTools: true, reason: "free" };
 }
 
-export async function assertCanUseTools(userId: number): Promise<void> {
-  const status = await getPlanAccessStatus(userId);
+export async function assertCanUseTools(_userId: number): Promise<void> {
+  const status = await getPlanAccessStatus(_userId);
   if (!status.canUseTools) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "PLAN_REQUIRED",
     });
   }
+}
+
+/** Stub: venda de plano desativada. Mantém importadores da migração antiga. */
+export async function userHasConfirmedPlanPayment(_userId: number): Promise<boolean> {
+  return true;
 }

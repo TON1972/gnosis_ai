@@ -2,6 +2,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { getDb } from "./db.js";
 // Certifique-se de que o caminho do schema está correto conforme seu projeto (shared ou drizzle)
 import { credits, creditTransactions, subscriptions, users, plans } from "../drizzle/schema.js";
+import { FREE_CREDITS_DAILY, FREE_CREDITS_INITIAL } from "./freeAccess.js";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -24,9 +25,8 @@ export async function getUserCredits(userId: number) {
   // 3. Cria registro inicial caso não exista (Primeiro acesso)
   if (result.length === 0) {
     const userActivePlan = await getUserActivePlan(userId);
-    const isAlianca = userActivePlan?.plan.id === 4;
-    const initialAmount = isAlianca ? 2000 : (userActivePlan?.plan.creditsInitial ?? 500);
-    const dailyAmount = userActivePlan?.plan.creditsDaily ?? 50;
+    const initialAmount = userActivePlan?.plan.creditsInitial ?? FREE_CREDITS_INITIAL;
+    const dailyAmount = userActivePlan?.plan.creditsDaily ?? FREE_CREDITS_DAILY;
 
     await db.insert(credits).values({
       userId,
@@ -34,7 +34,7 @@ export async function getUserCredits(userId: number) {
       creditsInitial: initialAmount.toString(),
       creditsDaily: dailyAmount.toString(),
       creditsBonus: "0",
-      type: isAlianca ? "alianca" : "initial",
+      type: "initial",
       expiresAt: new Date(Date.now() + THIRTY_DAYS_MS),
     } as any);
     result = await db.select().from(credits).where(eq(credits.userId, userId)).limit(1);
@@ -53,7 +53,7 @@ export async function getUserCredits(userId: number) {
   // Se passou 1 dia desde o último reset
   if (Math.floor((now.getTime() - lastReset.getTime()) / (1000 * 60 * 60 * 24)) >= 1) {
     const userActivePlan = await getUserActivePlan(userId);
-    daily = userActivePlan?.plan.creditsDaily ?? 50;
+    daily = userActivePlan?.plan.creditsDaily ?? FREE_CREDITS_DAILY;
 
     // Recalcula o total
     const totalAmount = initial + daily + bonus;

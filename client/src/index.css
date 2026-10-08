@@ -152,6 +152,59 @@
    * For custom widths, use max-w-* utilities directly:
    * <div className="max-w-6xl mx-auto px-4">...</div>
    */
+  .credits-cta {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f4d675 0%, #d4af37 46%, #b8860b 100%);
+    color: #1e3a5f;
+    font-family: "Cinzel", serif;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    box-shadow: 0 0 0 1px rgba(255, 250, 205, 0.35), 0 8px 24px -8px rgba(212, 175, 55, 0.85);
+  }
+  .credits-cta::after {
+    content: "";
+    position: absolute;
+    inset: -20% auto -20% -40%;
+    width: 38%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    transform: skewX(-18deg);
+    animation: credits-sheen 2.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .credits-cta--urgent {
+    animation: credits-ember 1.4s ease-in-out infinite;
+  }
+  .credits-chip {
+    transition: background-color 200ms ease, border-color 200ms ease;
+  }
+  .credits-chip--empty {
+    animation: credits-ember 1.6s ease-in-out infinite;
+    border-color: #d4af37;
+  }
+  .credits-pack--featured {
+    box-shadow: 0 0 0 2px #d4af37, 0 18px 40px -18px rgba(30, 58, 95, 0.55);
+  }
+
+  @keyframes credits-sheen {
+    0% { transform: translateX(-30%) skewX(-18deg); }
+    100% { transform: translateX(420%) skewX(-18deg); }
+  }
+  @keyframes credits-ember {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.45), 0 0 12px rgba(212, 175, 55, 0.35); }
+    50% { box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.9), 0 0 22px rgba(212, 175, 55, 0.7); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .credits-cta,
+    .credits-cta--urgent,
+    .credits-chip--empty,
+    .credits-cta::after {
+      animation: none;
+    }
+  }
+
   .container {
     width: 100%;
     margin-left: auto;

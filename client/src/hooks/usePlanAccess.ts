@@ -7,7 +7,7 @@ export function usePlanAccess() {
 
   return {
     ...query,
-    canUseTools: query.data?.canUseTools ?? false,
+    canUseTools: query.data?.canUseTools ?? true,
     requiresPlan: query.data ? !query.data.canUseTools : false,
     isMigration: query.data?.reason === "migration",
     isPaymentRequired: query.data?.reason === "payment_required",

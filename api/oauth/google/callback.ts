@@ -8,6 +8,7 @@ import { ENV } from "../../../server/_core/env.js";
 import { COOKIE_NAME } from "../../../shared/const.js";
 import { getSessionCookieOptions } from "../../../server/_core/cookies.js";
 import { supabaseAdmin } from "../../../server/_core/supabaseAdmin.js";
+import { ensureUserFreeAccess } from "../../../server/freeAccess.js";
 
 export const runtime = 'nodejs';
 
@@ -110,8 +111,6 @@ export default async function handler(req: Request, res: Response) {
         }
 
         const token = generateJWT(authUser);
-        const pendingPlanId = Number(req.cookies?.pending_plan_id || 0);
-        const pendingBilling = req.cookies?.pending_billing_period || 'yearly';
 
         res.setHeader('Set-Cookie', [
             `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`,
@@ -119,17 +118,13 @@ export default async function handler(req: Request, res: Response) {
             `pending_billing_period=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
         ]);
 
-        if (isNewUser) {
-            if (pendingPlanId > 0) {
-                res.redirect(`/dashboard?requirePayment=1&plan=${pendingPlanId}&billing=${pendingBilling}`);
-            } else {
-                res.redirect("/dashboard?requirePayment=1");
-            }
-        } else if (pendingPlanId > 0) {
-            res.redirect(`/auth?google_checkout=true&plan=${pendingPlanId}&billing=${pendingBilling}`);
-        } else {
-            res.redirect("/dashboard?freshLogin=1");
+        try {
+            await ensureUserFreeAccess(db, authUser.id);
+        } catch (err) {
+            console.error("[OAuth] ensureUserFreeAccess failed:", err);
         }
+
+        res.redirect("/dashboard?freshLogin=1");
     } catch (error: any) {
         console.error("[OAuth Error]:", error);
         res.redirect(`/auth?error=${encodeURIComponent(error.message || "Unknown error")}`);

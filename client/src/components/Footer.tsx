@@ -27,9 +27,11 @@ export default function Footer() {
                                 </Link>
                             </li>
                             <li>
-                                <a href="#planos" className="text-[#B8860B] hover:text-[#d4af37] transition-colors">
-                                    {t('home.btnPlans')}
-                                </a>
+                                <Link href="/planos">
+                                    <span className="text-[#B8860B] hover:text-[#d4af37] transition-colors cursor-pointer">
+                                        {t('home.btnBuyAvulso')}
+                                    </span>
+                                </Link>
                             </li>
                         </ul>
                     </div>

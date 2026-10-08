@@ -21,7 +21,6 @@ import ScrollToTopButton from "./components/ScrollToTopButton";
 import AdminTools from "./pages/AdminTools";
 import StudyChatPage from "./pages/StudyChatPage";
 import AffiliatePage from "./pages/AffiliatePage";
-import BasicMigrationGate from "./components/BasicMigrationModal";
 import PwaInstallPrompt from "./components/PwaInstallPrompt";
 import PwaServiceWorkerBridge from "./components/PwaServiceWorkerBridge";
 
@@ -67,7 +66,6 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
-          <BasicMigrationGate />
           <PwaInstallPrompt />
           <PwaServiceWorkerBridge />
           <Chatbot />
