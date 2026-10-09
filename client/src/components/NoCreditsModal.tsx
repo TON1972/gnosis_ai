@@ -35,7 +35,7 @@ export default function NoCreditsModal({ open, onClose, reason = "buy" }: NoCred
                 )
               : t(
                   "modals.credits.buyBody",
-                  "500 iniciais + 50 por dia na conta Free. Precisa de mais? Escolha um pacote. Avulsos não vencem.",
+                  "800 iniciais + 50 por dia na conta Free. Precisa de mais? Escolha um pacote. Avulsos não vencem.",
                 )}
           </DialogDescription>
         </DialogHeader>

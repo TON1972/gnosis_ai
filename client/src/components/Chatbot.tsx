@@ -26,7 +26,7 @@ const KNOWLEDGE_BASE = {
     ],
   },
   planos: {
-    message: "Conta Free: todas as ferramentas. 500 créditos no cadastro + 50 por dia. Acabou o saldo? Compre créditos avulsos. Os avulsos não vencem.\n\nNão vendemos mais assinatura de planos. O que você paga é só recarga de créditos.",
+    message: "Conta Free: todas as ferramentas. 800 créditos no cadastro + 50 por dia. Acabou o saldo? Compre créditos avulsos. Os avulsos não vencem.\n\nNão vendemos mais assinatura de planos. O que você paga é só recarga de créditos.",
     options: [
       { label: "Comprar créditos avulsos", action: "creditos_avulsos" },
       { label: "Ver pacotes", action: "ver_planos" },
@@ -35,7 +35,7 @@ const KNOWLEDGE_BASE = {
     ],
   },
   creditos: {
-    message: "Sobre o sistema de créditos:\n\n• Cada ferramenta consome créditos ao ser usada\n• Toda conta é Free e usa todas as ferramentas\n• 500 créditos iniciais no cadastro (não renovam)\n• 50 créditos por dia (não acumulam)\n• Créditos avulsos comprados nunca expiram\n\nQual sua dúvida específica?",
+    message: "Sobre o sistema de créditos:\n\n• Cada ferramenta consome créditos ao ser usada\n• Toda conta é Free e usa todas as ferramentas\n• 800 créditos iniciais no cadastro (não renovam)\n• 50 créditos por dia (não acumulam)\n• Créditos avulsos comprados nunca expiram\n\nQual sua dúvida específica?",
     options: [
       { label: "Como ganhar mais créditos", action: "ganhar_creditos" },
       { label: "Créditos expiram?", action: "expiracao_creditos" },
@@ -64,7 +64,7 @@ const KNOWLEDGE_BASE = {
     ],
   },
   diferencas_planos: {
-    message: "Não há mais diferença de ferramentas por plano. Toda conta Free usa o catálogo inteiro. O que muda é o saldo: 500 iniciais + 50/dia, e recarga avulsa quando precisar.",
+    message: "Não há mais diferença de ferramentas por plano. Toda conta Free usa o catálogo inteiro. O que muda é o saldo: 800 iniciais + 50/dia, e recarga avulsa quando precisar.",
     options: [
       { label: "Ver créditos avulsos", action: "ver_planos" },
       { label: "Voltar ao menu", action: "menu" },
@@ -85,14 +85,14 @@ const KNOWLEDGE_BASE = {
     ],
   },
   ganhar_creditos: {
-    message: "Formas de ganhar créditos:\n\n1. **Cadastro** — 500 créditos iniciais (uma vez)\n2. **Créditos diários** — 50 por dia, não acumulam\n3. **Compra avulsa** — pacotes que nunca expiram",
+    message: "Formas de ganhar créditos:\n\n1. **Cadastro** — 800 créditos iniciais (uma vez)\n2. **Créditos diários** — 50 por dia, não acumulam\n3. **Compra avulsa** — pacotes que nunca expiram",
     options: [
       { label: "Comprar créditos avulsos", action: "creditos_avulsos" },
       { label: "Voltar ao menu", action: "menu" },
     ],
   },
   expiracao_creditos: {
-    message: "**Sobre expiração:**\n\n✅ **Créditos diários** — 50 por dia (não acumulam)\n✅ **Créditos iniciais** — 500 no cadastro, não renovam\n✅ **Créditos avulsos** — NUNCA expiram",
+    message: "**Sobre expiração:**\n\n✅ **Créditos diários** — 50 por dia (não acumulam)\n✅ **Créditos iniciais** — 800 no cadastro, não renovam\n✅ **Créditos avulsos** — NUNCA expiram",
     options: [
       { label: "Comprar créditos avulsos", action: "creditos_avulsos" },
       { label: "Voltar ao menu", action: "menu" },
@@ -127,7 +127,7 @@ const KNOWLEDGE_BASE = {
     ],
   },
   testar_gratis: {
-    message: "Sim! Crie uma conta Free sem cartão:\n\n✅ Todas as ferramentas liberadas\n✅ 500 créditos iniciais + 50 por dia\n✅ Sem cobrança automática\n\nAcabou o saldo? Compre créditos avulsos.",
+    message: "Sim! Crie uma conta Free sem cartão:\n\n✅ Todas as ferramentas liberadas\n✅ 800 créditos iniciais + 50 por dia\n✅ Sem cobrança automática\n\nAcabou o saldo? Compre créditos avulsos.",
     options: [
       { label: "Criar conta grátis", action: "login" },
       { label: "Voltar ao menu", action: "menu" },

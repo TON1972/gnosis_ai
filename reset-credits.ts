@@ -21,7 +21,7 @@ async function resetCredits() {
     await db.delete(userCredits).where(eq(userCredits.userId, user.id));
     console.log("✅ Deleted old credits");
     
-    console.log("✅ Credits reset! Next login will create new credits with 500 initial + 50 daily");
+    console.log("✅ Credits reset! Next login will create new credits with 800 initial + 50 daily");
   } catch (error) {
     console.error("❌ Error:", error);
   }

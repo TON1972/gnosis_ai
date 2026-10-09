@@ -117,15 +117,15 @@ const faqData: FAQCategory[] = [
     items: [
       {
         question: "Como funciona o sistema de créditos da GNOSIS AI?",
-        answer: "A GNOSIS AI utiliza três tipos de créditos: (1) Créditos Iniciais — 500 no cadastro, uma vez, não renovam; (2) Créditos Diários — 50 por dia, não acumulam; (3) Créditos Avulsos — comprados à parte e que nunca expiram. Toda conta usa todas as ferramentas. O que acaba é o saldo."
+        answer: "A GNOSIS AI utiliza três tipos de créditos: (1) Créditos Iniciais — 800 no cadastro, uma vez, não renovam; (2) Créditos Diários — 50 por dia, não acumulam; (3) Créditos Avulsos — comprados à parte e que nunca expiram. Toda conta usa todas as ferramentas. O que acaba é o saldo."
       },
       {
         question: "Os créditos diários acumulam se eu não usar?",
-        answer: "Não. Os 50 créditos diários renovam todo dia e o que sobrou do dia anterior se perde. Os 500 iniciais não renovam. Os avulsos comprados ficam no saldo e nunca expiram."
+        answer: "Não. Os 50 créditos diários renovam todo dia e o que sobrou do dia anterior se perde. Os 800 iniciais não renovam. Os avulsos comprados ficam no saldo e nunca expiram."
       },
       {
         question: "Por quanto tempo os créditos iniciais são válidos?",
-        answer: "No plano Free, os 500 créditos iniciais NÃO renovam. Eles valem até acabar. Os 50 diários renovam no dia seguinte. Os avulsos não vencem."
+        answer: "No plano Free, os 800 créditos iniciais NÃO renovam. Eles valem até acabar. Os 50 diários renovam no dia seguinte. Os avulsos não vencem."
       },
       {
         question: "O que acontece quando meus créditos acabam?",
@@ -147,7 +147,7 @@ const faqData: FAQCategory[] = [
       },
       {
         question: "Quanto de crédito eu recebo de graça?",
-        answer: "500 créditos no cadastro (uma vez) + 50 créditos por dia. Os diários não acumulam. Se acabar o saldo, compre créditos avulsos."
+        answer: "800 créditos no cadastro (uma vez) + 50 créditos por dia. Os diários não acumulam. Se acabar o saldo, compre créditos avulsos."
       },
       {
         question: "Como compro mais créditos?",

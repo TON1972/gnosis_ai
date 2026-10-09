@@ -43,7 +43,7 @@ export default function PlanosPage() {
         <p className="text-lg md:text-xl text-[#8b6f47] text-center mb-4 max-w-3xl mx-auto">
           {t(
             "auth.freeAccessNote",
-            "Conta Free: todas as ferramentas. 500 créditos no cadastro + 50 por dia. Acabou o saldo? Compre créditos avulsos. Os avulsos não vencem.",
+            "Conta Free: todas as ferramentas. 800 créditos no cadastro + 50 por dia. Acabou o saldo? Compre créditos avulsos. Os avulsos não vencem.",
           )}
         </p>
         <p className="text-base text-[#8b6f47] text-center mb-12">

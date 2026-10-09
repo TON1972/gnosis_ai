@@ -46,7 +46,7 @@ export const plans = pgTable("plans", {
   priceEur: integer("priceEur").default(0),
   priceMonthlyEur: integer("priceMonthlyEur").default(0),
   priceYearlyEur: integer("priceYearlyEur").default(0),
-  creditsInitial: integer("creditsInitial").default(500),
+  creditsInitial: integer("creditsInitial").default(800),
   creditsDaily: integer("creditsDaily").default(50),
   isActive: boolean("isActive").default(true),
   createdAt: timestamp("createdAt").defaultNow(),
@@ -125,7 +125,7 @@ export const credits = pgTable("credits", {
 export const userCredits = pgTable("user_credits", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),
-  creditsInitial: integer("creditsInitial").default(500),
+  creditsInitial: integer("creditsInitial").default(800),
   creditsDaily: integer("creditsDaily").default(50),
   creditsBonus: integer("creditsBonus").default(0),
   creditsInitialExpiry: timestamp("creditsInitialExpiry"),

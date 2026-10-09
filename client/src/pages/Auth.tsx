@@ -112,7 +112,7 @@ export default function Auth() {
         toast.success(
           t(
             "auth.registerSuccessFree",
-            "Conta criada. Você tem 500 créditos iniciais + 50 por dia. Todas as ferramentas estão liberadas.",
+            "Conta criada. Você tem 800 créditos iniciais + 50 por dia. Todas as ferramentas estão liberadas.",
           ),
         );
         window.location.href = "/dashboard";
@@ -243,7 +243,7 @@ export default function Auth() {
                 <p className="text-sm text-[#1e3a5f] bg-white/70 border border-[#d4af37]/40 rounded-lg p-3 leading-relaxed">
                   {t(
                     "auth.freeAccessNote",
-                    "Conta Free: todas as ferramentas. 500 créditos no cadastro + 50 por dia. Acabou o saldo? Compre créditos avulsos. Os avulsos não vencem.",
+                    "Conta Free: todas as ferramentas. 800 créditos no cadastro + 50 por dia. Acabou o saldo? Compre créditos avulsos. Os avulsos não vencem.",
                   )}
                 </p>
                 <div className="space-y-2">

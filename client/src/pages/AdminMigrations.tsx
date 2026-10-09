@@ -37,7 +37,7 @@ export default function AdminMigrations() {
     {
       id: 'credits',
       title: 'Migrar Créditos Iniciais',
-      description: 'Atribui 500 créditos iniciais + 50 créditos diários para todos os usuários sem créditos',
+      description: 'Atribui 800 créditos iniciais + 50 créditos diários para todos os usuários sem créditos',
       mutation: migrateCredits,
       result: migrationResults.credits,
     },

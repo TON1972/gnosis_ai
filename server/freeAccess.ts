@@ -5,7 +5,7 @@ import { BASIC_PLAN_NAME, LEGACY_FREE_PLAN_NAME } from "../shared/planConstants.
 
 type Db = NodePgDatabase<typeof schema>;
 
-export const FREE_CREDITS_INITIAL = 500;
+export const FREE_CREDITS_INITIAL = 800;
 export const FREE_CREDITS_DAILY = 50;
 
 export async function getFreePlan(db: Db) {
@@ -32,7 +32,25 @@ export async function getFreePlan(db: Db) {
 
 export async function ensureFreePlan(db: Db) {
   const existing = await getFreePlan(db);
-  if (existing) return existing;
+  if (existing) {
+    const currentInitial = Number(existing.creditsInitial ?? 0);
+    const currentDaily = Number(existing.creditsDaily ?? 0);
+    if (currentInitial === FREE_CREDITS_INITIAL && currentDaily === FREE_CREDITS_DAILY) {
+      return existing;
+    }
+
+    const [updated] = await db
+      .update(schema.plans)
+      .set({
+        creditsInitial: FREE_CREDITS_INITIAL,
+        creditsDaily: FREE_CREDITS_DAILY,
+        description: `Acesso a todas as ferramentas. ${FREE_CREDITS_INITIAL} créditos iniciais + ${FREE_CREDITS_DAILY} por dia.`,
+      })
+      .where(eq(schema.plans.id, existing.id))
+      .returning();
+
+    return updated ?? existing;
+  }
 
   const [created] = await db
     .insert(schema.plans)
@@ -40,7 +58,7 @@ export async function ensureFreePlan(db: Db) {
       name: LEGACY_FREE_PLAN_NAME,
       displayName: "Plano Free",
       displayNameEn: "Free Plan",
-      description: "Acesso a todas as ferramentas. 500 créditos iniciais + 50 por dia.",
+      description: `Acesso a todas as ferramentas. ${FREE_CREDITS_INITIAL} créditos iniciais + ${FREE_CREDITS_DAILY} por dia.`,
       price: 0,
       priceMonthly: 0,
       priceYearly: 0,

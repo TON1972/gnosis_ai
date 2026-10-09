@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { StatsOverview, StatsKPIs, StatsInsights } from "@/components/admin/StatsOverview";
@@ -23,7 +23,12 @@ import { useLocation } from "wouter";
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isNarrow, setIsNarrow] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 1024 : false
+  );
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : true
+  );
 
   const isSuperAdmin = user?.role === 'super_admin';
   const isAdmin = user?.role === 'admin' || isSuperAdmin;
@@ -60,10 +65,37 @@ export default function AdminDashboard() {
     enabled: activeTab === 'overview' && isAdmin
   });
 
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const apply = () => {
+      const narrow = mql.matches;
+      setIsNarrow(narrow);
+      setIsSidebarOpen(!narrow);
+    };
+    mql.addEventListener("change", apply);
+    return () => mql.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => {
+    if (!isNarrow || !isSidebarOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsSidebarOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isNarrow, isSidebarOpen]);
+
   const handleLogout = () => {
     logout();
     setLocation("/");
   };
+
+  const closeSidebar = () => setIsSidebarOpen(false);
 
   // ✅ Títulos amigáveis para o Header
   const tabTitles: Record<string, string> = {
@@ -83,10 +115,11 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f8fafc]">
-      {/* SIDEBAR - Removido onSelectTool para bater com a interface */}
+    <div className="flex min-h-dvh bg-[#f8fafc]">
       <Sidebar
         isOpen={isSidebarOpen}
+        mode={isNarrow ? "drawer" : "rail"}
+        onClose={closeSidebar}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         role={user?.role}
@@ -94,17 +127,19 @@ export default function AdminDashboard() {
         setLocation={setLocation}
       />
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* TOPBAR */}
-        <header className="h-16 bg-white border-b flex items-center justify-between px-8 shadow-sm">
-          <div className="flex items-center gap-4">
+      <div className="flex-1 flex flex-col min-h-dvh min-w-0 overflow-hidden">
+        <header className="pwa-top-inset sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b bg-white px-3 shadow-sm sm:px-6">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+              type="button"
+              onClick={() => setIsSidebarOpen((open) => !open)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#1e3a5f] hover:bg-[#1e3a5f]/8 cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37]"
+              aria-label={isSidebarOpen ? "Fechar menu" : "Abrir menu"}
+              aria-expanded={isSidebarOpen}
             >
-              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              {isNarrow ? <Menu size={22} /> : isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <h2 className="font-black text-[#1e3a5f] uppercase tracking-widest text-sm">
+            <h2 className="truncate font-black text-[#1e3a5f] uppercase tracking-widest text-sm">
               {tabTitles[activeTab] || activeTab}
             </h2>
           </div>
@@ -124,7 +159,7 @@ export default function AdminDashboard() {
         </header>
 
         {/* ÁREA DE CONTEÚDO DINÂMICO */}
-        <main className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-[#f8fafc]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar bg-[#f8fafc]">
           {(isAdmin && (ldStats || ldPlanDist || ldStripe || ldToolStats)) ? (
             <div className="flex flex-col items-center justify-center py-20 text-[#d4af37]">
               <Loader2 className="animate-spin w-12 h-12 mb-4" />

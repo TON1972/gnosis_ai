@@ -215,7 +215,7 @@
       "paymentError": "Error initiating payment: ",
       "emptyTitle": "Not enough credits",
       "emptyBody": "This tool needs credits. Top up now — purchased credits never expire.",
-      "buyBody": "500 at signup + 50 per day on Free. Need more? Choose a pack. Extra credits never expire."
+      "buyBody": "800 at signup + 50 per day on Free. Need more? Choose a pack. Extra credits never expire."
     },
     "reminder": {
       "offerExtension": "OFFER EXTENSION",

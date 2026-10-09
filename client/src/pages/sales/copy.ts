@@ -10,7 +10,7 @@ export const LP_ROUTES = {
 export const LP_META = {
   title: "GNOSIS AI | Estudo bíblico com IA. Comece grátis",
   description:
-    "Aprofunde seu estudo bíblico com IA. Crie uma conta grátis, receba 500 créditos iniciais e 50 por dia. Sem cartão e sem mensalidade.",
+    "Aprofunde seu estudo bíblico com IA. Crie uma conta grátis, receba 800 créditos iniciais e 50 por dia. Sem cartão e sem mensalidade.",
 };
 
 export const HERO = {
@@ -20,7 +20,7 @@ export const HERO = {
     "Prepare sermões, aprofunde passagens e organize pesquisas com IA para o estudo bíblico. Para pastores, seminaristas e quem quer compreender melhor a Palavra.",
   cta: "Criar conta grátis",
   ctaLogged: "Ir para meu painel",
-  micro: "Sem cartão. 500 créditos no cadastro e 50 por dia. Todas as ferramentas.",
+  micro: "Sem cartão. 800 créditos no cadastro e 50 por dia. Todas as ferramentas.",
   secondary: "Ver créditos",
   videoButton: "Veja a GNOSIS AI em ação",
   videoCaption: "Da passagem ao estudo: veja como começar.",
@@ -32,7 +32,7 @@ export const HERO = {
 };
 
 export const HERO_STATS = [
-  { value: "500", label: "créditos no cadastro" },
+  { value: "800", label: "créditos no cadastro" },
   { value: "50", label: "créditos por dia" },
   { value: "Todas", label: "ferramentas liberadas" },
 ] as const;
@@ -49,7 +49,7 @@ export const MARQUEE_ITEMS = [
   "Hermenêutica",
   "Estudo bíblico com IA",
   "Sem mensalidade",
-  "500 créditos no cadastro",
+  "800 créditos no cadastro",
   "Todas as ferramentas liberadas",
   "Créditos avulsos sem prazo",
 ] as const;
@@ -91,7 +91,7 @@ export const STEPS = {
   items: [
     {
       title: "Crie sua conta grátis.",
-      body: "Entre com e-mail ou Google, sem cartão, e receba 500 créditos iniciais.",
+      body: "Entre com e-mail ou Google, sem cartão, e receba 800 créditos iniciais.",
     },
     {
       title: "Escolha o que quer preparar.",
@@ -194,7 +194,7 @@ export const TRUST = {
 export const FREE_OFFER = {
   title: "Comece grátis. Recarregue quando precisar.",
   items: [
-    { figure: "500", label: "créditos no cadastro", body: "Receba uma vez e use até acabar." },
+    { figure: "800", label: "créditos no cadastro", body: "Receba uma vez e use até acabar." },
     { figure: "50", label: "créditos por dia", body: "O saldo diário renova. O que sobra do dia não acumula." },
     { figure: "Sem prazo", label: "créditos comprados", body: "Adicione saldo quando quiser continuar além dos créditos gratuitos." },
   ],
@@ -221,7 +221,7 @@ export const FAQ = [
   {
     id: "assinar",
     q: "Preciso assinar ou pagar para começar?",
-    a: "Não. Você cria uma conta Free e recebe 500 créditos iniciais, além de 50 por dia. Todas as ferramentas ficam disponíveis. A compra de créditos é opcional e não cria mensalidade.",
+    a: "Não. Você cria uma conta Free e recebe 800 créditos iniciais, além de 50 por dia. Todas as ferramentas ficam disponíveis. A compra de créditos é opcional e não cria mensalidade.",
   },
   {
     id: "cartao",
@@ -231,7 +231,7 @@ export const FAQ = [
   {
     id: "vencem",
     q: "Meus créditos vencem?",
-    a: "Os 50 créditos diários não acumulam. Os 500 iniciais são concedidos uma vez e ficam disponíveis até você usar. Os créditos avulsos comprados não vencem. O consumo prioriza os diários, depois os iniciais e, por último, os avulsos.",
+    a: "Os 50 créditos diários não acumulam. Os 800 iniciais são concedidos uma vez e ficam disponíveis até você usar. Os créditos avulsos comprados não vencem. O consumo prioriza os diários, depois os iniciais e, por último, os avulsos.",
   },
   {
     id: "confiar",
