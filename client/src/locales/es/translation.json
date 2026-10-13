@@ -287,6 +287,13 @@
     "statusPending": "Pendiente",
     "creditsAdded": "+{{amount}} créditos"
   },
+  "pwa": {
+    "desktopAlert": {
+      "title": "Disponible en el celular",
+      "body": "Instala el web app en iPhone o Android. Abre el sitio en el celular y agrégalo a la pantalla de inicio.",
+      "ok": "Entendido"
+    }
+  },
   "savedStudies": {
     "title": "Mis Estudios Guardados",
     "confirmDelete": "¿Estás seguro de que deseas eliminar este estudio?",

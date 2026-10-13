@@ -19,3 +19,20 @@ export function useIsMobile() {
 
   return !!isMobile;
 }
+
+/** True só depois de medir o viewport — evita flash do alerta desktop no celular. */
+export function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = React.useState(false);
+
+  React.useEffect(() => {
+    const mql = window.matchMedia(`(min-width: ${MOBILE_BREAKPOINT}px)`);
+    const onChange = () => {
+      setIsDesktop(mql.matches);
+    };
+    onChange();
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  return isDesktop;
+}

@@ -306,6 +306,11 @@
       "close": "Fechar",
       "later": "Agora não"
     },
+    "desktopAlert": {
+      "title": "Disponível no celular",
+      "body": "Instale o web app no iPhone ou Android. Abra o site no celular e adicione à tela inicial.",
+      "ok": "Entendi"
+    },
     "entry": {
       "bannerTitle": "Instalar app no celular",
       "bannerDesc": "No iPhone: Safari → Compartilhar → Adicionar à Tela de Início",

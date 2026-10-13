@@ -3,6 +3,13 @@ import { getDb } from "./db.js";
 // Certifique-se de que o caminho do schema está correto conforme seu projeto (shared ou drizzle)
 import { credits, creditTransactions, subscriptions, users, plans } from "../drizzle/schema.js";
 import { FREE_CREDITS_DAILY, FREE_CREDITS_INITIAL } from "./freeAccess.js";
+import { BASIC_PLAN_NAME, LEGACY_FREE_PLAN_NAME } from "../shared/planConstants.js";
+
+function isFreeCreditGrant(plan?: { name?: string | null; priceMonthly?: number | null }) {
+  if (!plan?.name) return true;
+  if (plan.name === LEGACY_FREE_PLAN_NAME) return true;
+  return plan.name === BASIC_PLAN_NAME && Number(plan.priceMonthly ?? 0) === 0;
+}
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -25,8 +32,13 @@ export async function getUserCredits(userId: number) {
   // 3. Cria registro inicial caso não exista (Primeiro acesso)
   if (result.length === 0) {
     const userActivePlan = await getUserActivePlan(userId);
-    const initialAmount = userActivePlan?.plan.creditsInitial ?? FREE_CREDITS_INITIAL;
-    const dailyAmount = userActivePlan?.plan.creditsDaily ?? FREE_CREDITS_DAILY;
+    const plan = userActivePlan?.plan;
+    const initialAmount = isFreeCreditGrant(plan)
+      ? FREE_CREDITS_INITIAL
+      : Number(plan?.creditsInitial ?? FREE_CREDITS_INITIAL);
+    const dailyAmount = isFreeCreditGrant(plan)
+      ? FREE_CREDITS_DAILY
+      : Number(plan?.creditsDaily ?? FREE_CREDITS_DAILY);
 
     await db.insert(credits).values({
       userId,

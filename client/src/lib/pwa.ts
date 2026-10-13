@@ -46,6 +46,7 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 const DISMISS_KEY = "gnosis-pwa-install-dismissed";
+const DESKTOP_ALERT_KEY = "gnosis-pwa-desktop-alert-dismissed";
 
 export function wasInstallDismissedRecently(): boolean {
   const dismissed = localStorage.getItem(DISMISS_KEY);
@@ -57,4 +58,13 @@ export function wasInstallDismissedRecently(): boolean {
 
 export function dismissInstallPrompt(): void {
   localStorage.setItem(DISMISS_KEY, String(Date.now()));
+}
+
+export function wasDesktopAlertDismissed(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  return localStorage.getItem(DESKTOP_ALERT_KEY) === "1";
+}
+
+export function dismissDesktopAlert(): void {
+  localStorage.setItem(DESKTOP_ALERT_KEY, "1");
 }

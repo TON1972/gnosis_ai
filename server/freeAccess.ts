@@ -107,8 +107,8 @@ export async function ensureUserFreeAccess(db: Db, userId: number) {
     .limit(1);
 
   if (!existingCredits) {
-    const initial = Number(freePlan.creditsInitial ?? FREE_CREDITS_INITIAL);
-    const daily = Number(freePlan.creditsDaily ?? FREE_CREDITS_DAILY);
+    const initial = FREE_CREDITS_INITIAL;
+    const daily = FREE_CREDITS_DAILY;
     await db.insert(schema.credits).values({
       userId,
       amount: initial + daily,

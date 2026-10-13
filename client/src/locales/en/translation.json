@@ -306,6 +306,11 @@
       "close": "Close",
       "later": "Not now"
     },
+    "desktopAlert": {
+      "title": "Available on your phone",
+      "body": "Install the web app on iPhone or Android. Open the site on your phone and add it to the home screen.",
+      "ok": "Got it"
+    },
     "entry": {
       "bannerTitle": "Install app on your phone",
       "bannerDesc": "On iPhone: Safari → Share → Add to Home Screen",

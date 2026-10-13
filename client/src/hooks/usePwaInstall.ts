@@ -1,20 +1,26 @@
 import * as React from "react";
 import {
   BeforeInstallPromptEvent,
+  dismissDesktopAlert,
   dismissInstallPrompt,
   isAndroid,
   isIos,
   isPwaInstalled,
+  wasDesktopAlertDismissed,
   wasInstallDismissedRecently,
 } from "@/lib/pwa";
-import { useIsMobile } from "@/hooks/useMobile";
+import { useIsDesktop, useIsMobile } from "@/hooks/useMobile";
 
 export function usePwaInstall() {
   const isMobile = useIsMobile();
+  const isDesktop = useIsDesktop();
   const [deferredPrompt, setDeferredPrompt] =
     React.useState<BeforeInstallPromptEvent | null>(null);
   const [canInstall, setCanInstall] = React.useState(false);
   const [isInstalled, setIsInstalled] = React.useState(isPwaInstalled);
+  const [desktopDismissed, setDesktopDismissed] = React.useState(
+    wasDesktopAlertDismissed,
+  );
 
   React.useEffect(() => {
     setIsInstalled(isPwaInstalled());
@@ -48,6 +54,12 @@ export function usePwaInstall() {
     return canInstall || isIos() || isAndroid();
   }, [isInstalled, isMobile, canInstall]);
 
+  const shouldShowDesktopAlert = React.useMemo(() => {
+    if (isInstalled) return false;
+    if (!isDesktop) return false;
+    return !desktopDismissed;
+  }, [isInstalled, isDesktop, desktopDismissed]);
+
   const install = React.useCallback(async () => {
     if (!deferredPrompt) return false;
     await deferredPrompt.prompt();
@@ -66,13 +78,20 @@ export function usePwaInstall() {
     setCanInstall(false);
   }, []);
 
+  const dismissDesktop = React.useCallback(() => {
+    dismissDesktopAlert();
+    setDesktopDismissed(true);
+  }, []);
+
   return {
     isInstalled,
     canInstall: canInstall && !!deferredPrompt,
     isIosDevice: isIos(),
     isAndroidDevice: isAndroid(),
     shouldShowPrompt,
+    shouldShowDesktopAlert,
     install,
     dismiss,
+    dismissDesktop,
   };
 }
