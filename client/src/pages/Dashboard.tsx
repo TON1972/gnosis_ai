@@ -272,9 +272,6 @@ export default function Dashboard() {
                         <span className="inline-block px-3 py-1 bg-[#FFFACD] border border-[#d4af37] rounded-full text-xs font-semibold text-[#1e3a5f]">
                           {getLocalizedString(tool, 'category') || t('dashboard.generalCategory')}
                         </span>
-                        <span className="ml-2 inline-block px-3 py-1 bg-[#1e3a5f]/5 border border-[#d4af37]/40 rounded-full text-xs font-semibold text-[#8b6f47]">
-                          {Number(tool.creditCost ?? 50)} {t("home.creditsLbl")}
-                        </span>
                       </div>
                     </div>
                   </div>

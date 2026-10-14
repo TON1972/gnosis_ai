@@ -48,7 +48,6 @@ const KNOWLEDGE_BASE = {
     message: "A GNOSIS AI oferece o catálogo completo de ferramentas para toda conta Free:\n\nHermenêutica, Traduções, Resumos, Enfoques de Pregação, Estudos Doutrinários, Exegese, Teologia Sistemática, Patrística, Apologética e as demais do painel.\n\nO que limita o uso é o saldo de créditos, não o plano.",
     options: [
       { label: "Como usar uma ferramenta", action: "usar_ferramenta" },
-      { label: "Custo em créditos", action: "custo_ferramentas" },
       { label: "Salvar estudos", action: "salvar_estudos" },
       { label: "Voltar ao menu", action: "menu" },
       { label: "👋 Encerrar conversa", action: "encerrar" },
@@ -113,9 +112,10 @@ const KNOWLEDGE_BASE = {
     ],
   },
   custo_ferramentas: {
-    message: "Custo em créditos por ferramenta:\n\n**Básicas (50 créditos):**\nHermenêutica, Traduções, Resumos, etc.\n\n**Intermediárias (75 créditos):**\nExegese, Teologia Sistemática\n\n**Avançadas (100 créditos):**\nLinguagem Ministerial, Análise de Dados\n\nO custo é descontado apenas quando você usa a ferramenta.",
+    message: "Cada ferramenta consome créditos do seu saldo ao gerar um estudo. O valor não aparece na tela — é descontado automaticamente. Se o saldo acabar, recarregue com créditos avulsos.",
     options: [
       { label: "Ver todas as ferramentas", action: "ferramentas" },
+      { label: "Comprar créditos avulsos", action: "creditos_avulsos" },
       { label: "Voltar ao menu", action: "menu" },
     ],
   },
