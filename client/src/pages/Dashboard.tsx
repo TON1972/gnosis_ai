@@ -10,7 +10,7 @@ import SubscriptionWarningBanner from "@/components/SubscriptionWarningBanner";
 import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import { trpc } from "@/lib/trpc";
 import * as LucideIcons from "lucide-react";
-import { User, BookOpen } from "lucide-react";
+import { User, BookOpen, Star, ChevronRight } from "lucide-react";
 import Footer from "@/components/Footer";
 import HeaderCredits from "@/components/HeaderCredits";
 import BuyCreditsCta from "@/components/BuyCreditsCta";
@@ -25,6 +25,8 @@ interface ToolFromDb {
   category: string | null; // Usando a coluna category do banco
   icon: string | null;
   isActive: boolean;
+  isFeatured?: boolean | string | null;
+  order?: number | null;
   creditCost?: number | null;
 }
 
@@ -58,11 +60,16 @@ export default function Dashboard() {
   // ✅ Categorias dinâmicas baseadas na coluna 'category' traduzida
   const categories = ["Todos", ...Array.from(new Set(allTools.map(getCategory).filter(Boolean)))];
 
+  const isToolFeatured = (tool: ToolFromDb) =>
+    tool.isFeatured === true || String(tool.isFeatured) === "true";
+
   const filteredTools = allTools
     .filter(tool => selectedCategory === "Todos" || getCategory(tool) === selectedCategory)
-    .sort((a, b) =>
-      (getLocalizedString(a, 'displayName') || "").localeCompare(getLocalizedString(b, 'displayName') || "")
-    );
+    .sort((a, b) => {
+      const featuredDiff = Number(isToolFeatured(b)) - Number(isToolFeatured(a));
+      if (featuredDiff !== 0) return featuredDiff;
+      return (a.order ?? 0) - (b.order ?? 0) || a.id - b.id;
+    });
 
   const openCreditsModal = (reason: "empty" | "buy" = "buy") => {
     setCreditsModalReason(reason);
@@ -240,13 +247,14 @@ export default function Dashboard() {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="tools-grid grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {isLoading ? (
                 <div className="col-span-full text-center py-10 text-[#1e3a5f] animate-pulse">
                   {t('dashboard.loading')}
                 </div>
               ) : filteredTools.map((tool) => {
                 const IconComponent = (LucideIcons as any)[tool.icon || ""] || BookOpen;
+                const featured = isToolFeatured(tool);
 
                 return (
                   <div
@@ -260,20 +268,56 @@ export default function Dashboard() {
                     }}
                     role="button"
                     tabIndex={0}
-                    className="bg-white/90 rounded-2xl p-6 shadow-xl border-4 border-[#d4af37] transition-colors duration-200 cursor-pointer hover:border-[#1e3a5f] relative"
+                    aria-label={
+                      featured
+                        ? `${t("dashboard.featuredCta")}: ${getLocalizedString(tool, "displayName")}`
+                        : getLocalizedString(tool, "displayName")
+                    }
+                    className={
+                      featured
+                        ? "tool-card-featured col-span-1 md:col-span-2 relative overflow-hidden rounded-2xl border-2 border-[#d4af37] bg-[#1e3a5f] cursor-pointer transition-colors duration-200 hover:border-[#f4d675] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FFFACD]"
+                        : "bg-white/90 rounded-2xl p-6 shadow-xl border-4 border-[#d4af37] transition-colors duration-200 cursor-pointer hover:border-[#1e3a5f] relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                    }
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="p-4 rounded-lg bg-[#1e3a5f]">
-                        <IconComponent className="w-8 h-8 text-[#d4af37]" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-[#1e3a5f] mb-2">{getLocalizedString(tool, 'displayName')}</h3>
-                        <p className="text-sm text-[#8b6f47] mb-2 line-clamp-2">{getLocalizedString(tool, 'description')}</p>
-                        <span className="inline-block px-3 py-1 bg-[#FFFACD] border border-[#d4af37] rounded-full text-xs font-semibold text-[#1e3a5f]">
-                          {getLocalizedString(tool, 'category') || t('dashboard.generalCategory')}
+                    {featured ? (
+                      <div className="tool-card-featured-inner relative px-5 py-4 md:px-6 md:py-5">
+                        <span
+                          aria-hidden="true"
+                          className="featured-rail absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-[#f4d675] via-[#d4af37] to-[#b8860b]"
+                        />
+                        <IconComponent
+                          aria-hidden="true"
+                          className="featured-watermark tool-card-icon pointer-events-none absolute -right-2 -bottom-3 h-24 w-24 text-[#d4af37]/15"
+                        />
+                        <p className="featured-kicker relative mb-2 inline-flex items-center gap-1.5 font-[Cinzel,serif] text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d4af37]">
+                          <Star className="h-3 w-3 fill-current" aria-hidden="true" />
+                          {t("dashboard.featuredBadge")}
+                        </p>
+                        <h3 className="relative pr-8 font-[Cinzel,serif] text-[1.35rem] leading-snug font-semibold tracking-[0.04em] text-[#FFFACD]">
+                          {getLocalizedString(tool, "displayName")}
+                        </h3>
+                        <p className="featured-desc relative mt-2 max-w-[42ch] font-['Crimson_Text',serif] text-[15px] leading-relaxed text-[#FFFACD]/80 line-clamp-2">
+                          {getLocalizedString(tool, "description")}
+                        </p>
+                        <span className="featured-cta credits-cta relative mt-4 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-4 text-[12px] uppercase">
+                          {t("dashboard.featuredCta")}
+                          <ChevronRight className="h-4 w-4" aria-hidden="true" />
                         </span>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex items-start gap-4">
+                        <div className="p-4 rounded-lg bg-[#1e3a5f]">
+                          <IconComponent className="w-8 h-8 text-[#d4af37]" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-[#1e3a5f] mb-2">{getLocalizedString(tool, 'displayName')}</h3>
+                          <p className="text-sm text-[#8b6f47] mb-2 line-clamp-2">{getLocalizedString(tool, 'description')}</p>
+                          <span className="inline-block px-3 py-1 bg-[#FFFACD] border border-[#d4af37] rounded-full text-xs font-semibold text-[#1e3a5f]">
+                            {getLocalizedString(tool, 'category') || t('dashboard.generalCategory')}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

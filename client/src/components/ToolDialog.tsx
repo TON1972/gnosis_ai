@@ -30,7 +30,8 @@ interface Tool {
   promptTemplate: string | null;
   creditCost: number;
   categoryId: number | null;
-  isActive: boolean; 
+  isActive: boolean;
+  isFeatured?: boolean;
   planIds?: number[]; 
   displayNameEn?: string | null;
   descriptionEn?: string | null;
@@ -58,6 +59,7 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
     creditCost: 50,
     categoryId: null,
     isActive: true,
+    isFeatured: false,
     planIds: [],
     displayNameEn: "",
     descriptionEn: "",
@@ -96,6 +98,7 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
         promptTemplate: editingTool.promptTemplate || "",
         categoryId: editingTool.categoryId || null,
         isActive: editingTool.isActive === true || String(editingTool.isActive) === "true",
+        isFeatured: editingTool.isFeatured === true || String(editingTool.isFeatured) === "true",
         planIds: planIdsFromDb, 
         displayNameEn: editingTool.displayNameEn || "",
         descriptionEn: editingTool.descriptionEn || "",
@@ -115,6 +118,7 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
         creditCost: 50,
         categoryId: null,
         isActive: true,
+        isFeatured: false,
         planIds: [],
         displayNameEn: "",
         descriptionEn: "",
@@ -328,20 +332,37 @@ export default function ToolDialog({ isOpen, onClose, onSave, editingTool }: Too
             </div>
           </div>
 
-          <div className="grid gap-2 mt-2">
-            <Label className="text-[#1e3a5f] font-bold">Visibilidade</Label>
-            <Select 
-              value={formData.isActive ? "true" : "false"} 
-              onValueChange={(val) => setFormData({ ...formData, isActive: val === "true" })}
-            >
-              <SelectTrigger className="border-2 border-[#d4af37]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="true">Ativo</SelectItem>
-                <SelectItem value="false">Inativo</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            <div className="grid gap-2">
+              <Label className="text-[#1e3a5f] font-bold">Visibilidade</Label>
+              <Select 
+                value={formData.isActive ? "true" : "false"} 
+                onValueChange={(val) => setFormData({ ...formData, isActive: val === "true" })}
+              >
+                <SelectTrigger className="border-2 border-[#d4af37]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Ativo</SelectItem>
+                  <SelectItem value="false">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label className="text-[#1e3a5f] font-bold">Destaque no painel</Label>
+              <Select 
+                value={formData.isFeatured ? "true" : "false"} 
+                onValueChange={(val) => setFormData({ ...formData, isFeatured: val === "true" })}
+              >
+                <SelectTrigger className="border-2 border-[#d4af37]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Em destaque</SelectItem>
+                  <SelectItem value="false">Normal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 

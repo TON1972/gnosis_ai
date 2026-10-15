@@ -102,9 +102,9 @@
   }
   
   /* Grid de ferramentas: 2 colunas com gap reduzido */
-  .dashboard-container .grid.grid-cols-1 {
+  .dashboard-container .tools-grid {
     display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 0.5rem !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -112,7 +112,7 @@
   }
   
   /* Cards de ferramentas: padding reduzido e largura controlada */
-  .dashboard-container .grid.grid-cols-1 > div {
+  .dashboard-container .tools-grid > div {
     padding: 0.5rem !important;
     min-width: 0 !important;
     max-width: 100% !important;
@@ -120,8 +120,21 @@
     box-sizing: border-box !important;
   }
   
+  /* Destaque ocupa a largura dos 2 cards no mobile/PWA */
+  .dashboard-container .tools-grid > .tool-card-featured {
+    grid-column: 1 / -1 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .dashboard-container .tools-grid > .tool-card-featured .tool-card-featured-inner {
+    padding: 1rem 1rem 1.1rem 1.15rem !important;
+    text-align: left !important;
+  }
+  
   /* Forçar layout vertical dentro dos cards (linha 368 do Dashboard.tsx) */
-  .dashboard-container .grid.grid-cols-1 > div > div.flex {
+  .dashboard-container .tools-grid > div > div.flex {
     flex-direction: column !important;
     align-items: center !important;
     text-align: center !important;
@@ -129,25 +142,71 @@
   }
   
   /* Ícones de ferramentas: tamanho reduzido */
-  .dashboard-container .grid.grid-cols-1 > div svg {
+  .dashboard-container .tools-grid > div svg {
     width: 1.25rem !important;
     height: 1.25rem !important;
   }
+
+  .dashboard-container .tools-grid > .tool-card-featured .featured-kicker svg {
+    width: 0.7rem !important;
+    height: 0.7rem !important;
+  }
+
+  .dashboard-container .tools-grid > .tool-card-featured .featured-watermark {
+    width: 5.5rem !important;
+    height: 5.5rem !important;
+  }
   
   /* Títulos de ferramentas: tamanho reduzido */
-  .dashboard-container .grid.grid-cols-1 > div h3 {
+  .dashboard-container .tools-grid > div h3 {
     font-size: 0.75rem !important;
     line-height: 1rem !important;
   }
+
+  .dashboard-container .tools-grid > .tool-card-featured h3 {
+    font-size: 1.2rem !important;
+    line-height: 1.4rem !important;
+    margin: 0 !important;
+    padding-right: 2.5rem !important;
+  }
   
   /* Descrições de ferramentas: tamanho reduzido */
-  .dashboard-container .grid.grid-cols-1 > div p {
+  .dashboard-container .tools-grid > div p {
     font-size: 0.65rem !important;
     line-height: 0.9rem !important;
   }
+
+  .dashboard-container .tools-grid > .tool-card-featured .featured-kicker {
+    font-size: 0.625rem !important;
+    line-height: 1 !important;
+    margin-bottom: 0.4rem !important;
+  }
+
+  .dashboard-container .tools-grid > .tool-card-featured .featured-desc {
+    font-size: 0.9375rem !important;
+    line-height: 1.45 !important;
+    margin-top: 0.4rem !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  .dashboard-container .tools-grid > .tool-card-featured .featured-cta {
+    min-height: 44px !important;
+    margin-top: 0.75rem !important;
+    padding: 0 1rem !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  .dashboard-container .tools-grid > .tool-card-featured .featured-cta svg {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
   
   /* Botões de ferramentas: tamanho reduzido */
-  .dashboard-container .grid.grid-cols-1 > div button {
+  .dashboard-container .tools-grid > div button {
     font-size: 0.65rem !important;
     padding: 0.375rem 0.5rem !important;
   }

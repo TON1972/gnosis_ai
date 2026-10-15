@@ -298,13 +298,14 @@ export const appRouter = router({
 
           icon: tools.icon,
           isActive: tools.isActive,
+          isFeatured: tools.isFeatured,
           order: tools.order,
           createdAt: tools.createdAt,
         })
         .from(tools)
         .leftJoin(toolCategories, eq(tools.categoryId, toolCategories.id))
         .where(eq(tools.isActive, true))
-        .orderBy(tools.id);
+        .orderBy(desc(tools.isFeatured), asc(tools.order), asc(tools.id));
     }),
 
     // server/routers.ts
@@ -1345,6 +1346,8 @@ export const appRouter = router({
         inputPlaceholder: tools.inputPlaceholder,
         creditCost: tools.creditCost,
         isActive: tools.isActive,
+        isFeatured: tools.isFeatured,
+        order: tools.order,
         categoryName: toolCategories.name,
         categoryId: tools.categoryId,
         promptTemplate: tools.promptTemplate,
@@ -1363,7 +1366,7 @@ export const appRouter = router({
       })
         .from(tools)
         .leftJoin(toolCategories, eq(tools.categoryId, toolCategories.id))
-        .orderBy(tools.id);
+        .orderBy(asc(tools.order), asc(tools.id));
     }),
 
     // ✅ 2. Listagem de categorias para o Select do Modal
@@ -1422,6 +1425,7 @@ export const appRouter = router({
         creditCost: z.number().min(0),
         categoryId: z.number().optional().nullable(),
         isActive: z.boolean().default(true),
+        isFeatured: z.boolean().optional(),
         planIds: z.array(z.number()).optional(),
         nameEn: z.string().optional().nullable(),
         displayNameEn: z.string().optional().nullable(),
@@ -1448,6 +1452,7 @@ export const appRouter = router({
           creditCost: input.creditCost,
           categoryId: input.categoryId,
           isActive: input.isActive ? "true" : "false", // Ajuste conforme seu schema
+          isFeatured: input.isFeatured ?? false,
           name: input.displayName.toLowerCase().replace(/\s+/g, '_'),
           nameEn: input.nameEn,
           displayNameEn: input.displayNameEn,
@@ -1491,6 +1496,32 @@ export const appRouter = router({
 
         return { success: true };
       }),
+
+    setToolFeatured: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        isFeatured: z.boolean(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+        const db = await getValidatedDb();
+        await db.update(tools).set({ isFeatured: input.isFeatured }).where(eq(tools.id, input.id));
+        return { success: true };
+      }),
+
+    reorderTools: protectedProcedure
+      .input(z.object({
+        orderedIds: z.array(z.number()).min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') throw new Error('Acesso negado');
+        const db = await getValidatedDb();
+        for (let index = 0; index < input.orderedIds.length; index++) {
+          await db.update(tools).set({ order: index }).where(eq(tools.id, input.orderedIds[index]));
+        }
+        return { success: true };
+      }),
+
     // ✅ 4. Mutation para Deletar
     deleteTool: protectedProcedure
       .input(z.object({ id: z.number() }))

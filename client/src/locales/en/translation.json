@@ -127,7 +127,9 @@
     "upgradePlanBtn": "Buy credits",
     "buyCreditsBtn": "Buy credits",
     "allCategories": "All",
-    "generalCategory": "General"
+    "generalCategory": "General",
+    "featuredBadge": "Featured",
+    "featuredCta": "Start now"
   },
   "home": {
     "heroTitle": "Deep Biblical Studies with AI",

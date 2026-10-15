@@ -63,11 +63,13 @@ mobileRouter.get("/tools", requireMobileAuth, async (req, res) => {
         category: toolCategories.name,
         icon: tools.icon,
         isActive: tools.isActive,
+        isFeatured: tools.isFeatured,
+        order: tools.order,
       })
       .from(tools)
       .leftJoin(toolCategories, eq(tools.categoryId, toolCategories.id))
       .where(eq(tools.isActive, true))
-      .orderBy(tools.order);
+      .orderBy(desc(tools.isFeatured), asc(tools.order), asc(tools.id));
 
     return res.status(200).json({ success: true, tools: toolsList });
   } catch (error: any) {

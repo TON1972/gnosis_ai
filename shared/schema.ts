@@ -73,6 +73,7 @@ export const tools = pgTable("tools", {
   categoryEs: text("categoryEs"),
   icon: text("icon"), // Adicionado para os ícones dinâmicos
   isActive: boolean("isActive").default(true),
+  isFeatured: boolean("isFeatured").default(false),
   order: integer("order").default(0), // Adicionado para ordenação
   createdAt: timestamp("createdAt").defaultNow(),
 });

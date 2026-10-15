@@ -186,6 +186,7 @@ export const tools = pgTable("tools", {
   categoryId: integer("categoryId").references(() => toolCategories.id), // ✅ A nova coluna
   icon: text("icon"),
   isActive: boolean("isActive").default(true),
+  isFeatured: boolean("isFeatured").default(false),
   order: integer("order").default(0),
   createdAt: timestamp("createdAt").defaultNow(),
   nameEn: varchar("nameEn", { length: 100 }),

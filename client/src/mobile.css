@@ -658,14 +658,24 @@
   }
 
   /* Dashboard: Cards de ferramentas compactos */
-  body:not(.public-page) .grid.grid-cols-1 > div {
+  body:not(.public-page) .tools-grid > div {
     padding: 0.75rem !important;
   }
 
+  body:not(.public-page) .tools-grid > .tool-card-featured {
+    grid-column: 1 / -1 !important;
+    padding: 0 !important;
+  }
+
   /* Dashboard: Ícones de ferramentas menores */
-  body:not(.public-page) .grid.grid-cols-1 svg {
+  body:not(.public-page) .tools-grid > div svg {
     width: 1.5rem !important;
     height: 1.5rem !important;
+  }
+
+  body:not(.public-page) .tools-grid > .tool-card-featured .tool-card-icon {
+    width: 1.75rem !important;
+    height: 1.75rem !important;
   }
 
   /* Dashboard: Botões de categoria compactos */

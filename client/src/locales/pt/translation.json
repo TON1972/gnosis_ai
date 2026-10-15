@@ -127,7 +127,9 @@
     "upgradePlanBtn": "Comprar créditos",
     "buyCreditsBtn": "Comprar créditos",
     "allCategories": "Todos",
-    "generalCategory": "Geral"
+    "generalCategory": "Geral",
+    "featuredBadge": "Destaque",
+    "featuredCta": "Começar agora"
   },
   "home": {
     "heroTitle": "Estudos Bíblicos Profundos com IA",
