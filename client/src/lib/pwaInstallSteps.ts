@@ -2,9 +2,14 @@ import type { LucideIcon } from "lucide-react";
 import {
   Bell,
   CheckCircle2,
+  ChevronsDown,
+  Compass,
   Download,
+  Globe,
+  Home,
   Menu,
   MoreVertical,
+  PanelBottom,
   PlusSquare,
   Share,
   Smartphone,
@@ -32,10 +37,14 @@ export const ANDROID_MANUAL_STEPS: InstallStep[] = [
 ];
 
 export const IOS_INSTALL_STEPS: InstallStep[] = [
-  { id: "openSafari", icon: Smartphone },
+  { id: "openSafari", icon: Compass },
+  { id: "openSite", icon: Globe },
+  { id: "showToolbar", icon: PanelBottom },
   { id: "tapShare", icon: Share },
+  { id: "scrollShare", icon: ChevronsDown },
   { id: "tapAddHome", icon: PlusSquare },
   { id: "confirm", icon: CheckCircle2 },
+  { id: "findIcon", icon: Home },
 ];
 
 export const PUSH_TIP_STEP: InstallStep = { id: "enablePush", icon: Bell };

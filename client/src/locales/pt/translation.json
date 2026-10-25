@@ -316,7 +316,7 @@
     "entry": {
       "bannerTitle": "Instalar app no celular",
       "bannerDesc": "No iPhone: Safari → Compartilhar → Adicionar à Tela de Início",
-      "bannerDescIos": "Safari → Compartilhar → Adicionar à Tela de Início",
+      "bannerDescIos": "Safari → barra de baixo → Compartilhar → rolar → Adicionar à Tela de Início",
       "bannerDescAndroid": "Chrome → menu → Instalar app ou Adicionar à tela inicial",
       "bannerCta": "Ver como",
       "link": "Como instalar o app no celular"
@@ -334,7 +334,7 @@
       "scrollRegion": "Passos de instalação",
       "scrollHint": "Role para ver todos os passos",
       "androidNote": "Use o Google Chrome. Se aparecer o botão Instalar, toque nele. Caso contrário, siga os passos abaixo.",
-      "iosNote": "Use o Safari (obrigatório no iPhone). Toque Compartilhar na barra inferior — não use o menu ⋯.",
+      "iosNote": "No iPhone isso não fica em Ajustes. Use só o Safari. Chrome, Instagram e WhatsApp não instalam o app.",
       "installBtn": "Instalar agora",
       "installing": "Instalando...",
       "installSuccess": "App instalado com sucesso!",
@@ -371,24 +371,40 @@
       "ios": {
         "title": "Instalação iPhone/iPad",
         "openSafari": {
-          "title": "Abra o site no Safari",
-          "desc": "O Safari é obrigatório no iPhone. Não use Chrome ou outros navegadores."
+          "title": "Abra o app Safari",
+          "desc": "Toque no ícone da bússola azul, chamado Safari. Se você estiver no Chrome, Instagram ou WhatsApp, saia e abra o Safari."
+        },
+        "openSite": {
+          "title": "Abra o site da GNOSIS AI",
+          "desc": "Toque na barra de endereço no alto ou embaixo da tela, digite gnosisai.global e espere a página carregar por completo."
+        },
+        "showToolbar": {
+          "title": "Mostre a barra de baixo do Safari",
+          "desc": "Olhe a parte de baixo da tela. Se a barra sumiu, toque uma vez no meio da página. No iPad, a barra fica no alto, à direita."
         },
         "tapShare": {
           "title": "Toque em Compartilhar",
-          "desc": "Ícone na barra inferior do Safari (quadrado com flecha para cima). Não use o menu ⋯."
+          "desc": "Na barra do Safari, toque no quadrado com a seta para cima. No iPhone fica no centro da barra de baixo. Não toque em AA, em abas nem nos três pontinhos."
+        },
+        "scrollShare": {
+          "title": "Role a lista que abriu",
+          "desc": "Sobe uma janela de baixo para cima. Passe o dedo para cima nessa lista até aparecer mais opções. A instalação não fica nas primeiras linhas."
         },
         "tapAddHome": {
-          "title": "Adicionar à Tela de Início",
-          "desc": "Role a lista e toque em \"Adicionar à Tela de Início\"."
+          "title": "Toque em Adicionar à Tela de Início",
+          "desc": "Procure o item com um quadrado e um sinal de +. O nome é \"Adicionar à Tela de Início\". Toque nele."
         },
         "confirm": {
-          "title": "Confirme com Adicionar",
-          "desc": "Opcionalmente edite o nome e toque em Adicionar no canto superior."
+          "title": "Toque em Adicionar no canto de cima",
+          "desc": "Abre uma tela com o ícone e o nome GNOSIS AI. Toque em Adicionar no canto superior direito. Não toque em Cancelar."
+        },
+        "findIcon": {
+          "title": "Vá para a tela inicial",
+          "desc": "Feche o Safari: deslize de baixo para cima ou aperte o botão Início. O ícone da GNOSIS AI aparece na tela do iPhone, como um app."
         },
         "enablePush": {
           "title": "Ative as notificações",
-          "desc": "Com o app instalado, abra o Perfil e ative push (iOS 16.4+)."
+          "desc": "Abra o app pela tela inicial, entre em Perfil e ligue as notificações (iPhone com iOS 16.4 ou mais novo)."
         }
       }
     },

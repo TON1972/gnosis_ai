@@ -316,7 +316,7 @@
     "entry": {
       "bannerTitle": "Install app on your phone",
       "bannerDesc": "On iPhone: Safari → Share → Add to Home Screen",
-      "bannerDescIos": "Safari → Share → Add to Home Screen",
+      "bannerDescIos": "Safari → bottom bar → Share → scroll → Add to Home Screen",
       "bannerDescAndroid": "Chrome → menu → Install app or Add to Home screen",
       "bannerCta": "How to",
       "link": "How to install the app on your phone"
@@ -334,7 +334,7 @@
       "scrollRegion": "Installation steps",
       "scrollHint": "Scroll to see all steps",
       "androidNote": "Use Google Chrome. If Install appears, tap it. Otherwise follow the steps below.",
-      "iosNote": "Use Safari (required on iPhone). Tap Share in the bottom bar — not the ⋯ menu.",
+      "iosNote": "This is not in iPhone Settings. Use Safari only. Chrome, Instagram, and WhatsApp cannot install the app.",
       "installBtn": "Install now",
       "installing": "Installing...",
       "installSuccess": "App installed successfully!",
@@ -371,24 +371,40 @@
       "ios": {
         "title": "iPhone/iPad installation",
         "openSafari": {
-          "title": "Open the site in Safari",
-          "desc": "Safari is required on iPhone. Do not use Chrome or other browsers."
+          "title": "Open the Safari app",
+          "desc": "Tap the blue compass icon named Safari. If you are in Chrome, Instagram, or WhatsApp, leave that app and open Safari."
+        },
+        "openSite": {
+          "title": "Open the GNOSIS AI site",
+          "desc": "Tap the address bar at the top or bottom of the screen, type gnosisai.global, and wait until the page fully loads."
+        },
+        "showToolbar": {
+          "title": "Show Safari's bottom bar",
+          "desc": "Look at the bottom of the screen. If the bar is hidden, tap once in the middle of the page. On iPad, the bar is at the top right."
         },
         "tapShare": {
           "title": "Tap Share",
-          "desc": "Icon in Safari's bottom bar (square with arrow up). Do not use the ⋯ menu."
+          "desc": "In the Safari bar, tap the square with the arrow pointing up. On iPhone it is in the center of the bottom bar. Do not tap AA, tabs, or the three dots."
+        },
+        "scrollShare": {
+          "title": "Scroll the list that opens",
+          "desc": "A sheet slides up from the bottom. Swipe up on that list until more options appear. Install is not in the first rows."
         },
         "tapAddHome": {
-          "title": "Add to Home Screen",
-          "desc": "Scroll the list and tap \"Add to Home Screen\"."
+          "title": "Tap Add to Home Screen",
+          "desc": "Look for the item with a square and a plus sign. The name is \"Add to Home Screen\". Tap it."
         },
         "confirm": {
-          "title": "Confirm with Add",
-          "desc": "Optionally edit the name and tap Add in the top corner."
+          "title": "Tap Add in the top corner",
+          "desc": "A screen appears with the GNOSIS AI icon and name. Tap Add in the top-right corner. Do not tap Cancel."
+        },
+        "findIcon": {
+          "title": "Go to the Home Screen",
+          "desc": "Leave Safari: swipe up from the bottom or press the Home button. The GNOSIS AI icon is on the iPhone Home Screen, like an app."
         },
         "enablePush": {
-          "title": "Enable notifications",
-          "desc": "With the app installed, open Profile and enable push (iOS 16.4+)."
+          "title": "Turn on notifications",
+          "desc": "Open the app from the Home Screen, go to Profile, and enable notifications (iPhone with iOS 16.4 or newer)."
         }
       }
     },
