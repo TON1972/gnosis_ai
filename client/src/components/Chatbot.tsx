@@ -394,13 +394,15 @@ export default function Chatbot() {
 
   if (location === "/lp-vendas") return null;
 
+  const hideFab = location.startsWith("/tool/") || location.startsWith("/study/");
+
   return (
     <>
-      {/* Floating Button */}
-      {!isOpen && (
+      {/* FAB fica fora das telas de ferramenta/estudo para não cobrir o botão de responder */}
+      {!isOpen && !hideFab && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-8 right-6 z-50 bg-[#d4af37] text-[#1e3a5f] p-4 rounded-full shadow-2xl hover:bg-[#B8860B] transition-all duration-300 hover:scale-110"
+          className="chatbot-fab fixed bottom-8 right-6 z-50 bg-[#d4af37] text-[#1e3a5f] p-4 rounded-full shadow-2xl hover:bg-[#B8860B] transition-all duration-300 hover:scale-110"
           aria-label="Abrir chat"
         >
           <MessageCircle className="w-6 h-6" />
@@ -409,7 +411,7 @@ export default function Chatbot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:left-auto md:right-6 md:translate-x-0 z-50 w-[340px] md:w-[380px] h-[520px] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col border-4 border-[#d4af37]">
+        <div className="chatbot-panel fixed bottom-4 left-1/2 -translate-x-1/2 md:left-auto md:right-6 md:translate-x-0 z-50 w-[340px] md:w-[380px] h-[520px] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col border-4 border-[#d4af37]">
           {/* Header */}
           <div className="bg-[#1e3a5f] text-white p-4 rounded-t-xl flex items-center justify-between">
             <div className="flex items-center gap-3">

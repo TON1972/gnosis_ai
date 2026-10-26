@@ -2,6 +2,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
+import OpenRebecaButton from "@/components/OpenRebecaButton";
  
 interface DashboardMobileMenuProps {
   user: any;
@@ -107,6 +108,8 @@ export default function DashboardMobileMenu({ user, onLogout }: DashboardMobileM
                 </span>
               </Link>
             )}
+
+            <OpenRebecaButton variant="menu" onOpen={closeMenu} />
             
             <button
               onClick={() => {

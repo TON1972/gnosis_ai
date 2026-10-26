@@ -15,6 +15,7 @@ import DashboardMobileMenu from "@/components/DashboardMobileMenu";
 import Footer from "@/components/Footer";
 import HeaderCredits from "@/components/HeaderCredits";
 import BuyCreditsCta from "@/components/BuyCreditsCta";
+import OpenRebecaButton from "@/components/OpenRebecaButton";
 import { getLocalizedString } from "@/lib/i18nHelper";
 import "../dashboard-mobile.css";
 
@@ -159,6 +160,8 @@ export default function ToolPage() {
                 }}
               />
             </div>
+
+            <OpenRebecaButton />
 
             {/* ✅ Botão Voltar movido para o header */}
             <Link href="/dashboard">

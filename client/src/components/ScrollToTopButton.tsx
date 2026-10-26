@@ -31,7 +31,12 @@ export default function ScrollToTopButton() {
     });
   };
 
-  if (!isVisible || location === "/lp-vendas") {
+  if (
+    !isVisible ||
+    location === "/lp-vendas" ||
+    location.startsWith("/tool/") ||
+    location.startsWith("/study/")
+  ) {
     return null;
   }
 

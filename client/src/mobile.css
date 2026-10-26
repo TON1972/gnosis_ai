@@ -241,20 +241,20 @@
   /* ===== CHATBOT ===== */
   
   /* Janela do chat menor */
-  [class*="w-[380px]"] {
+  .chatbot-panel {
     width: 95vw !important;
     max-width: 350px !important;
-    height: 500px !important;
+    height: min(500px, calc(100dvh - 5rem - env(safe-area-inset-bottom, 0px))) !important;
+    bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
   }
   
-  /* Botão flutuante do chat */
-  button[class*="bottom-8"][class*="right-6"] {
-    bottom: 1rem !important;
+  .chatbot-fab {
+    bottom: max(1.25rem, env(safe-area-inset-bottom, 0px)) !important;
     right: 1rem !important;
     padding: 0.75rem !important;
   }
   
-  button[class*="bottom-8"][class*="right-6"] svg {
+  .chatbot-fab svg {
     width: 1.25rem !important;
     height: 1.25rem !important;
   }

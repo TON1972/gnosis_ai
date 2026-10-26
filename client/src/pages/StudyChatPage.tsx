@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import ShareButton from "@/components/ShareButton";
+import OpenRebecaButton from "@/components/OpenRebecaButton";
 import NoCreditsModal from "@/components/NoCreditsModal";
 
 export default function StudyChatPage() {
@@ -203,7 +204,8 @@ export default function StudyChatPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <OpenRebecaButton />
             <Button onClick={handleCopyAll} variant="outline" size="sm" className="bg-white/10 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-[#1e3a5f] font-bold">
               {copied ? <CheckCircle className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
               <span className="hidden sm:inline">Copiar Tudo</span>
@@ -268,7 +270,7 @@ export default function StudyChatPage() {
       </main>
 
       {/* Rodapé com Input Fixo */}
-      <footer className="p-4 bg-white border-t-4 border-[#d4af37] shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+      <footer className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white border-t-4 border-[#d4af37] shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
         <div className="container mx-auto max-w-4xl">
           <div className="flex gap-3 items-end">
             {/* Botão de Voltar ao Dashboard (Integrado ao Chat) */}
